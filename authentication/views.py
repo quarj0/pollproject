@@ -47,7 +47,6 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Blacklist token (optional, if you're using a token blacklist)
             token = request.data.get("refresh")
             if token:
                 token_obj = RefreshToken(token)
@@ -63,15 +62,15 @@ class PasswordResetRequestView(APIView):
         user = get_user_model().objects.filter(email=email).first()
 
         if user:
-            # Generate a password reset token and send the email
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(user.pk.encode('utf-8'))
-            reset_url = f"{
-                settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+            reset_url = request.build_absolute_uri(
+                f"/reset-password/{uid}/{token}/")
 
             send_mail(
                 "Password Reset Request",
-                f"Click the link below to reset your password: {reset_url}",
+                f"""Click the link below to reset your password: {
+                    reset_url}. If you didn't request a password reset, ignore this email.""",
                 settings.DEFAULT_FROM_EMAIL,
                 [email]
             )
