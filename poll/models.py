@@ -1,3 +1,56 @@
 from django.db import models
+from authentication.models import User
 
-# Create your models here.
+
+class Poll(models.Model):
+    CREATOR_PAY = 'creator-pay'
+    VOTERS_PAY = 'voters-pay'
+
+    POLL_TYPES = [
+        (CREATOR_PAY, 'Creator-Pay'),
+        (VOTERS_PAY, 'Voters-Pay')
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    poll_type = models.CharField(max_length=20, choices=POLL_TYPES)
+    expected_voters = models.PositiveIntegerField(
+        null=True, blank=True)  # Only for creator-pay
+    voting_fee = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True)  # Only for voters-pay
+    creator = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="polls")
+    active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title} ({self.poll_type})"
+
+
+class Contestant(models.Model):
+    poll = models.ForeignKey(
+        Poll, on_delete=models.CASCADE, related_name="contestants")
+    category = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
+    award = models.CharField(max_length=100, blank=True)
+    nominee_code = models.CharField(max_length=10, unique=True)
+    image = models.ImageField(upload_to='contestant_images/')
+    
+    
+    def save(self, *args, **kwargs):
+        if not self.nominee_code:
+            name_parts = self.name.split()
+            if len(name_parts) == 1:
+                code = name_parts[0][:3].upper()
+            elif len(name_parts) == 2:
+                code = (name_parts[0][:2] + name_parts[1][:1]).upper()
+            else:
+                code = (name_parts[0][:1] + name_parts[1][:1] + name_parts[2][:1]).upper()
+            self.nominee_code = f"{code}{self.id}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} - {self.category} in {self.poll.title}"
+
+        
