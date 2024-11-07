@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "authentication"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}

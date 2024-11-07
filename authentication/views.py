@@ -18,7 +18,8 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            return Response({"message": "User registered successfully."}, status=status.HTTP_201_CREATED)
+            return Response({
+                "message": "User registered successfully.", }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -94,8 +95,10 @@ class PasswordResetRequestView(APIView):
 class PasswordResetConfirmView(APIView):
     def post(self, request, uidb64, token):
         try:
-            uid = urlsafe_base64_decode(uidb64).decode('utf-8')
-            user = get_user_model().objects.get(pk=uid)
+            user.set_password(new_password)
+            user.save()
+            if user.is_active:
+                return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
         except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
             user = None
 
@@ -106,3 +109,12 @@ class PasswordResetConfirmView(APIView):
             return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid token or expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeleteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        user.delete()
+        return Response({"message": "User deleted successfully."}, status=status.HTTP_200_OK)
