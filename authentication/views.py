@@ -63,16 +63,27 @@ class PasswordResetRequestView(APIView):
 
         if user:
             token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(user.pk.encode('utf-8'))
+            uid = urlsafe_base64_encode(str(user.pk).encode('utf-8'))
             reset_url = request.build_absolute_uri(
-                f"/reset-password/{uid}/{token}/")
+                f"/auth/reset/password/{uid}/{token}/")
 
             send_mail(
                 "Password Reset Request",
-                f"""Click the link below to reset your password: {
-                    reset_url}. If you didn't request a password reset, ignore this email.""",
-                settings.DEFAULT_FROM_EMAIL,
-                [email]
+                f"""
+                Dear {user.get_full_name() or user.username},
+
+                We received a request to reset your password. Click the link below to reset your password.\n
+
+                {reset_url}
+
+                If you did not request a password reset, please ignore this email or contact support if you have questions.
+
+                Best regards,
+                Your Company Team
+                """,
+                settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
             )
 
             return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
