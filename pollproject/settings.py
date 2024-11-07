@@ -30,10 +30,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
-    'polls',
-    'vote',
-    'payment',
     'authentication',
+    'payment',
+    'poll',
+    'vote',
 ]
 
 MIDDLEWARE = [
@@ -135,8 +135,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # CORS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://" + config('FRONTEND_URL'),
-
+    "http://127.0.0.1:5327",
 ]
 
 # Default primary key field type
