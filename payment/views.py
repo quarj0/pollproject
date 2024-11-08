@@ -61,3 +61,5 @@ class PaystackVerifyPaymentView(APIView):
         except Exception as e:
             logger.error(f"Exception during Paystack verification: {e}")
             return Response({"error": "An error occurred during verification"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

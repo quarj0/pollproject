@@ -29,17 +29,39 @@ class Poll(models.Model):
         return f"{self.title} ({self.poll_type})"
 
 
+from django.db import models
+import random
+import string
+
 class Contestant(models.Model):
-    poll = models.ForeignKey(
-        Poll, on_delete=models.CASCADE, related_name="contestants")
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="contestants")
     category = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     award = models.CharField(max_length=100, blank=True)
-    # nominee_code = models.CharField(max_length=10, unique=True)
+    nominee_code = models.CharField(max_length=15, unique=True)
     image = models.ImageField(upload_to='contestant_images/', blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.nominee_code:
+            name_parts = self.name.split()
+            if len(name_parts) == 1:
+                code = name_parts[0][:3].upper()
+            elif len(name_parts) == 2:
+                code = (name_parts[0][:2] + name_parts[1][:1]).upper()
+            else:
+                code = (name_parts[0][:1] + name_parts[1][:1] + name_parts[2][:1]).upper()
+
+            poll_id_code = f"{self.poll.id:03d}"
+            # Generate a random string of 3 characters for uniqueness
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+
+            self.nominee_code = f"{code}{poll_id_code}{random_str}"
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"
+
 
 
 class Vote(models.Model):

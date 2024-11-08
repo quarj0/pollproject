@@ -6,20 +6,18 @@ from .models import Poll, Contestant, Vote
 
 
 
-
-
 class ContestantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contestant
         fields = [
-            'id', 'category', 'name', 'award',
+            'id', 'category', 'name', 'award', 'nominee_code',
             'image'
         ]
-        # read_only_fields = ['nominee_code']  # No need to generate it during creation
+        read_only_fields = ['nominee_code'] 
 
     def create(self, validated_data):
-        # Create the contestant without nominee_code
         contestant = Contestant.objects.create(**validated_data)
+        contestant.save()
         return contestant
 
 
