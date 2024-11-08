@@ -1,4 +1,3 @@
-from rest_framework import serializers
 from django.utils import timezone
 from rest_framework import serializers
 from django.utils import timezone
@@ -6,40 +5,26 @@ from django.utils import timezone
 from .models import Poll, Contestant, Vote
 
 
-class ContestantSerializer(serializers.ModelSerializer):
-    poll = serializers.PrimaryKeyRelatedField(queryset=Poll.objects.all())
 
+
+
+class ContestantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contestant
         fields = [
-            'id', 'poll', 'category', 'name', 'award',
-            'nominee_code', 'image'
+            'id', 'category', 'name', 'award',
+            'image'
         ]
-        read_only_fields = ['nominee_code']
+        # read_only_fields = ['nominee_code']  # No need to generate it during creation
 
     def create(self, validated_data):
+        # Create the contestant without nominee_code
         contestant = Contestant.objects.create(**validated_data)
-        contestant.nominee_code = self.generate_nominee_code(contestant)
-        contestant.save(update_fields=["nominee_code"])
         return contestant
-
-    def generate_nominee_code(self, contestant):
-        """Generate a nominee code based on name parts."""
-        name_parts = contestant.name.split()
-        if len(name_parts) == 1:
-            code = name_parts[0][:3].upper()
-        elif len(name_parts) == 2:
-            code = (name_parts[0][:2] + name_parts[1][:1]).upper()
-        else:
-            code = (name_parts[0][:1] + name_parts[1]
-                    [:1] + name_parts[2][:1]).upper()
-        return f"{code}{contestant.id}"
 
 
 class PollSerializer(serializers.ModelSerializer):
-    creator = serializers.StringRelatedField(read_only=True)
-    contestants = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Contestant.objects.all())
+    contestants = ContestantSerializer(many=True)
     start_time = serializers.DateTimeField()
     end_time = serializers.DateTimeField()
 
@@ -47,12 +32,11 @@ class PollSerializer(serializers.ModelSerializer):
         model = Poll
         fields = [
             'id', 'title', 'description', 'start_time', 'end_time',
-            'poll_type', 'expected_voters', 'voting_fee', 'creator',
+            'poll_type', 'expected_voters', 'voting_fee',
             'active', 'contestants', 'setup_fee'
         ]
 
     def validate_expected_voters(self, value):
-        """Ensure expected voters are within valid limits for creator-pay polls."""
         if self.initial_data.get('poll_type') == Poll.CREATOR_PAY:
             if not (20 <= value <= 200):
                 raise serializers.ValidationError(
@@ -61,7 +45,6 @@ class PollSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        """Validate fields based on poll_type and times."""
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError(
                 "End time must be after start time.")
@@ -101,11 +84,14 @@ class PollSerializer(serializers.ModelSerializer):
         return 0
 
     def create(self, validated_data):
+        contestants_data = validated_data.pop('contestants')
         validated_data['creator'] = self.context['request'].user
-        if validated_data['poll_type'] == Poll.CREATOR_PAY:
-            validated_data['setup_fee'] = self.calculate_setup_fee(
-                validated_data['expected_voters'])
-        return super().create(validated_data)
+        poll = Poll.objects.create(**validated_data)
+
+        for contestant_data in contestants_data:
+            Contestant.objects.create(poll=poll, **contestant_data)
+
+        return poll
 
 
 class VoteSerializer(serializers.ModelSerializer):

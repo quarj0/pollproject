@@ -35,7 +35,7 @@ class Contestant(models.Model):
     category = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     award = models.CharField(max_length=100, blank=True)
-    nominee_code = models.CharField(max_length=10, unique=True)
+    # nominee_code = models.CharField(max_length=10, unique=True)
     image = models.ImageField(upload_to='contestant_images/', blank=True, null=True)
 
     def __str__(self):
