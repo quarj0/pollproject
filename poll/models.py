@@ -17,9 +17,9 @@ class Poll(models.Model):
     end_time = models.DateTimeField()
     poll_type = models.CharField(max_length=20, choices=POLL_TYPES)
     expected_voters = models.PositiveIntegerField(
-        null=True, blank=True)  # Only for creator-pay
+        null=True, blank=True)
     voting_fee = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True)  # Only for voters-pay
+        max_digits=10, decimal_places=2, null=True, blank=True)
     creator = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="polls")
     active = models.BooleanField(default=False)
@@ -36,8 +36,7 @@ class Contestant(models.Model):
     award = models.CharField(max_length=100, blank=True)
     nominee_code = models.CharField(max_length=10, unique=True)
     image = models.ImageField(upload_to='contestant_images/')
-    
-    
+
     def save(self, *args, **kwargs):
         if not self.nominee_code:
             name_parts = self.name.split()
@@ -46,11 +45,22 @@ class Contestant(models.Model):
             elif len(name_parts) == 2:
                 code = (name_parts[0][:2] + name_parts[1][:1]).upper()
             else:
-                code = (name_parts[0][:1] + name_parts[1][:1] + name_parts[2][:1]).upper()
+                code = (name_parts[0][:1] + name_parts[1]
+                        [:1] + name_parts[2][:1]).upper()
             self.nominee_code = f"{code}{self.id}"
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"
 
-        
+
+class Vote(models.Model):
+    poll = models.ForeignKey(
+        Poll, on_delete=models.CASCADE, related_name="votes")
+    contestant = models.ForeignKey(
+        Contestant, on_delete=models.CASCADE, related_name="votes")
+    number_of_votes = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.number_of_votes} votes for {self.contestant.name}"
