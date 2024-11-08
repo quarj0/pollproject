@@ -17,7 +17,6 @@ class ContestantSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         contestant = Contestant.objects.create(**validated_data)
-        contestant.save()
         return contestant
 
 
