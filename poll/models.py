@@ -19,7 +19,8 @@ class Poll(models.Model):
     expected_voters = models.PositiveIntegerField(
         null=True, blank=True)
     voting_fee = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True)
+        max_digits=10, decimal_places=2, null=True, blank=True, default=0)
+    setup_fee = setup_fee = models.PositiveIntegerField(null=True, blank=True, default=0)
     creator = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="polls")
     active = models.BooleanField(default=False)
@@ -36,19 +37,6 @@ class Contestant(models.Model):
     award = models.CharField(max_length=100, blank=True)
     nominee_code = models.CharField(max_length=10, unique=True)
     image = models.ImageField(upload_to='contestant_images/')
-
-    def save(self, *args, **kwargs):
-        if not self.nominee_code:
-            name_parts = self.name.split()
-            if len(name_parts) == 1:
-                code = name_parts[0][:3].upper()
-            elif len(name_parts) == 2:
-                code = (name_parts[0][:2] + name_parts[1][:1]).upper()
-            else:
-                code = (name_parts[0][:1] + name_parts[1]
-                        [:1] + name_parts[2][:1]).upper()
-            self.nominee_code = f"{code}{self.id}"
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"
