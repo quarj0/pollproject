@@ -29,7 +29,7 @@ class LoginView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
-            user = authenticate(email=email, password=password)
+            user = authenticate(username=email, password=password)
 
             if user:
                 refresh = RefreshToken.for_user(user)
@@ -95,20 +95,29 @@ class PasswordResetRequestView(APIView):
 class PasswordResetConfirmView(APIView):
     def post(self, request, uidb64, token):
         try:
-            user.set_password(new_password)
-            user.save()
-            if user.is_active:
-                return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
+            uid = urlsafe_base64_decode(uidb64).decode('utf-8')
+            user = get_user_model().objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
             user = None
 
         if user and default_token_generator.check_token(user, token):
-            new_password = request.data.get("password")
+            new_password = request.data.get("new_password")
+            confirm_password = request.data.get("confirm_password")
+
+            if not new_password or not confirm_password:
+                return Response({"error": "Both password fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if new_password != confirm_password:
+                return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+            elif len(new_password) < 6:
+                return Response({"error": "Password must be at least 6 characters long"}, status=status.HTTP_400_BAD_REQUEST)
+
             user.set_password(new_password)
             user.save()
             return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
 
-        return Response({"error": "Invalid token or expired"}, status=status.HTTP_400_BAD_REQUEST)
+        # Invalid token or user
+        return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DeleteUserView(APIView):
