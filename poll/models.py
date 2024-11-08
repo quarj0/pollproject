@@ -20,7 +20,7 @@ class Poll(models.Model):
         null=True, blank=True)
     voting_fee = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0)
-    setup_fee = setup_fee = models.PositiveIntegerField(null=True, blank=True, default=0)
+    setup_fee = models.PositiveIntegerField(null=True, blank=True, default=0)
     creator = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="polls")
     active = models.BooleanField(default=False)
@@ -36,7 +36,7 @@ class Contestant(models.Model):
     name = models.CharField(max_length=100)
     award = models.CharField(max_length=100, blank=True)
     nominee_code = models.CharField(max_length=10, unique=True)
-    image = models.ImageField(upload_to='contestant_images/')
+    image = models.ImageField(upload_to='contestant_images/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"

@@ -6,84 +6,6 @@ from django.utils import timezone
 from .models import Poll, Contestant, Vote
 
 
-class PollSerializer(serializers.ModelSerializer):
-    creator = serializers.StringRelatedField(read_only=True)
-    contestants = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    start_time = serializers.DateTimeField()
-    end_time = serializers.DateTimeField()
-
-    class Meta:
-        model = Poll
-        fields = [
-            'id', 'title', 'description', 'start_time', 'end_time',
-            'poll_type', 'expected_voters', 'voting_fee', 'creator',
-            'active', 'contestants'
-        ]
-
-    def validate_expected_voters(self, value):
-        """Ensure expected voters are within valid limits for creator-pay polls."""
-        if self.initial_data.get('poll_type') == Poll.CREATOR_PAY:
-            if value < 20 or value > 200:
-                raise serializers.ValidationError(
-                    "Expected voters must be between 20 and 200 for creator-pay polls."
-                )
-        return value
-
-    def validate(self, data):
-        if data['start_time'] >= data['end_time']:
-            raise serializers.ValidationError(
-                "End time must be after start time.")
-
-        if data['start_time'] < timezone.now():
-            raise serializers.ValidationError(
-                "Start time must be in the future.")
-
-        if data['poll_type'] == Poll.VOTERS_PAY:
-            if data.get('voting_fee') is None:
-                raise serializers.ValidationError(
-                    "Voting fee is required for voters-pay polls.")
-            elif data['voting_fee'] <= 0:
-                raise serializers.ValidationError(
-                    "Voting fee must be a positive amount.")
-
-            if data.get('expected_voters') is not None:
-                raise serializers.ValidationError(
-                    "Expected voters should not be set for voters-pay polls.")
-
-        if data['poll_type'] == Poll.CREATOR_PAY:
-            if data.get('voting_fee') is not None:
-                raise serializers.ValidationError(
-                    "Voting fee should not be set for creator-pay polls.")
-
-            if data.get('expected_voters') is None:
-                raise serializers.ValidationError(
-                    "Expected voters is required for creator-pay polls.")
-
-            expected_voters = data.get('expected_voters', 0)
-            if 20 <= expected_voters <= 60:
-                data['setup_fee'] = 25
-            elif 61 <= expected_voters <= 100:
-                data['setup_fee'] = 35
-            elif 101 <= expected_voters <= 200:
-                data['setup_fee'] = 50
-
-        return data
-
-    def create(self, validated_data):
-        validated_data['creator'] = self.context['request'].user
-
-        if validated_data['poll_type'] == Poll.CREATOR_PAY:
-            expected_voters = validated_data.get('expected_voters', 0)
-            if 20 <= expected_voters <= 60:
-                validated_data['setup_fee'] = 25
-            elif 61 <= expected_voters <= 100:
-                validated_data['setup_fee'] = 35
-            elif 101 <= expected_voters <= 200:
-                validated_data['setup_fee'] = 50
-
-        return super().create(validated_data)
-
-
 class ContestantSerializer(serializers.ModelSerializer):
     poll = serializers.PrimaryKeyRelatedField(queryset=Poll.objects.all())
 
@@ -97,7 +19,12 @@ class ContestantSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         contestant = Contestant.objects.create(**validated_data)
+        contestant.nominee_code = self.generate_nominee_code(contestant)
+        contestant.save(update_fields=["nominee_code"])
+        return contestant
 
+    def generate_nominee_code(self, contestant):
+        """Generate a nominee code based on name parts."""
         name_parts = contestant.name.split()
         if len(name_parts) == 1:
             code = name_parts[0][:3].upper()
@@ -106,10 +33,79 @@ class ContestantSerializer(serializers.ModelSerializer):
         else:
             code = (name_parts[0][:1] + name_parts[1]
                     [:1] + name_parts[2][:1]).upper()
-        contestant.nominee_code = f"{code}{contestant.id}"
+        return f"{code}{contestant.id}"
 
-        contestant.save(update_fields=["nominee_code"])
-        return contestant
+
+class PollSerializer(serializers.ModelSerializer):
+    creator = serializers.StringRelatedField(read_only=True)
+    contestants = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Contestant.objects.all())
+    start_time = serializers.DateTimeField()
+    end_time = serializers.DateTimeField()
+
+    class Meta:
+        model = Poll
+        fields = [
+            'id', 'title', 'description', 'start_time', 'end_time',
+            'poll_type', 'expected_voters', 'voting_fee', 'creator',
+            'active', 'contestants', 'setup_fee'
+        ]
+
+    def validate_expected_voters(self, value):
+        """Ensure expected voters are within valid limits for creator-pay polls."""
+        if self.initial_data.get('poll_type') == Poll.CREATOR_PAY:
+            if not (20 <= value <= 200):
+                raise serializers.ValidationError(
+                    "Expected voters must be between 20 and 200 for creator-pay polls."
+                )
+        return value
+
+    def validate(self, data):
+        """Validate fields based on poll_type and times."""
+        if data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError(
+                "End time must be after start time.")
+        if data['start_time'] < timezone.now():
+            raise serializers.ValidationError(
+                "Start time must be in the future.")
+
+        poll_type = data.get('poll_type')
+        if poll_type == Poll.VOTERS_PAY:
+            if data.get('voting_fee') is None or data['voting_fee'] <= 0:
+                raise serializers.ValidationError(
+                    "Voting fee is required and must be positive for voters-pay polls.")
+            if data.get('expected_voters') is not None:
+                raise serializers.ValidationError(
+                    "Expected voters should not be set for voters-pay polls.")
+
+        elif poll_type == Poll.CREATOR_PAY:
+            if data.get('voting_fee') is not None:
+                raise serializers.ValidationError(
+                    "Voting fee should not be set for creator-pay polls.")
+            if data.get('expected_voters') is None:
+                raise serializers.ValidationError(
+                    "Expected voters is required for creator-pay polls.")
+            data['setup_fee'] = self.calculate_setup_fee(
+                data['expected_voters'])
+
+        return data
+
+    def calculate_setup_fee(self, expected_voters):
+        """Calculate setup fee based on the expected voters."""
+        if 20 <= expected_voters <= 60:
+            return 25
+        elif 61 <= expected_voters <= 100:
+            return 35
+        elif 101 <= expected_voters <= 200:
+            return 50
+        return 0
+
+    def create(self, validated_data):
+        validated_data['creator'] = self.context['request'].user
+        if validated_data['poll_type'] == Poll.CREATOR_PAY:
+            validated_data['setup_fee'] = self.calculate_setup_fee(
+                validated_data['expected_voters'])
+        return super().create(validated_data)
 
 
 class VoteSerializer(serializers.ModelSerializer):

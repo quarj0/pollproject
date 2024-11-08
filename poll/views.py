@@ -18,7 +18,13 @@ logger = logging.getLogger(__name__)
 
 paystack = Paystack(secret_key=settings.PAYSTACK_SECRET_KEY)
 
+
 class PollCreateView(APIView):
+
+    """
+    API view to handle the creation of polls.
+    """
+
     def post(self, request):
         serializer = PollSerializer(
             data=request.data, context={'request': request})
@@ -89,8 +95,6 @@ class PollCreateView(APIView):
             logger.error(f"Error shortening URL with Bitly: {e}")
             return None
 
-
-
     def create_payment_link(self, user, amount, poll_id):
         """
         Create a payment link with Paystack.
@@ -147,3 +151,10 @@ class PollListView(APIView):
         polls = Poll.objects.all()
         serializer = PollSerializer(polls, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DeletePollsView(APIView):
+    def delete(self, request):
+        polls = Poll.objects.all()
+        polls.delete()
+        return Response({"detail": "Polls deleted."})
