@@ -103,6 +103,21 @@ class UpdatePollSerializer(serializers.ModelSerializer):
             'active', 'contestants', 'setup_fee'
         ]
 
+    def generate_nominee_code(self, name, poll_id):
+        name_parts = name.split()
+        if len(name_parts) == 1:
+            # Use first 3 letters if there's only one name part
+            code = name_parts[0][:3].upper()
+        elif len(name_parts) == 2:
+            # Use first 2 letters of the first part and 1 letter of the second part
+            code = (name_parts[0][:2] + name_parts[1][:1]).upper()
+        else:
+            # Use first letters of the first three parts
+            code = (name_parts[0][:1] + name_parts[1]
+                    [:1] + name_parts[2][:1]).upper()
+
+        return f"{code}{poll_id}"
+
     def validate_expected_voters(self, value):
         if self.initial_data.get('poll_type') == Poll.CREATOR_PAY:
             if not (20 <= value <= 200):
@@ -181,12 +196,15 @@ class UpdatePollSerializer(serializers.ModelSerializer):
             'setup_fee', instance.setup_fee)
         instance.save()
 
-        
         existing_contestants = list(instance.contestants.all())
         for contestant_data, contestant in zip(contestants_data, existing_contestants):
+            new_name = contestant_data.get('name', contestant.name)
+            if new_name != contestant.name:
+                contestant.nominee_code = contestant.nominee_code = f"{
+                    self.generate_nominee_code(new_name, instance.id)}"
             contestant.category = contestant_data.get(
                 'category', contestant.category)
-            contestant.name = contestant_data.get('name', contestant.name)
+            contestant.name = new_name
             contestant.award = contestant_data.get('award', contestant.award)
             contestant.image = contestant_data.get('image', contestant.image)
             contestant.save()
