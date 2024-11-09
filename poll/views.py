@@ -9,13 +9,11 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from .models import Poll
 from .serializers import PollSerializer, UpdatePollSerializer
-from paystackapi.paystack import Paystack
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-paystack = Paystack(secret_key=settings.PAYSTACK_SECRET_KEY)
 
 
 class PollCreateView(APIView):
@@ -100,11 +98,11 @@ class PollCreateView(APIView):
         payment_data = {
             "email": user.email,
             "amount": int(amount * 100),
-            "reference": f"poll-{poll_id}-setup-fees",
+            "reference": f"poll-{poll_id}-poll_activation",
         }
 
         headers = {
-            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY.strip()}",
             "Content-Type": "application/json",
         }
 
@@ -112,7 +110,8 @@ class PollCreateView(APIView):
             response = requests.post(
                 "https://api.paystack.co/transaction/initialize",
                 json=payment_data,
-                headers=headers
+                headers=headers,
+                timeout=10,
             )
 
             if response.status_code == 200:

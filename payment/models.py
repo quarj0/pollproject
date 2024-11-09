@@ -23,7 +23,7 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.transaction_type} - {self.poll.title} by {self.user.username if self.user else 'Anonymous'}"
+        return f"{self.transaction_type} - {self.poll.title} by {self.user.username if self.user else 'voter'}"
 
     def clean(self):
         if self.transaction_type == 'poll_activation' and not self.user:
@@ -32,6 +32,8 @@ class Transaction(models.Model):
         if self.transaction_type == 'vote' and self.user:
             raise ValidationError(
                 'User should not be set for vote transactions.')
+
+   
 
 
 class Withdrawal(models.Model):
