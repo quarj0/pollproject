@@ -1,6 +1,5 @@
-from datetime import timezone
 import requests
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
@@ -9,7 +8,7 @@ from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 
 from .models import Poll
-from .serializers import PollSerializer
+from .serializers import PollSerializer, UpdatePollSerializer
 from paystackapi.paystack import Paystack
 
 import logging
@@ -20,7 +19,6 @@ paystack = Paystack(secret_key=settings.PAYSTACK_SECRET_KEY)
 
 
 class PollCreateView(APIView):
-
     """
     API view to handle the creation of polls.
     """
@@ -133,6 +131,15 @@ class PollCreateView(APIView):
         except requests.RequestException as e:
             logger.error(f"Exception during Paystack initialization: {e}")
             return None
+
+
+class UpdatePollView(generics.UpdateAPIView):
+    queryset = Poll.objects.all()
+    serializer_class = UpdatePollSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 
 class PollDetailView(APIView):
