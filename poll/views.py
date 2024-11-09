@@ -15,7 +15,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
 class PollCreateView(APIView):
     """
     API view to handle the creation of polls.
@@ -159,8 +158,13 @@ class PollListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class DeletePollsView(APIView):
-    def delete(self, request):
-        polls = Poll.objects.all()
-        polls.delete()
-        return Response({"detail": "Polls deleted."})
+class DeletePollView(APIView):
+    def delete(self, request, poll_id=None):
+        if poll_id:
+            poll = get_object_or_404(Poll, id=poll_id)
+            poll.delete()
+            return Response({"detail": f"Poll {poll_id} has been deleted."}, status=status.HTTP_200_OK)
+        else:
+            polls = Poll.objects.all()
+            polls.delete()
+            return Response({"detail": "All polls deleted."}, status=status.HTTP_200_OK)
