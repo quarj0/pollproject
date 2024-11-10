@@ -11,7 +11,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.crypto import get_random_string
 import string
 
-from vote.models import VoterCode
+from vote.models import Vote
 from .models import Poll
 from .serializers import PollSerializer, UpdatePollSerializer
 
@@ -80,8 +80,7 @@ class PollCreateView(APIView):
             code = get_random_string(
                 length=5, allowed_chars=string.ascii_uppercase + string.digits)
 
-            # Create and save a new VoterCode instance
-            VoterCode.objects.create(poll=poll, code=code)
+            Vote.objects.create(poll=poll, code=code)
 
         return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
 
@@ -155,7 +154,8 @@ class PollCreateView(APIView):
                 return None
 
         except requests.RequestException as e:
-            logger.error(f"Exception during payment gateway initialization: {e}")
+            logger.error(
+                f"Exception during payment gateway initialization: {e}")
             return None
 
 
@@ -207,7 +207,7 @@ class DownloadVoterCodesView(APIView):
         poll = get_object_or_404(Poll, id=poll_id)
 
         # Check if the poll has any voter codes
-        voter_codes = VoterCode.objects.filter(poll=poll, used=False)
+        voter_codes = Vote.objects.filter(poll=poll, used=False)
 
         if not voter_codes:
             return Response({"error": "No voter codes available for this poll."}, status=status.HTTP_404_NOT_FOUND)
