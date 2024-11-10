@@ -210,4 +210,3 @@ class UpdatePollSerializer(serializers.ModelSerializer):
             contestant.save()
 
         return instance
-

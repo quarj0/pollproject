@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.utils import timezone
 from poll.models import Poll, Contestant
-from .models import Vote
+from .models import Vote, VoterCode
 
 
 class VoteSerializer(serializers.ModelSerializer):
@@ -35,3 +35,7 @@ class VoteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return super().create(validated_data)
+
+
+class VoterCodeSerializer(serializers.ModelSerializer):
+    pass

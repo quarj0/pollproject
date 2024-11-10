@@ -16,8 +16,7 @@ class Poll(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     poll_type = models.CharField(max_length=20, choices=POLL_TYPES)
-    expected_voters = models.PositiveIntegerField(
-        null=True, blank=True)
+    expected_voters = models.PositiveIntegerField(null=True, blank=True)
     voting_fee = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, default=0)
     setup_fee = models.PositiveIntegerField(null=True, blank=True, default=0)
@@ -49,13 +48,10 @@ class Contestant(models.Model):
             else:
                 code = (name_parts[0][:1] + name_parts[1]
                         [:1] + name_parts[2][:1]).upper()
-
             poll_id_code = str(self.poll.id)
             self.nominee_code = f"{code}{poll_id_code}"
-
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"
-
 

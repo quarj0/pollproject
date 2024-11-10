@@ -32,7 +32,7 @@ class VoteView(APIView):
                     Contestant, nominee_code=nominee_code, poll=poll)
             else:
                 contestant = get_object_or_404(
-                    Contestant, id=contestant_id, poll=poll)
+                    Contestant, id=contestant_id, poll=poll, category=contestant.category)
 
             # Check if the user has already voted for this contestant
             existing_vote = Vote.objects.filter(

@@ -1,3 +1,5 @@
+import csv
+from django.http import HttpResponse
 import requests
 from rest_framework import status, generics
 from rest_framework.response import Response
@@ -6,7 +8,10 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
+from django.utils.crypto import get_random_string
+import string
 
+from vote.models import VoterCode
 from .models import Poll
 from .serializers import PollSerializer, UpdatePollSerializer
 
@@ -21,6 +26,7 @@ class PollCreateView(APIView):
     """
 
     def post(self, request):
+        # Handle poll creation via serializer
         serializer = PollSerializer(
             data=request.data, context={'request': request})
 
@@ -28,18 +34,22 @@ class PollCreateView(APIView):
             poll = serializer.save()
 
             ussd_code = f"*1398*{poll.id}#"
-
             short_url = self.generate_bitly_url(poll.id, request)
 
             if poll.poll_type == Poll.CREATOR_PAY:
                 if poll.setup_fee:
                     payment_link = self.create_payment_link(
                         request.user, poll.setup_fee, poll.id)
+
+                    if poll.expected_voters:
+                        self.generate_voter_codes(poll)
+
                     return Response({
                         "poll_id": poll.id,
                         "short_url": short_url,
                         "ussd_code": ussd_code,
                         "payment_link": payment_link,
+                        "download_voter_codes": reverse('download_voter_codes', args=[poll.id]),
                         "message": "Poll created successfully. Please complete payment to activate the poll."
                     }, status=status.HTTP_201_CREATED)
                 else:
@@ -52,10 +62,29 @@ class PollCreateView(APIView):
                 "poll_id": poll.id,
                 "short_url": short_url,
                 "ussd_code": ussd_code,
-                "message": "Poll created successfully and is now active. Share the link and USSD code."
+                "message": "Poll created successfully and is now active."
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def generate_voter_codes(self, poll):
+        """
+        Generate a number of unique voter codes for a given poll based on expected voters.
+        """
+        # Ensure the poll has expected voters set
+        if not poll.expected_voters:
+            return f"Poll '{poll.title}' does not have expected voters set."
+
+        # Create the required number of unique voter codes based on expected voters
+        for _ in range(poll.expected_voters):
+            # Generate a random 8-character alphanumeric code
+            code = get_random_string(
+                length=8, allowed_chars=string.ascii_uppercase + string.digits)
+
+            # Create and save a new VoterCode instance
+            VoterCode.objects.create(poll=poll, code=code)
+
+        return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
 
     def generate_bitly_url(self, poll_id, request):
         """
@@ -122,12 +151,12 @@ class PollCreateView(APIView):
                                  response_data.get('message')}")
                     return None
             else:
-                logger.error(f"Failed to connect to Paystack. Status Code: {
+                logger.error(f"Failed to connect to payment gateway. Status Code: {
                              response.status_code}")
                 return None
 
         except requests.RequestException as e:
-            logger.error(f"Exception during Paystack initialization: {e}")
+            logger.error(f"Exception during payment gateway initialization: {e}")
             return None
 
 
@@ -170,3 +199,30 @@ class DeletePollView(APIView):
             return Response({"detail": "All polls deleted."}, status=status.HTTP_200_OK)
 
 
+class DownloadVoterCodesView(APIView):
+    """
+    View to download the voter codes for a specific poll as a CSV file.
+    """
+
+    def get(self, request, poll_id):
+        poll = get_object_or_404(Poll, id=poll_id)
+
+        # Check if the poll has any voter codes
+        voter_codes = VoterCode.objects.filter(poll=poll, used=False)
+
+        if not voter_codes:
+            return Response({"error": "No voter codes available for this poll."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create a CSV file in memory
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="voter_codes_{
+            poll_id}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Voter Code', 'Used'])
+
+        # Write each voter code to the CSV
+        for voter_code in voter_codes:
+            writer.writerow([voter_code.code, voter_code.used])
+
+        return response
