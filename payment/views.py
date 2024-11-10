@@ -1,5 +1,4 @@
 import logging
-import time
 import requests
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -64,7 +63,7 @@ class VerifyPaymentView(APIView):
                     poll.save()
 
                 if transaction.transaction_type == 'vote':
-                    return Response({"message": "Payment verified and vote cast."}, status=status.HTTP_200_OK)
+                    return Response({"message": "Payment verified and vote recorded."}, status=status.HTTP_200_OK)
                 
                 return Response({"message": "Payment verified and poll activated."}, status=status.HTTP_200_OK)
             else:

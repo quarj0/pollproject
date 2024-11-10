@@ -77,9 +77,8 @@ class PollCreateView(APIView):
 
         # Create the required number of unique voter codes based on expected voters
         for _ in range(poll.expected_voters):
-            # Generate a random 8-character alphanumeric code
             code = get_random_string(
-                length=8, allowed_chars=string.ascii_uppercase + string.digits)
+                length=5, allowed_chars=string.ascii_uppercase + string.digits)
 
             # Create and save a new VoterCode instance
             VoterCode.objects.create(poll=poll, code=code)
