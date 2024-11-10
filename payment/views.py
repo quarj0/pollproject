@@ -63,6 +63,9 @@ class VerifyPaymentView(APIView):
                     poll.active = True
                     poll.save()
 
+                if transaction.transaction_type == 'vote':
+                    return Response({"message": "Payment verified and vote cast."}, status=status.HTTP_200_OK)
+                
                 return Response({"message": "Payment verified and poll activated."}, status=status.HTTP_200_OK)
             else:
                 logger.error(f"Paystack verification failed: {response_data}")

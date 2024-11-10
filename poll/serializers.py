@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from .models import Poll, Contestant, Vote
+from .models import Poll, Contestant
 
 
 class ContestantSerializer(serializers.ModelSerializer):
@@ -211,39 +211,3 @@ class UpdatePollSerializer(serializers.ModelSerializer):
 
         return instance
 
-
-class VoteSerializer(serializers.ModelSerializer):
-    poll = serializers.PrimaryKeyRelatedField(queryset=Poll.objects.all())
-    contestant = serializers.PrimaryKeyRelatedField(
-        queryset=Contestant.objects.all())
-
-    class Meta:
-        model = Vote
-        fields = [
-            'id', 'poll', 'contestant', 'number_of_votes', 'created_at'
-        ]
-        read_only_fields = ['created_at']
-
-    def validate(self, data):
-        poll = data['poll']
-        contestant = data['contestant']
-
-        if not poll.active:
-            raise serializers.ValidationError("Poll is not active.")
-
-        if timezone.now() < poll.start_time:
-            raise serializers.ValidationError(
-                "Voting has not started for this poll.")
-
-        if timezone.now() > poll.end_time:
-            raise serializers.ValidationError(
-                "Voting has ended for this poll.")
-
-        if contestant.poll != poll:
-            raise serializers.ValidationError(
-                "Contestant does not belong to the selected poll.")
-
-        return data
-
-    def create(self, validated_data):
-        return super().create(validated_data)

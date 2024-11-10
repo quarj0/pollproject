@@ -97,7 +97,7 @@ class PollCreateView(APIView):
         payment_data = {
             "email": user.email,
             "amount": int(amount * 100),
-            "reference": f"poll-{poll_id}-poll_activation",
+            "reference": f"poll_activation",
         }
 
         headers = {
@@ -168,3 +168,5 @@ class DeletePollView(APIView):
             polls = Poll.objects.all()
             polls.delete()
             return Response({"detail": "All polls deleted."}, status=status.HTTP_200_OK)
+
+
