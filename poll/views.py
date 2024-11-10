@@ -97,7 +97,7 @@ class PollCreateView(APIView):
         payment_data = {
             "email": user.email,
             "amount": int(amount * 100),
-            "reference": f"poll_activation",
+            "reference": f"poll-{poll_id}-activation",
         }
 
         headers = {

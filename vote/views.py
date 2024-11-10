@@ -19,14 +19,13 @@ class VoteView(APIView):
         contestant_id = request.data.get("contestant_id")
         num_votes = int(request.data.get("number_of_votes", 1))
 
-        # Creator-Pay Poll: Require either nominee_code or contestant_id
+        # Identify contestant based on poll type and input data
         if poll.poll_type == Poll.CREATOR_PAY:
             if not nominee_code and not contestant_id:
                 return Response(
                     {"error": "Provide either nominee_code or contestant_id for creator-pay polls."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
             # Fetch contestant using nominee_code or contestant_id
             if nominee_code:
                 contestant = get_object_or_404(
@@ -44,16 +43,25 @@ class VoteView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Prepare data for serializer and validate
+            serializer = VoteSerializer(data={
+                'poll': poll.id,
+                'contestant': contestant.id,
+                'number_of_votes': 1
+            })
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
             # Register a single vote
-            Vote.objects.create(poll=poll, contestant=contestant)
+            serializer.save()
             return Response({"message": "Vote cast successfully."}, status=status.HTTP_201_CREATED)
 
-        # Voter-Pay Poll: Web requires number_of_votes only; USSD requires nominee_code and number_of_votes
         elif poll.poll_type == Poll.VOTERS_PAY:
-            if nominee_code:  # USSD
+            # Ensure correct inputs: nominee_code for USSD, contestant_id for web
+            if nominee_code:
                 contestant = get_object_or_404(
                     Contestant, nominee_code=nominee_code, poll=poll)
-            elif contestant_id:  # Web
+            elif contestant_id:
                 contestant = get_object_or_404(
                     Contestant, id=contestant_id, poll=poll)
             else:
@@ -62,7 +70,16 @@ class VoteView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Calculate the total payment amount
+            # Prepare data for serializer and validate
+            serializer = VoteSerializer(data={
+                'poll': poll.id,
+                'contestant': contestant.id,
+                'number_of_votes': num_votes
+            })
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Calculate payment amount
             amount_due = num_votes * poll.voting_fee
             vote_reference = f"vote-{poll.id}-{contestant.id}"
 
@@ -84,7 +101,6 @@ class VoteView(APIView):
                     "email": request.data.get("email", "test@example.com"),
                     "amount": amount_due * 100,  # Paystack expects amount in kobo
                     "reference": vote_reference,
-                    # "callback_url": "https://your-callback-url.com/"  # Uncomment when ready
                 }
 
                 try:
