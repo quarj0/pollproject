@@ -3,14 +3,19 @@ from poll.models import Poll, Contestant
 
 
 class Vote(models.Model):
-    poll = models.ForeignKey(
-        Poll, on_delete=models.CASCADE, related_name="votes")
-    contestant = models.ForeignKey(
-        Contestant, on_delete=models.CASCADE, related_name="votes")
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="votes")
+    contestant = models.ForeignKey( Contestant, on_delete=models.CASCADE, related_name="votes")
     number_of_votes = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
-    code = models.CharField(max_length=20, blank=True, null=True)
-    used = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.number_of_votes} votes for {self.contestant.name}"
+
+
+class VoterCode(models.Model):
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="voter_codes")
+    code = models.CharField(max_length=20, unique=True)
+    used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Voter Code: {self.code} for Poll: {self.poll.title}"

@@ -11,7 +11,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.crypto import get_random_string
 import string
 
-from vote.models import Vote
+from vote.models import VoterCode
 from .models import Poll
 from .serializers import PollSerializer, UpdatePollSerializer
 
@@ -80,9 +80,11 @@ class PollCreateView(APIView):
             code = get_random_string(
                 length=5, allowed_chars=string.ascii_uppercase + string.digits)
 
-            Vote.objects.create(poll=poll, code=code)
+            # Create a vote entry for tracking purposes (code is not tied to a contestant here)
+            VoterCode.objects.create(poll=poll, code=code)
 
         return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
+
 
     def generate_bitly_url(self, poll_id, request):
         """
@@ -137,7 +139,6 @@ class PollCreateView(APIView):
                 "https://api.paystack.co/transaction/initialize",
                 json=payment_data,
                 headers=headers,
-                timeout=10,
             )
 
             if response.status_code == 200:
@@ -207,7 +208,7 @@ class DownloadVoterCodesView(APIView):
         poll = get_object_or_404(Poll, id=poll_id)
 
         # Check if the poll has any voter codes
-        voter_codes = Vote.objects.filter(poll=poll, used=False)
+        voter_codes = VoterCode.objects.filter(poll=poll, used=False)
 
         if not voter_codes:
             return Response({"error": "No voter codes available for this poll."}, status=status.HTTP_404_NOT_FOUND)
