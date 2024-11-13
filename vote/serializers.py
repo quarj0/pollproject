@@ -19,19 +19,32 @@ class VoteSerializer(serializers.ModelSerializer):
     def validate(self, data):
         poll = data.get('poll')
         contestant = data.get('contestant')
-
+        number_of_votes = data.get('number_of_votes')
         # Validate poll status and voting period
         if poll:
             if not poll.active:
                 raise serializers.ValidationError("Poll is not active.")
+
             if timezone.now() < poll.start_time:
                 raise serializers.ValidationError("Voting has not started.")
+
             if timezone.now() > poll.end_time:
                 raise serializers.ValidationError("Voting has ended.")
 
-        # Ensure contestant belongs to the poll
+
+        # Validate number of votes
+        if number_of_votes < 1:
+            raise serializers.ValidationError(
+                "Number of votes must be at least 1.")
+
+        # Validate contestant and nominee code relationship to poll
         if contestant and contestant.poll != poll:
-            raise serializers.ValidationError("Contestant does not belong to this poll.")
+            raise serializers.ValidationError(
+                "Contestant does not belong to this poll.")
+
+        if contestant and contestant.poll != poll:
+            raise serializers.ValidationError(
+                "Contestant does not belong to this poll.")
 
         return data
 
@@ -63,9 +76,11 @@ class VoterCodeSerializer(serializers.ModelSerializer):
 
         # For creator-pay polls: validate expected voter limit
         if poll.poll_type == Poll.CREATOR_PAY:
-            used_codes_count = VoterCode.objects.filter(poll=poll, used=True).count()
+            used_codes_count = VoterCode.objects.filter(
+                poll=poll, used=True).count()
             if used_codes_count >= poll.expected_voters:
-                raise serializers.ValidationError( "The maximum number of votes has been reached for this poll.")
+                raise serializers.ValidationError(
+                    "The maximum number of votes has been reached for this poll.")
 
         return data
 
@@ -79,7 +94,3 @@ class VoterCodeSerializer(serializers.ModelSerializer):
         voter_code.save()
 
         return voter_code
-
-
-
-

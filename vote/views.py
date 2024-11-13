@@ -1,3 +1,5 @@
+import uuid
+from django.http import Http404
 import requests
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -85,39 +87,54 @@ class VoteView(APIView):
         return voter_code
 
     def handle_voter_pay(self, poll, nominee_code, contestant_id, num_votes):
-        # Fetch contestant
-        contestant = self.get_contestant(poll, nominee_code, contestant_id)
+        # Validate contestant and nominee code
+        if not nominee_code and not contestant_id:
+            return Response({"error": "Either nominee_code or contestant_id must be provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate vote data
+        # Fetch contestant with error handling
+        try:
+            contestant = self.get_contestant(poll, nominee_code, contestant_id)
+        except Http404:
+            return Response({"error": "Contestant not found with provided nominee code or contestant ID."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate vote data with serializer
         serializer = VoteSerializer(data={
             'poll': poll.id,
             'contestant': contestant.id,
-            'number_of_votes': num_votes
+            'number_of_votes': num_votes,
         })
 
+        # Check serializer validity
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate amount and generate payment link
+        # Calculate amount and generate unique payment reference
         vote_price = poll.voting_fee
         amount_to_pay = vote_price * num_votes
-        payment_reference = f"vote-{poll.id}"
+        # Unique reference with UUID
+        unique_reference = f"vote-{poll.id}-{
+            contestant.id}-{uuid.uuid4().hex[:8]}"
+
+        # Attempt to generate payment link
         payment_link = self.generate_payment_link(
-            amount_to_pay, payment_reference)
+            amount_to_pay, unique_reference)
+        
+        transaction_type = self.get_transaction_type(poll)
 
+        # Verify that the payment link was created
         if not payment_link:
-            return Response({"error": "Unable to generate payment link."},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Unable to generate payment link."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Create a transaction record
+        # Record the transaction as pending
         Transaction.objects.create(
             poll=poll,
             amount=amount_to_pay,
-            payment_reference=payment_reference,
+            payment_reference=unique_reference,
+            transaction_type=transaction_type,
             success=False
         )
 
-        # Return the payment link
+        # Return the payment link for the user to proceed with payment
         return Response({"payment_url": payment_link}, status=status.HTTP_200_OK)
 
     def generate_payment_link(self, amount, reference):
@@ -127,13 +144,16 @@ class VoteView(APIView):
             "Content-Type": "application/json"
         }
         data = {
+            "email": "anonymousvoter@example.com",
             "amount": int(amount * 100),
             "reference": reference
         }
 
         response = requests.post(url, json=data, headers=headers)
+        print(response.json())
+
         if response.status_code == 200:
-            return response.json().get('data').get('authorization_url')
+            return response.json().get('data', {}).get('authorization_url')
         return None
 
     def get_contestant(self, poll, nominee_code, contestant_id):
@@ -144,39 +164,5 @@ class VoteView(APIView):
         raise ValueError(
             "Either nominee_code or contestant_id must be provided.")
 
-
-class VerifyPaymentCallback(APIView):
-    def get(self, request):
-        payment_reference = request.GET.get("reference")
-        if not payment_reference:
-            return Response({"error": "Payment reference missing."}, status=status.HTTP_400_BAD_REQUEST)
-
-        url = f"https://api.paystack.co/transaction/verify/{payment_reference}"
-        headers = {
-            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"
-        }
-        response = requests.get(url, headers=headers)
-
-        if response.status_code == 200 and response.json().get('data').get('status') == "success":
-            Transaction.objects.filter(
-                payment_reference=payment_reference).update(success=True)
-
-            # Check if transaction is for voting
-            if "vote" in payment_reference:
-                poll_id, contestant_id = payment_reference.split("-")[1:]
-                poll = get_object_or_404(Poll, id=poll_id)
-                contestant = get_object_or_404(
-                    Contestant, id=contestant_id, poll=poll)
-
-                # Create vote after payment is verified
-                Vote.objects.create(
-                    poll=poll,
-                    contestant=contestant,
-                    number_of_votes=Transaction.objects.get(
-                        payment_reference=payment_reference).amount // poll.voting_fee
-                )
-                return Response({"message": "Vote recorded after successful payment."}, status=status.HTTP_201_CREATED)
-
-            return Response({"message": "Payment verified successfully."}, status=status.HTTP_200_OK)
-
-        return Response({"error": "Payment verification failed."}, status=status.HTTP_400_BAD_REQUEST)
+    def get_transaction_type(self, poll):
+        return 'poll_activation' if poll.poll_type == Poll.CREATOR_PAY else 'vote'

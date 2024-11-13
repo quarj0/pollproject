@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 import requests
 from django.conf import settings
@@ -7,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from poll.models import Contestant, Poll
 from .models import Transaction
+from vote.serializers import VoteSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +80,11 @@ class VerifyPaymentView(APIView):
             elif "vote" in reference:
                 contestant_id = reference_parts[2]
                 poll = get_object_or_404(Poll, id=poll_id)
-                contestant = get_object_or_404(
-                    Contestant, id=contestant_id, poll=poll)
+                contestant = get_object_or_404(Contestant, id=contestant_id, poll=poll)
                 transaction_type = get_transaction_type(poll)
+
+                # Determine number of votes based on the amount paid
+                vote_count = Decimal(amount_paid) // poll.voting_fee
 
                 # Create or update the transaction
                 if not transaction:
@@ -88,14 +92,29 @@ class VerifyPaymentView(APIView):
                         payment_reference=reference,
                         transaction_type=transaction_type,
                         amount=amount_paid,
-                        success=False,
+                        success=True,
                         poll=poll
                     )
                 else:
                     transaction.success = True
                     transaction.save()
 
-                return Response({"message": "Payment verified for voting."}, status=status.HTTP_200_OK)
+                # Record the vote using VoterSerializer
+                vote_data = {
+                    'poll': poll.id,
+                    'contestant': contestant.id,
+                    'number_of_votes': vote_count,
+                }
+                voter_serializer = VoteSerializer(data=vote_data)
+
+                if voter_serializer.is_valid():
+                    voter_serializer.save()
+                    return Response({"message": "Vote recorded."}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(voter_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+            return Response({"message": "Payment verified for voting."}, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Exception during Paystack verification: {e}")

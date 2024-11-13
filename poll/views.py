@@ -90,7 +90,7 @@ class PollCreateView(APIView):
         """
         Generate a shortened URL using Bitly API with dynamically built URL
         """
-        bitly_url = "https://api-ssl.bitly.com/v4/shorten"
+        bitly_url = "https://api-ssl.bitly.com/v4/bitlinks"
         headers = {
             "Authorization": f"Bearer {settings.BITLY_ACCESS_TOKEN}",
             "Content-Type": "application/json",
@@ -99,9 +99,11 @@ class PollCreateView(APIView):
         site = get_current_site(request)
         long_url = f"http://{site.domain}{
             reverse('poll_detail', args=[poll_id])}"
+        title = Poll.objects.get(id=poll_id).title
 
         payload = {
             "long_url": long_url,
+            "title": title,
         }
 
         try:
@@ -146,12 +148,10 @@ class PollCreateView(APIView):
                 if response_data.get("status"):
                     return response_data["data"]["authorization_url"]
                 else:
-                    logger.error(f"Paystack error: {
-                                 response_data.get('message')}")
+                    logger.error(f"Paystack error: {response_data.get('message')}")
                     return None
             else:
-                logger.error(f"Failed to connect to payment gateway. Status Code: {
-                             response.status_code}")
+                logger.error(f"Failed to connect to payment gateway. Status Code: {response.status_code}")
                 return None
 
         except requests.RequestException as e:
