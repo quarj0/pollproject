@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from authentication.models import User
 from poll.models import Poll
 from django.core.exceptions import ValidationError
 
@@ -8,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.exceptions import ValidationError
 from poll.models import Poll
-from django.contrib.auth.models import User
 
 
 class Transaction(models.Model):

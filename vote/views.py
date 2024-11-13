@@ -111,7 +111,6 @@ class VoteView(APIView):
         # Calculate amount and generate unique payment reference
         vote_price = poll.voting_fee
         amount_to_pay = vote_price * num_votes
-        # Unique reference with UUID
         unique_reference = f"vote-{poll.id}-{
             contestant.id}-{uuid.uuid4().hex[:8]}"
 

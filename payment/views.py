@@ -1,6 +1,8 @@
 from decimal import Decimal
 import logging
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -39,8 +41,14 @@ class VerifyPaymentView(APIView):
             return Response({"message": "Transaction already verified."}, status=status.HTTP_200_OK)
 
         try:
+            # Setup a session with retry
+            session = requests.Session()
+            retries = Retry(total=3, backoff_factor=0.3,
+                            status_forcelist=[500, 502, 503, 504])
+            session.mount("https://", HTTPAdapter(max_retries=retries))
+
             # Send verification request to Paystack
-            response = requests.get(url, headers=headers)
+            response = session.get(url, headers=headers)
             response_data = response.json()
 
             # Ensure response is successful
@@ -48,8 +56,9 @@ class VerifyPaymentView(APIView):
                 logger.error(f"Paystack verification failed: {response_data}")
                 return Response({"error": "Payment verification failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-            
-            amount_paid = response_data['data']['amount'] / 100
+            # Convert amount_paid to Decimal
+            amount_paid = Decimal(
+                response_data['data']['amount']) / Decimal(100)
             reference_parts = reference.split("-")
             poll_id = reference_parts[1]
 
@@ -80,11 +89,12 @@ class VerifyPaymentView(APIView):
             elif "vote" in reference:
                 contestant_id = reference_parts[2]
                 poll = get_object_or_404(Poll, id=poll_id)
-                contestant = get_object_or_404(Contestant, id=contestant_id, poll=poll)
+                contestant = get_object_or_404(
+                    Contestant, id=contestant_id, poll=poll)
                 transaction_type = get_transaction_type(poll)
 
-                # Determine number of votes based on the amount paid
-                vote_count = Decimal(amount_paid) // poll.voting_fee
+                # Ensure poll.voting_fee is also Decimal
+                vote_count = amount_paid // Decimal(poll.voting_fee)
 
                 # Create or update the transaction
                 if not transaction:
@@ -112,7 +122,6 @@ class VerifyPaymentView(APIView):
                     return Response({"message": "Vote recorded."}, status=status.HTTP_201_CREATED)
                 else:
                     return Response(voter_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
             return Response({"message": "Payment verified for voting."}, status=status.HTTP_200_OK)
 
@@ -150,7 +159,8 @@ class PaymentLinkView(APIView):
     def get(self, request, poll_id):
         poll = get_object_or_404(Poll, id=poll_id)
         transaction_type = get_transaction_type(poll)
-        amount = poll.setup_fee if poll.poll_type == Poll.CREATOR_PAY else poll.voting_fee
+        amount = Decimal(poll.setup_fee if poll.poll_type ==
+                         Poll.CREATOR_PAY else poll.voting_fee)
 
         # Check if a successful payment transaction already exists
         existing_transaction = Transaction.objects.filter(
@@ -172,7 +182,8 @@ class PaymentLinkView(APIView):
             reference = pending_transaction.payment_reference
         else:
             # Create a unique reference for a new transaction
-            reference = f"poll-{poll_id}-activation" if poll.poll_type == Poll.CREATOR_PAY else f"vote-{poll_id}"
+            reference = f"poll-{
+                poll_id}-activation" if poll.poll_type == Poll.CREATOR_PAY else f"vote-{poll_id}"
             pending_transaction = Transaction.objects.create(
                 user_id=request.user.id,
                 poll_id=poll_id,
@@ -194,7 +205,12 @@ class PaymentLinkView(APIView):
         }
 
         try:
-            response = requests.post(
+            # Setup a session with retry
+            session = requests.Session()
+            session.mount("https://", HTTPAdapter(max_retries=Retry(total=3,
+                          backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])))
+
+            response = session.post(
                 "https://api.paystack.co/transaction/initialize",
                 json=payment_data,
                 headers=headers,
@@ -211,15 +227,12 @@ class PaymentLinkView(APIView):
                 else:
                     logger.error(f"Paystack error: {
                                  response_data.get('message')}")
-                    return Response({"error": "An error occurred during payment link generation."},
-                                    status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 logger.error(f"Failed to connect to Paystack. Status Code: {
                              response.status_code}")
-                return Response({"error": "Failed to connect to payment gateway."},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Failed to connect to payment gateway."}, status=status.HTTP_400_BAD_REQUEST)
 
         except requests.RequestException as e:
             logger.error(f"Exception during Paystack initialization: {e}")
-            return Response({"error": "An error occurred during payment link generation."},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
