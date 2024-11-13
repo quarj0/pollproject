@@ -127,12 +127,23 @@ class UpdatePollSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        if data['start_time'] >= data['end_time']:
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+
+        if start_time and end_time:
+            if start_time >= end_time:
+                raise serializers.ValidationError("End time must be after start time.")
+            if start_time < timezone.now():
+                raise serializers.ValidationError("Start time must be in the future.")
+            
+        if 'end_time' in data and self.instance.active and data['end_time'] < self.instance.end_time:
             raise serializers.ValidationError(
-                "End time must be after start time.")
-        if data['start_time'] < timezone.now():
-            raise serializers.ValidationError(
-                "Start time must be in the future.")
+                "End time can only be extended, not reduced, for an active poll.")
+
+        if self.instance:
+            if self.instance.end_time < timezone.now():
+                raise ValidationError(
+                    "Voting has ended; the poll cannot be modified.")
 
         poll_type = data.get('poll_type')
         if poll_type == Poll.VOTERS_PAY:
@@ -178,6 +189,13 @@ class UpdatePollSerializer(serializers.ModelSerializer):
                     raise ValidationError(
                         f"{field} cannot be modified for an active poll."
                     )
+
+            if 'start_time' in validated_data and validated_data['start_time'] != instance.start_time:
+                raise ValidationError(
+                    "Start time cannot be modified for an active poll.")
+
+            
+        
 
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get(
