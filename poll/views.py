@@ -97,8 +97,9 @@ class PollCreateView(APIView):
         }
 
         site = get_current_site(request)
-        long_url = f"http://{site.domain}{
-            reverse('poll_detail', args=[poll_id])}"
+        
+        long_url = f"http://{site.domain}{reverse('poll-detail', args=[poll_id])}"
+
         title = Poll.objects.get(id=poll_id).title
 
         payload = {

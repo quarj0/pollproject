@@ -54,6 +54,7 @@ class PollSerializer(serializers.ModelSerializer):
             if data.get('expected_voters') is not None:
                 raise serializers.ValidationError(
                     "Expected voters should not be set for voters-pay polls.")
+                
         elif poll_type == Poll.CREATOR_PAY:
             if data.get('voting_fee') is not None:
                 raise serializers.ValidationError(
@@ -63,6 +64,14 @@ class PollSerializer(serializers.ModelSerializer):
                     "Expected voters is required for creator-pay polls.")
             data['setup_fee'] = self.calculate_setup_fee(
                 data['expected_voters'])
+            
+            if data.get('expected_voters') < 20:
+                raise serializers.ValidationError(
+                    "Expected voters should be at least 20 for creator-pay polls.")
+                
+            if data.get('expected_voters') > 200:
+                raise serializers.ValidationError(
+                    "Expected voters cannot exceed 200 for creator-pay polls.")
 
         return data
 
