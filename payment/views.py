@@ -1,16 +1,25 @@
+import hmac
+import hashlib
+import json
 from decimal import Decimal
 import logging
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.views import View
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from poll.models import Contestant, Poll
-from .models import Transaction
+from django.utils import timezone
+
 from vote.serializers import VoteSerializer
+from .models import Withdrawal, Poll, Transaction
+from poll.models import Contestant
 
 logger = logging.getLogger(__name__)
 
@@ -236,3 +245,107 @@ class PaymentLinkView(APIView):
         except requests.RequestException as e:
             logger.error(f"Exception during Paystack initialization: {e}")
             return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class InitiateWithdrawalView(View):
+    def post(self, request, poll_id):
+        poll = get_object_or_404(Poll, id=poll_id, creator=request.user)
+
+        # Check if the poll has ended and is a voter-pay poll
+        if poll.POLL_TYPES[poll.poll_type][1] != 'voter-pay' or not poll.has_ended():
+            return JsonResponse({"error": "Withdrawal not allowed for this poll."}, status=400)
+
+        # Calculate the withdrawal amount
+        vote_count = poll.votes.count()
+        withdrawal_amount = Decimal(
+            poll.vote_fee * vote_count * Decimal('0.6'))
+
+        # Check for existing pending or successful withdrawal for this poll
+        existing_withdrawal = Withdrawal.objects.filter(poll=poll, creator=request.user, status__in=['pending', 'successful']
+                                                        ).first()
+
+        if existing_withdrawal:
+            if existing_withdrawal.status == 'pending':
+                return JsonResponse({"message": "A withdrawal is already pending. Please wait for confirmation."})
+            else:
+                return JsonResponse({"message": "A withdrawal for this poll has already been successfully processed."})
+
+        # Create a unique reference for the withdrawal
+        reference = f"{
+            poll_id}-{request.user.id}-{Withdrawal.objects.count() + 1}"
+
+        # Create a new withdrawal record with a pending status
+        withdrawal = Withdrawal.objects.create(
+            poll=poll,
+            creator=request.user,
+            amount=withdrawal_amount,
+            account_number=request.user.account_number,
+            reference=reference,
+            status='pending'
+        )
+
+        # Initiate transfer via Paystack
+        headers = {
+            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "source": "balance",
+            "reason": f"Withdrawal for poll {poll.title}",
+            "amount": int(withdrawal_amount * 100),
+            "recipient": withdrawal.account_number,
+            "reference": reference
+        }
+        response = requests.post(
+            "https://api.paystack.co/transfer", json=data, headers=headers)
+        response_data = response.json()
+
+        # Handle Paystack response
+        if response.status_code == 200 and response_data.get("status") == "success":
+            return JsonResponse({"message": "Withdrawal initiated successfully."})
+        else:
+            withdrawal.status = 'failed'
+            withdrawal.save()
+            return JsonResponse({"error": "Failed to initiate withdrawal. Please try again later."}, status=500)
+
+    def has_ended(self):
+        return self.end_time < timezone.now()
+
+
+@csrf_exempt
+def paystack_webhook(request):
+    # Retrieve the X-Paystack-Signature header
+    paystack_signature = request.headers.get('X-Paystack-Signature')
+
+    # Recompute the hash with the secret key to verify
+    payload_body = request.body
+    secret_key = settings.PAYSTACK_SECRET_KEY.encode('utf-8')
+    computed_hash = hmac.new(secret_key, payload_body,
+                             hashlib.sha512).hexdigest()
+
+    # Check if the computed hash matches the Paystack signature
+    if computed_hash != paystack_signature:
+        return JsonResponse({"status": "error", "message": "Invalid signature"}, status=400)
+
+    # Proceed with event handling if signature is valid
+    payload = json.loads(payload_body)
+    event = payload.get('event')
+
+    if event == 'transfer.success':
+        reference = payload.get('data', {}).get('reference')
+        try:
+            withdrawal = Withdrawal.objects.get(reference=reference)
+            withdrawal.status = 'successful'
+            withdrawal.save()
+        except Withdrawal.DoesNotExist:
+            pass
+    elif event == 'transfer.failed':
+        reference = payload.get('data', {}).get('reference')
+        try:
+            withdrawal = Withdrawal.objects.get(reference=reference)
+            withdrawal.status = 'failed'
+            withdrawal.save()
+        except Withdrawal.DoesNotExist:
+            pass
+
+    return JsonResponse({"status": "success"})
