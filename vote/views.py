@@ -1,3 +1,4 @@
+from django.db.models import Count
 import uuid
 from django.http import Http404
 import requests
@@ -9,7 +10,7 @@ from rest_framework import status
 from django.db import transaction
 from .serializers import VoteSerializer
 from poll.models import Poll, Contestant
-from .models import Vote, VoterCode
+from .models import VoterCode
 from payment.models import Transaction
 import logging
 
@@ -165,3 +166,12 @@ class VoteView(APIView):
 
     def get_transaction_type(self, poll):
         return 'poll_activation' if poll.poll_type == Poll.CREATOR_PAY else 'vote'
+
+
+class VoteResultView(APIView):
+    def get(self, request, poll_id):
+        poll = get_object_or_404(Poll, id=poll_id)
+        results = Contestant.objects.filter(poll=poll).annotate(vote_count=Count('votes')).values(
+            'nominee_code', 'vote_count'
+        )
+        return Response(results, status=status.HTTP_200_OK)
