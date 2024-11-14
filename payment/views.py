@@ -18,8 +18,9 @@ from rest_framework import status
 from django.utils import timezone
 
 from vote.serializers import VoteSerializer
-from .models import Withdrawal, Poll, Transaction
-from poll.models import Contestant
+from .models import Withdrawal, Transaction
+from poll.models import Contestant, Poll
+
 
 logger = logging.getLogger(__name__)
 

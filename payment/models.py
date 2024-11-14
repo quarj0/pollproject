@@ -4,11 +4,6 @@ from poll.models import Poll
 from django.core.exceptions import ValidationError
 
 
-from django.db import models
-from django.core.exceptions import ValidationError
-from poll.models import Poll
-
-
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
         ('poll_activation', 'Poll Activation'),
@@ -41,10 +36,10 @@ class Transaction(models.Model):
 class Withdrawal(models.Model):
 
     STATUS = [
-            ('pending', 'Pending'),
-            ('successful','Successful'),
-            ('failed', 'Failed')
-            ]
+        ('pending', 'Pending'),
+        ('successful', 'Successful'),
+        ('failed', 'Failed')
+    ]
 
     poll = models.ForeignKey(
         "Poll", on_delete=models.CASCADE, related_name="withdrawals")
