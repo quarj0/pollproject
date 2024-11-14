@@ -51,9 +51,11 @@ class PollSerializer(serializers.ModelSerializer):
             if data.get('voting_fee') is None or data['voting_fee'] <= 0:
                 raise serializers.ValidationError(
                     "Voting fee is required for voters-pay polls.")
+                
             if data.get('expected_voters') is not None:
                 raise serializers.ValidationError(
                     "Expected voters should not be set for voters-pay polls.")
+            
                 
         elif poll_type == Poll.CREATOR_PAY:
             if data.get('voting_fee') is not None:

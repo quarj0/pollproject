@@ -48,8 +48,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'authentication',
     'channels',
-    'payment',
     'poll',
+    'payment',
     'vote',
 
 ]

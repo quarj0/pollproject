@@ -9,12 +9,12 @@ from urllib3.util.retry import Retry
 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from django.views import View
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 
 from vote.serializers import VoteSerializer
@@ -248,74 +248,81 @@ class PaymentLinkView(APIView):
             return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class InitiateWithdrawalView(View):
+class InitiateWithdrawalView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, poll_id):
         poll = get_object_or_404(Poll, id=poll_id, creator=request.user)
 
-        # Check if the poll has ended and is a voter-pay poll
-        if poll.POLL_TYPES[poll.poll_type][1] != 'voter-pay' or not poll.has_ended():
-            return JsonResponse({"error": "Withdrawal not allowed for this poll."}, status=400)
-
-        # Calculate the withdrawal amount
+        # Calculate withdrawal amount (60% of total fees collected)
         vote_count = poll.votes.count()
-        withdrawal_amount = Decimal(
-            poll.vote_fee * vote_count * Decimal('0.6'))
+        total_amount_collected = Decimal(poll.voting_fee) * vote_count
+        amount = total_amount_collected * Decimal('0.6')
 
-        # Check for existing pending or successful withdrawal for this poll
-        existing_withdrawal = Withdrawal.objects.filter(poll=poll, creator=request.user, status__in=['pending', 'successful']
-                                                        ).first()
+        # Check for any existing pending or successful withdrawal
+        existing_withdrawal = Withdrawal.objects.filter(
+            poll=poll, creator=request.user, status__in=[
+                'pending', 'successful']
+        ).first()
 
         if existing_withdrawal:
-            if existing_withdrawal.status == 'pending':
-                return JsonResponse({"message": "A withdrawal is already pending. Please wait for confirmation."})
-            else:
-                return JsonResponse({"message": "A withdrawal for this poll has already been successfully processed."})
+            message = (
+                "A withdrawal is already pending. Please wait for confirmation."
+                if existing_withdrawal.status == 'pending'
+                else "A withdrawal for this poll has already been successfully processed."
+            )
+            return Response({"message": message}, status=400)
 
-        # Create a unique reference for the withdrawal
+        # Generate a unique reference for this withdrawal
         reference = f"{
             poll_id}-{request.user.id}-{Withdrawal.objects.count() + 1}"
 
-        # Create a new withdrawal record with a pending status
+        # Create the withdrawal entry in the database
         withdrawal = Withdrawal.objects.create(
             poll=poll,
             creator=request.user,
-            amount=withdrawal_amount,
+            amount=amount,
             account_number=request.user.account_number,
             reference=reference,
             status='pending'
         )
 
-        # Initiate transfer via Paystack
+        # Set up the Paystack request to create a transfer recipient
         headers = {
             "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
             "Content-Type": "application/json"
         }
         data = {
-            "source": "balance",
-            "reason": f"Withdrawal for poll {poll.title}",
-            "amount": int(withdrawal_amount * 100),
-            "recipient": withdrawal.account_number,
-            "reference": reference
+            "type": "mobile_money",
+            "name": request.user.username,
+            "account_number": "0551234987",
+            "bank_code": "MTN",
+            "currency": "GHS",
         }
+
         response = requests.post(
-            "https://api.paystack.co/transfer", json=data, headers=headers)
+            "https://api.paystack.co/transferrecipient", json=data, headers=headers
+        )
         response_data = response.json()
 
-        # Handle Paystack response
+        # Handle the response from Paystack for transfer recipient creation
         if response.status_code == 200 and response_data.get("status") == "success":
-            return JsonResponse({"message": "Withdrawal initiated successfully."})
+            recipient_code = response_data['data']['recipient_code']
+            # Log that recipient was created successfully, but no transfer initiated due to limitations
+            logger.info(f"Recipient created: {recipient_code}")
+            return Response({
+                "status": "Recipient created successfully. Awaiting manual verification for withdrawal."
+            })
         else:
+            # Log failure details for debugging
             withdrawal.status = 'failed'
             withdrawal.save()
-            return JsonResponse({"error": "Failed to initiate withdrawal. Please try again later."}, status=500)
-
-    def has_ended(self):
-        return self.end_time < timezone.now()
+            logger.error(f"Failed to initiate withdrawal: {response_data}")
+            return Response({"error": "Failed to initiate withdrawal. Please try again later."}, status=500)
 
 
 @csrf_exempt
 def paystack_webhook(request):
-    # Retrieve the X-Paystack-Signature header
     paystack_signature = request.headers.get('X-Paystack-Signature')
 
     # Recompute the hash with the secret key to verify
@@ -339,7 +346,8 @@ def paystack_webhook(request):
             withdrawal.status = 'successful'
             withdrawal.save()
         except Withdrawal.DoesNotExist:
-            pass
+            logger.error(f"Successful withdrawal not found: {reference}")
+            return JsonResponse({"status": "error", "message": "Withdrawal not found"}, status=404)
     elif event == 'transfer.failed':
         reference = payload.get('data', {}).get('reference')
         try:
@@ -347,6 +355,7 @@ def paystack_webhook(request):
             withdrawal.status = 'failed'
             withdrawal.save()
         except Withdrawal.DoesNotExist:
-            pass
+            logger.error(f"Failed withdrawal not found: {reference}")
+            return JsonResponse({"status": "error", "message": "Withdrawal not found"}, status=404)
 
     return JsonResponse({"status": "success"})

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
-from poll.models import Poll
 from django.core.exceptions import ValidationError
+from poll.models import Poll
 
 
 class Transaction(models.Model):
@@ -34,22 +34,20 @@ class Transaction(models.Model):
 
 
 class Withdrawal(models.Model):
-
     STATUS = [
         ('pending', 'Pending'),
         ('successful', 'Successful'),
         ('failed', 'Failed')
     ]
-
-    poll = models.ForeignKey(
-        "Poll", on_delete=models.CASCADE, related_name="withdrawals")
-    creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="withdrawals")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     account_number = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE)
     reference = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS, default='pending')
+
 
     def __str__(self):
         return f"Withdrawal of {self.amount} for {self.poll.title} by {self.creator.username}"

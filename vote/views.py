@@ -1,18 +1,23 @@
-from django.db.models import Count
+from decimal import Decimal
 import uuid
-from django.http import Http404
 import requests
+import logging
+
+from django.http import JsonResponse
+from django.db.models import Count
+from django.views import View
+from django.http import Http404
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.db import transaction
+
 from .serializers import VoteSerializer
+from .models import VoterCode, Vote
 from poll.models import Poll, Contestant
-from .models import VoterCode
 from payment.models import Transaction
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +149,7 @@ class VoteView(APIView):
             "Content-Type": "application/json"
         }
         data = {
-            "email": "anonymousvoter@example.com",
+            "email": "customer@email.com",
             "amount": int(amount * 100),
             "reference": reference
         }
@@ -166,6 +171,97 @@ class VoteView(APIView):
 
     def get_transaction_type(self, poll):
         return 'poll_activation' if poll.poll_type == Poll.CREATOR_PAY else 'vote'
+
+
+class USSDVotingView(View):
+    def post(self, request, poll_id):
+        poll = get_object_or_404(Poll, id=poll_id)
+        phone_number = request.POST.get("phone_number")
+        session_stage = request.POST.get("session_stage")
+        user_input = request.POST.get("user_input")
+
+        if session_stage == "welcome":
+            # Step 1: Display poll title and welcome message
+            message = f"Welcome to {poll.title}! Please select a category to continue."
+            
+            categories = Contestant.objects.filter(poll=poll).values_list('category', flat=True).distinct()
+            
+            options = {str(i+1): category for i, category in enumerate(categories)}
+            
+            response_data = {"message": message,"options": options, "next_stage": "select_category"}
+            return JsonResponse(response_data)
+
+        elif session_stage == "select_category":
+            # Step 2: Display contestants for the selected category
+            categories = Contestant.objects.filter(poll=poll).values_list('category', flat=True).distinct()
+           
+            category = categories[int(user_input) - 1]
+            
+            contestants = Contestant.objects.filter(poll=poll, category=category)
+
+            message = f"Category: {category}. Select a contestant:"
+            options = {str(i+1): contestant.name for i, contestant in enumerate(contestants)}
+            
+            response_data = {"message": message, "options": options,"next_stage": "select_contestant", "selected_category": category}
+            return JsonResponse(response_data)
+
+        elif session_stage == "select_contestant":
+            category = request.POST.get("selected_category")
+            contestants = Contestant.objects.filter(poll=poll, category=category)
+            contestant = contestants[int(user_input) - 1]
+
+            if poll.poll_type == 'voter-pay':
+                # For Voter-Pay Polls, ask for the number of votes
+                message = f"You selected {contestant.name}. Enter the number of votes:"
+                response_data = {
+                    "message": message, "next_stage": "enter_votes", "contestant_id": contestant.id}
+                return JsonResponse(response_data)
+
+            elif poll.poll_type == 'creator-pay':
+                # For Creator-Pay Polls, ask for voter code and validate it
+                message = f"You selected {contestant.name}. Enter your voter code to proceed:"
+                
+                response_data = {
+                    "message": message, "next_stage": "enter_voter_code", "contestant_id": contestant.id}
+                return JsonResponse(response_data)
+
+        elif session_stage == "enter_votes":
+            # Step 4 (Voter-Pay Polls): Process payment
+            votes_count = int(user_input)
+            contestant_id = request.POST.get("contestant_id")
+            contestant = get_object_or_404(Contestant, id=contestant_id)
+            amount = Decimal(poll.voting_fee) * votes_count * \
+                                100  # Convert to cents for Paystack
+
+            # Initiate payment via Paystack
+            headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
+            
+            data = {"email": "customer@email.com", "amount": int(amount)}
+            
+            response = requests.post(
+                "https://api.paystack.co/transaction/initialize", json=data, headers=headers)
+            response_data = response.json()
+
+            if response.status_code == 200 and response_data.get("status") == "success":
+                return JsonResponse({"message": "Vote payment initiated. Complete payment to confirm your votes."})
+            else:
+                return JsonResponse({"error": "Failed to initiate payment."}, status=500)
+
+        elif session_stage == "enter_voter_code":
+            # Step 4 (Creator-Pay Polls): Validate voter code and register vote
+            voter_code = user_input
+            contestant_id = request.POST.get("contestant_id")
+            contestant = get_object_or_404(Contestant, id=contestant_id)
+
+            # Verify Voter Code
+            if not VoterCode.objects.filter(code=voter_code, used=False).exists():
+                return JsonResponse({"error": "Invalid or already used voter code."}, status=400)
+
+            # Register the vote
+            VoterCode.objects.filter(code=voter_code).update(used=True)
+            Vote.objects.create(poll=poll, contestant=contestant)
+            return JsonResponse({"message": "Vote successfully cast!"})
+
 
 
 class VoteResultView(APIView):
