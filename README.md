@@ -16,7 +16,7 @@ Poll is a simple web application that allows users to create and participate in 
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/yourusername/pollproject.git
+    git clone https://github.com/quarj0/pollproject.git
     ```
 
 2. Navigate to the project directory:
@@ -28,24 +28,24 @@ Poll is a simple web application that allows users to create and participate in 
 3. Install dependencies:
 
     ```bash
-    npm install
+    pip install requirements.txt
     ```
 
 4. Set up the database:
 
     ```bash
-    npm run setup-db
+    setup psql
     ```
 
 5. Start the development server:
 
     ```bash
-    npm start
+    python manage.py runserver
     ```
 
 ## Usage
 
-1. Open your web browser and go to `http://localhost:3000`.
+1. Open your web browser and go to `http://localhost:8000`.
 2. Sign up for a new account or log in with your existing account.
 3. Create a new poll by clicking on the "Create Poll" button.
 4. Share the poll link with others to gather votes.
