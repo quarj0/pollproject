@@ -17,7 +17,8 @@ BITLY_ACCESS_TOKEN=config('BITLY_ACCESS_TOKEN')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
+                 '4a56-154-161-174-215.ngrok-free.app']
 
 # Security settings for production
 if not DEBUG:

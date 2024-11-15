@@ -5,7 +5,6 @@ import logging
 
 from django.http import JsonResponse
 from django.db.models import Count
-from django.views import View
 from django.http import Http404
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -13,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.db import transaction
+from django.utils import timezone
 
 from .serializers import VoteSerializer
 from .models import VoterCode, Vote
@@ -123,7 +123,7 @@ class VoteView(APIView):
         # Attempt to generate payment link
         payment_link = self.generate_payment_link(
             amount_to_pay, unique_reference)
-        
+
         transaction_type = self.get_transaction_type(poll)
 
         # Verify that the payment link was created
@@ -173,95 +173,166 @@ class VoteView(APIView):
         return 'poll_activation' if poll.poll_type == Poll.CREATOR_PAY else 'vote'
 
 
-class USSDVotingView(View):
-    def post(self, request, poll_id):
-        poll = get_object_or_404(Poll, id=poll_id)
-        phone_number = request.POST.get("phone_number")
-        session_stage = request.POST.get("session_stage")
-        user_input = request.POST.get("user_input")
+class USSDVotingView(APIView):
+    def post(self, request, poll_id=None):
+        phone_number = request.data.get("phone_number")
+        text = request.data.get("user_input", "").strip()
+        user_inputs = text.split("*")  # Separate inputs by *
 
-        if session_stage == "welcome":
-            # Step 1: Display poll title and welcome message
-            message = f"Welcome to {poll.title}! Please select a category to continue."
-            
-            categories = Contestant.objects.filter(poll=poll).values_list('category', flat=True).distinct()
-            
-            options = {str(i+1): category for i, category in enumerate(categories)}
-            
-            response_data = {"message": message,"options": options, "next_stage": "select_category"}
-            return JsonResponse(response_data)
+        try:
+            # Step 1: Handle no poll_id provided
+            if poll_id is None:
+                polls = Poll.objects.filter(
+                    active=True)  # Only active polls
+                if not polls:
+                    return JsonResponse({"message": "END No polls available at the moment."}, status=400)
 
-        elif session_stage == "select_category":
-            # Step 2: Display contestants for the selected category
-            categories = Contestant.objects.filter(poll=poll).values_list('category', flat=True).distinct()
-           
-            category = categories[int(user_input) - 1]
-            
-            contestants = Contestant.objects.filter(poll=poll, category=category)
+                if len(user_inputs) == 1:  # List available polls
+                    message = "Available Polls:\n"
+                    options = "\n".join(
+                        [f"{i+1}. {poll.title}" for i,
+                            poll in enumerate(polls)]
+                    )
+                    return JsonResponse({"message": f"CON {message}{options}"})
+                else:  # User selects a poll
+                    try:
+                        selected_poll = int(user_inputs[1]) - 1
+                        poll = polls[selected_poll]
+                        poll_id = poll.id  # Update poll_id for subsequent steps
+                    except (IndexError, ValueError):
+                        return JsonResponse({"message": "END Invalid selection. Please try again."}, status=400)
 
-            message = f"Category: {category}. Select a contestant:"
-            options = {str(i+1): contestant.name for i, contestant in enumerate(contestants)}
-            
-            response_data = {"message": message, "options": options,"next_stage": "select_contestant", "selected_category": category}
-            return JsonResponse(response_data)
+            # Step 2: Retrieve poll and proceed
+            poll = get_object_or_404(Poll, id=poll_id)
 
-        elif session_stage == "select_contestant":
-            category = request.POST.get("selected_category")
-            contestants = Contestant.objects.filter(poll=poll, category=category)
-            contestant = contestants[int(user_input) - 1]
+            # Welcome Stage: Display categories
+            if len(user_inputs) == 1:
+                if not poll.active or poll.end_time < timezone.now():
+                    return JsonResponse({"message": "END This poll is inactive or has ended."}, status=400)
 
-            if poll.poll_type == 'voter-pay':
-                # For Voter-Pay Polls, ask for the number of votes
-                message = f"You selected {contestant.name}. Enter the number of votes:"
-                response_data = {
-                    "message": message, "next_stage": "enter_votes", "contestant_id": contestant.id}
-                return JsonResponse(response_data)
+                message = f"Welcome to {poll.title}! Select a category:"
+                categories = Contestant.objects.filter(
+                    poll=poll).values_list('category', flat=True).distinct()
+                if not categories:
+                    return JsonResponse({"message": "END No categories available for this poll."}, status=400)
 
-            elif poll.poll_type == 'creator-pay':
-                # For Creator-Pay Polls, ask for voter code and validate it
-                message = f"You selected {contestant.name}. Enter your voter code to proceed:"
-                
-                response_data = {
-                    "message": message, "next_stage": "enter_voter_code", "contestant_id": contestant.id}
-                return JsonResponse(response_data)
+                options = "\n".join(
+                    [f"{i+1}. {category}" for i,
+                        category in enumerate(categories)]
+                )
+                return JsonResponse({"message": f"CON {message}\n{options}"})
 
-        elif session_stage == "enter_votes":
-            # Step 4 (Voter-Pay Polls): Process payment
-            votes_count = int(user_input)
-            contestant_id = request.POST.get("contestant_id")
-            contestant = get_object_or_404(Contestant, id=contestant_id)
-            amount = Decimal(poll.voting_fee) * votes_count * \
-                                100  # Convert to cents for Paystack
+            # Select Category: Display contestants
+            elif len(user_inputs) == 2:
+                try:
+                    category_index = int(user_inputs[1]) - 1
+                    categories = Contestant.objects.filter(
+                        poll=poll).values_list('category', flat=True).distinct()
+                    category = categories[category_index]
+                except (IndexError, ValueError):
+                    return JsonResponse({"message": "END Invalid category selection. Try again."}, status=400)
 
-            # Initiate payment via Paystack
-            headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
-            
-            data = {"email": "customer@email.com", "amount": int(amount)}
-            
-            response = requests.post(
-                "https://api.paystack.co/transaction/initialize", json=data, headers=headers)
-            response_data = response.json()
+                contestants = Contestant.objects.filter(
+                    poll=poll, category=category)
+                if not contestants:
+                    return JsonResponse({"message": f"END No contestants in the category '{category}'."}, status=400)
 
-            if response.status_code == 200 and response_data.get("status") == "success":
-                return JsonResponse({"message": "Vote payment initiated. Complete payment to confirm your votes."})
-            else:
-                return JsonResponse({"error": "Failed to initiate payment."}, status=500)
+                message = f"Category: {category}. Select a contestant:"
+                options = "\n".join(
+                    [f"{i+1}. {contestant.name}" for i,
+                        contestant in enumerate(contestants)]
+                )
+                return JsonResponse({"message": f"CON {message}\n{options}"})
 
-        elif session_stage == "enter_voter_code":
-            # Step 4 (Creator-Pay Polls): Validate voter code and register vote
-            voter_code = user_input
-            contestant_id = request.POST.get("contestant_id")
-            contestant = get_object_or_404(Contestant, id=contestant_id)
+            # Select Contestant: Process votes or voter code
+            elif len(user_inputs) == 3:
+                try:
+                    category_index = int(user_inputs[1]) - 1
+                    categories = Contestant.objects.filter(
+                        poll=poll).values_list('category', flat=True).distinct()
+                    category = categories[category_index]
 
-            # Verify Voter Code
-            if not VoterCode.objects.filter(code=voter_code, used=False).exists():
-                return JsonResponse({"error": "Invalid or already used voter code."}, status=400)
+                    contestant_index = int(user_inputs[2]) - 1
+                    contestants = Contestant.objects.filter(
+                        poll=poll, category=category)
+                    contestant = contestants[contestant_index]
+                except (IndexError, ValueError):
+                    return JsonResponse({"message": "END Invalid contestant selection. Try again."}, status=400)
 
-            # Register the vote
-            VoterCode.objects.filter(code=voter_code).update(used=True)
-            Vote.objects.create(poll=poll, contestant=contestant)
-            return JsonResponse({"message": "Vote successfully cast!"})
+                if poll.poll_type == 'voter-pay':
+                    return JsonResponse({"message": f"CON You selected {contestant.name}. Enter the number of votes:"})
+                elif poll.poll_type == 'creator-pay':
+                    return JsonResponse({"message": f"CON You selected {contestant.name}. Enter your voter code:"})
 
+            # Enter Votes or Voter Code
+            elif len(user_inputs) == 4:
+                if poll.poll_type == 'voter-pay':
+                    try:
+                        votes_count = int(user_inputs[3])
+                    except ValueError:
+                        return JsonResponse({"message": "END Invalid number of votes. Try again."}, status=400)
+
+                    # Process payment
+                    url = "https://api.paystack.co/transaction/initialize"
+                    headers = {
+                        "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+                        "Content-Type": "application/json"
+                    }
+                    amount = poll.voting_fee * votes_count
+                    data = {
+                        # Generate pseudo-email from phone
+                        "email": f"{phone_number}@example.com",
+                        "amount": int(amount * 100),
+                        "reference": f"vote-{poll.id}-{uuid.uuid4().hex[:8]}"
+                    }
+
+                    response = requests.post(url, json=data, headers=headers)
+                    if response.status_code == 200 and response.json().get("status") == "success":
+                        payment_url = response.json(
+                        )["data"]["authorization_url"]
+                        return JsonResponse({
+                            "message": "END Payment initiated. Follow the link sent to complete your vote.",
+                            "payment_url": payment_url
+                        })
+                    else:
+                        return JsonResponse({"message": "END Failed to initiate payment. Try again later."}, status=500)
+
+                elif poll.poll_type == 'creator-pay':
+                    voter_code = user_inputs[3]
+                    # Validate voter code
+                    valid_voter_code = VoterCode.objects.filter(
+                        code=voter_code, used=False).first()
+
+                    if not valid_voter_code:
+                        return JsonResponse({"message": "END Invalid or already used voter code. Try again."}, status=400)
+
+                    # Mark voter code as used and record the vote
+                    valid_voter_code.used = True
+                    valid_voter_code.save()
+
+                    category_index = int(user_inputs[1]) - 1
+                    categories = Contestant.objects.filter(
+                        poll=poll).values_list('category', flat=True).distinct()
+                    category = categories[category_index]
+
+                    contestant_index = int(user_inputs[2]) - 1
+                    contestants = Contestant.objects.filter(
+                        poll=poll, category=category)
+                    contestant = contestants[contestant_index]
+
+                    Vote.objects.create(
+                        poll=poll,
+                        contestant=contestant,
+                        voter_code=voter_code
+                    )
+                    return JsonResponse({"message": "END Vote successfully cast! Thank you for participating."})
+
+            # Fallback for invalid inputs
+            return JsonResponse({"message": "END Invalid input. Please try again."}, status=400)
+
+        except Exception as e:
+            # Handle unexpected errors gracefully
+            return JsonResponse({"message": f"END An error occurred: {str(e)}"}, status=500)
 
 
 class VoteResultView(APIView):
