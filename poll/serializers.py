@@ -29,20 +29,22 @@ class PollSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        now = timezone.now()
         start_time = data.get('start_time')
         end_time = data.get('end_time')
 
         # Check if start time is in the future and end time is after start time
-        if start_time and start_time < now:
+        if start_time and start_time < timezone.now():
             raise serializers.ValidationError(
                 "Start time must be in the future.")
         if end_time and start_time >= end_time:
             raise serializers.ValidationError(
                 "End time must be after start time.")
 
-        # Deactivate poll if end_time is in the past
-        if end_time and end_time < now:
+        if 'contestants' not in data or len(data['contestants']) < 2:
+            raise serializers.ValidationError(
+                "A poll must have at least 2 contestants")
+            
+        if end_time and end_time < timezone.now():
             data['active'] = False
 
         # Validate poll_type and voting conditions
