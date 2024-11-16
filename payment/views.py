@@ -651,7 +651,7 @@ class InitiateWithdrawalView(APIView):
     def post(self, request, poll_id):
         poll = get_object_or_404(Poll, id=poll_id, creator=request.user)
 
-        if poll.poll_type != "voter-pay":
+        if poll.poll_type != "voters-pay":
             return Response(
                 {"error": "Withdrawals are only allowed for voter-pay polls."},
                 status=status.HTTP_400_BAD_REQUEST,

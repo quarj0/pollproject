@@ -179,33 +179,33 @@ class USSDVotingView(APIView):
     def post(self, request, poll_id=None):
         phone_number = request.data.get("phone_number")
         text = request.data.get("user_input", "").strip()
-        user_inputs = text.split("*")  # Separate inputs by *
+        user_inputs = text.split()
 
         try:
             # Step 1: Handle no poll_id provided
             if poll_id is None:
-                polls = Poll.objects.filter(active=True)  # Only active polls
+                polls = Poll.objects.filter(active=True)
                 if not polls:
                     return JsonResponse({"message": "END No polls available at the moment."}, status=400)
 
-                if len(user_inputs) == 1:  # List available polls
+                if len(user_inputs) == 1:
                     message = "Available Polls:\n"
                     options = "\n".join(
-                        [f"{i+1}. {poll.title}" for i, poll in enumerate(polls)]
+                        [f"{i+1}. {poll.title}" for i,
+                            poll in enumerate(polls)]
                     )
                     return JsonResponse({"message": f"CON {message}{options}"})
-                else:  # User selects a poll
+                else:
                     try:
                         selected_poll = int(user_inputs[1]) - 1
                         poll = polls[selected_poll]
-                        poll_id = poll.id  # Update poll_id for subsequent steps
+                        poll_id = poll.id
                     except (IndexError, ValueError):
                         return JsonResponse({"message": "END Invalid selection. Please try again."}, status=400)
 
             # Step 2: Retrieve poll and proceed
             poll = get_object_or_404(Poll, id=poll_id)
 
-            # Welcome Stage: Display categories
             if len(user_inputs) == 1:
                 if not poll.active or poll.end_time < timezone.now():
                     return JsonResponse({"message": "END This poll is inactive or has ended."}, status=400)
@@ -217,11 +217,11 @@ class USSDVotingView(APIView):
                     return JsonResponse({"message": "END No categories available for this poll."}, status=400)
 
                 options = "\n".join(
-                    [f"{i+1}. {category}" for i, category in enumerate(categories)]
+                    [f"{i+1}. {category}" for i,
+                        category in enumerate(categories)]
                 )
                 return JsonResponse({"message": f"CON {message}\n{options}"})
 
-            # Select Category: Display contestants
             elif len(user_inputs) == 2:
                 try:
                     category_index = int(user_inputs[1]) - 1
@@ -238,31 +238,38 @@ class USSDVotingView(APIView):
 
                 message = f"Category: {category}. Select a contestant:"
                 options = "\n".join(
-                    [f"{i+1}. {contestant.name}" for i, contestant in enumerate(contestants)]
+                    [f"{i+1}. {contestant.name}" for i,
+                        contestant in enumerate(contestants)]
                 )
                 return JsonResponse({"message": f"CON {message}\n{options}"})
 
-            # Select Contestant: Process votes or voter code
             elif len(user_inputs) == 3:
                 try:
+                    # Fetch category by index
                     category_index = int(user_inputs[1]) - 1
-                    categories = Contestant.objects.filter(
-                        poll=poll).values_list('category', flat=True).distinct()
+                    categories = list(Contestant.objects.filter(
+                        poll=poll).values_list('category', flat=True).distinct())
+                    if category_index < 0 or category_index >= len(categories):
+                        return JsonResponse({"message": "END Invalid category selection. Try again."}, status=400)
                     category = categories[category_index]
 
+                    # Fetch contestant by index
                     contestant_index = int(user_inputs[2]) - 1
-                    contestants = Contestant.objects.filter(
-                        poll=poll, category=category)
+                    contestants = list(Contestant.objects.filter(
+                        poll=poll, category=category))
+                    if contestant_index < 0 or contestant_index >= len(contestants):
+                        return JsonResponse({"message": "END Invalid contestant selection. Try again."}, status=400)
                     contestant = contestants[contestant_index]
-                except (IndexError, ValueError):
-                    return JsonResponse({"message": "END Invalid contestant selection. Try again."}, status=400)
+                except (ValueError, IndexError) as e:
+                    return JsonResponse({"message": "END Invalid input. Please try again."}, status=400)
 
+                # Proceed with poll type logic
                 if poll.poll_type == 'voter-pay':
                     return JsonResponse({"message": f"CON You selected {contestant.name}. Enter the number of votes:"})
                 elif poll.poll_type == 'creator-pay':
                     return JsonResponse({"message": f"CON You selected {contestant.name}. Enter your voter code:"})
+                return JsonResponse({"message": f"CON You selected {contestant.name}. Enter your voter code:"})
 
-            # Enter Votes or Voter Code
             elif len(user_inputs) == 4:
                 if poll.poll_type == 'voter-pay':
                     try:
@@ -270,7 +277,6 @@ class USSDVotingView(APIView):
                     except ValueError:
                         return JsonResponse({"message": "END Invalid number of votes. Try again."}, status=400)
 
-                    # Process payment
                     url = "https://api.paystack.co/transaction/initialize"
                     headers = {
                         "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
@@ -278,15 +284,15 @@ class USSDVotingView(APIView):
                     }
                     amount = poll.voting_fee * votes_count
                     data = {
-                        # Generate pseudo-email from phone
-                        "email": f"{phone_number}@example.com",
+                        "email": f"customer@email.com",
                         "amount": int(amount * 100),
                         "reference": f"vote-{poll.id}-{uuid.uuid4().hex[:8]}"
                     }
 
                     response = requests.post(url, json=data, headers=headers)
                     if response.status_code == 200 and response.json().get("status") == "success":
-                        payment_url = response.json()["data"]["authorization_url"]
+                        payment_url = response.json(
+                        )["data"]["authorization_url"]
                         return JsonResponse({
                             "message": "END Payment initiated. Follow the link sent to complete your vote.",
                             "payment_url": payment_url
@@ -296,15 +302,22 @@ class USSDVotingView(APIView):
 
                 elif poll.poll_type == 'creator-pay':
                     voter_code = user_inputs[3]
-                    # Validate voter code
                     valid_voter_code = VoterCode.objects.filter(
                         code=voter_code, used=False).first()
 
                     if not valid_voter_code:
                         return JsonResponse({"message": "END Invalid or already used voter code. Try again."}, status=400)
 
-                    # Mark voter code as used and record the vote
                     valid_voter_code.used = True
+                    category_index = int(user_inputs[1]) - 1
+                    categories = Contestant.objects.filter(
+                        poll=poll).values_list('category', flat=True).distinct()
+                    category = categories[category_index]
+
+                    contestant_index = int(user_inputs[2]) - 1
+                    contestants = Contestant.objects.filter(
+                        poll=poll, category=category)
+                    contestant = contestants[contestant_index]
                     valid_voter_code.save()
 
                     category_index = int(user_inputs[1]) - 1
@@ -324,11 +337,9 @@ class USSDVotingView(APIView):
                     )
                     return JsonResponse({"message": "END Vote successfully cast! Thank you for participating."})
 
-            # Fallback for invalid inputs
             return JsonResponse({"message": "END Invalid input. Please try again."}, status=400)
 
         except Exception as e:
-            # Handle unexpected errors gracefully
             return JsonResponse({"message": f"END An error occurred: {str(e)}"}, status=500)
 
 
