@@ -28,6 +28,7 @@ class PollCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        
         # Handle poll creation via serializer
         serializer = PollSerializer(
             data=request.data, context={'request': request})
