@@ -1,10 +1,8 @@
-from decimal import Decimal
 import uuid
 import requests
 import logging
 
 from django.http import JsonResponse
-from django.db.models import Count
 from django.http import Http404
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -13,11 +11,15 @@ from rest_framework.views import APIView
 from rest_framework import status
 from django.db import transaction
 from django.utils import timezone
+from django.db.models import Sum
+
 
 from .serializers import VoteSerializer
 from .models import VoterCode, Vote
 from poll.models import Poll, Contestant
 from payment.models import Transaction
+
+from vote import serializers
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +180,9 @@ class USSDVotingView(APIView):
         phone_number = request.data.get("phone_number")
         text = request.data.get("user_input", "").strip()
         user_inputs = text.split("*")  # Separate inputs by *
+        
+        if not serializers.is_valid():
+            return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Step 1: Handle no poll_id provided
@@ -338,7 +343,9 @@ class USSDVotingView(APIView):
 class VoteResultView(APIView):
     def get(self, request, poll_id):
         poll = get_object_or_404(Poll, id=poll_id)
-        results = Contestant.objects.filter(poll=poll).annotate(vote_count=Count('votes')).values(
-            'nominee_code', 'vote_count'
+        results = Contestant.objects.filter(poll=poll).annotate(
+            vote_count=Sum('votes__number_of_votes')
+        ).values(
+            'name', 'vote_count'
         )
         return Response(results, status=status.HTTP_200_OK)
