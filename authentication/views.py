@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
@@ -62,14 +62,16 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             # Blacklist the refresh token
-            token = request.data.get("refresh")
-            if token:
-                token_obj = RefreshToken(token)
+            refresh_token = request.data.get("refresh")
+            if refresh_token:
+                token_obj = RefreshToken(refresh_token)
                 token_obj.blacklist()
-
-            # Delete all sessions for the user
-            request.user.auth_token.delete()
-            request.user.session_set.all().delete()
+                
+            access_token = request.data.get("access")
+            if access_token:
+                token_ = AccessToken(token_)
+                token_.__delitem__("access")
+            
 
             return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
         except Exception as e:

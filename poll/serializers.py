@@ -31,8 +31,12 @@ class PollSerializer(serializers.ModelSerializer):
     def validate(self, data):
         start_time = data.get('start_time')
         end_time = data.get('end_time')
+        
+        # Check to see if user has logged out or in
+        request = self.context.get('request')
+        if not request or not request.user or not request.user.is_authenticated:
+            raise serializers.ValidationError("User must be logged in to create or update a poll.")
 
-        # Check if start time is in the future and end time is after start time
         if start_time and start_time < timezone.now():
             raise serializers.ValidationError(
                 "Start time must be in the future.")
