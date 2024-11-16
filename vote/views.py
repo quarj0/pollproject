@@ -180,23 +180,18 @@ class USSDVotingView(APIView):
         phone_number = request.data.get("phone_number")
         text = request.data.get("user_input", "").strip()
         user_inputs = text.split("*")  # Separate inputs by *
-        
-        if not serializers.is_valid():
-            return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Step 1: Handle no poll_id provided
             if poll_id is None:
-                polls = Poll.objects.filter(
-                    active=True)  # Only active polls
+                polls = Poll.objects.filter(active=True)  # Only active polls
                 if not polls:
                     return JsonResponse({"message": "END No polls available at the moment."}, status=400)
 
                 if len(user_inputs) == 1:  # List available polls
                     message = "Available Polls:\n"
                     options = "\n".join(
-                        [f"{i+1}. {poll.title}" for i,
-                            poll in enumerate(polls)]
+                        [f"{i+1}. {poll.title}" for i, poll in enumerate(polls)]
                     )
                     return JsonResponse({"message": f"CON {message}{options}"})
                 else:  # User selects a poll
@@ -222,8 +217,7 @@ class USSDVotingView(APIView):
                     return JsonResponse({"message": "END No categories available for this poll."}, status=400)
 
                 options = "\n".join(
-                    [f"{i+1}. {category}" for i,
-                        category in enumerate(categories)]
+                    [f"{i+1}. {category}" for i, category in enumerate(categories)]
                 )
                 return JsonResponse({"message": f"CON {message}\n{options}"})
 
@@ -244,8 +238,7 @@ class USSDVotingView(APIView):
 
                 message = f"Category: {category}. Select a contestant:"
                 options = "\n".join(
-                    [f"{i+1}. {contestant.name}" for i,
-                        contestant in enumerate(contestants)]
+                    [f"{i+1}. {contestant.name}" for i, contestant in enumerate(contestants)]
                 )
                 return JsonResponse({"message": f"CON {message}\n{options}"})
 
@@ -293,8 +286,7 @@ class USSDVotingView(APIView):
 
                     response = requests.post(url, json=data, headers=headers)
                     if response.status_code == 200 and response.json().get("status") == "success":
-                        payment_url = response.json(
-                        )["data"]["authorization_url"]
+                        payment_url = response.json()["data"]["authorization_url"]
                         return JsonResponse({
                             "message": "END Payment initiated. Follow the link sent to complete your vote.",
                             "payment_url": payment_url

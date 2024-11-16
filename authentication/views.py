@@ -61,10 +61,16 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
+            # Blacklist the refresh token
             token = request.data.get("refresh")
             if token:
                 token_obj = RefreshToken(token)
                 token_obj.blacklist()
+
+            # Delete all sessions for the user
+            request.user.auth_token.delete()
+            request.user.session_set.all().delete()
+
             return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

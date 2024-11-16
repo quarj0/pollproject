@@ -16,6 +16,7 @@ from .models import Poll
 from .serializers import PollSerializer, UpdatePollSerializer
 
 import logging
+from rest_framework.permissions import IsAuthenticated
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class PollCreateView(APIView):
     """
     API view to handle the creation of polls.
     """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         # Handle poll creation via serializer
