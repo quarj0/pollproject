@@ -1,3 +1,5 @@
+import logging
+import requests
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,9 +11,12 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, AuthenticationFailed
+from rest_framework_simplejwt.exceptions import TokenError, AuthenticationFailed
 
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
@@ -30,7 +35,7 @@ class LoginView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
-            user = authenticate(username=email, password=password)
+            user = authenticate(request, username=email, password=password)
 
             if user:
                 refresh = RefreshToken.for_user(user)
@@ -42,6 +47,15 @@ class LoginView(APIView):
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserUpdateView(APIView):
@@ -66,12 +80,11 @@ class LogoutView(APIView):
             if refresh_token:
                 token_obj = RefreshToken(refresh_token)
                 token_obj.blacklist()
-                
+
             access_token = request.data.get("access")
             if access_token:
                 token_ = AccessToken(token_)
                 token_.__delitem__("access")
-            
 
             return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -82,7 +95,7 @@ class PasswordResetRequestView(APIView):
     def post(self, request):
         email = request.data.get('email')
         user = get_user_model().objects.filter(email=email).first()
-        
+
         try:
 
             if user:
@@ -119,7 +132,7 @@ class PasswordResetRequestView(APIView):
             return Response({"error": "Failed to generate token"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except AuthenticationFailed:
             return Response({"error": "Failed to authenticate user"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
 
 class PasswordResetConfirmView(APIView):
     def post(self, request, uidb64, token):
@@ -146,12 +159,12 @@ class PasswordResetConfirmView(APIView):
                 return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
 
         except TokenError:
-                return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
         except AuthenticationFailed:
             return Response({"error": "Failed to authenticate user"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
 
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -160,3 +173,42 @@ class DeleteUserView(APIView):
         user = request.user
         user.delete()
         return Response({"message": "User deleted successfully."}, status=status.HTTP_200_OK)
+
+
+class RecaptchaView(APIView):
+    def post(self, request):
+        # Get the ReCAPTCHA token from the request data
+        recaptcha_token = request.data.get("recaptcha_token")
+
+        if not recaptcha_token:
+            return Response(
+                {"error": "ReCAPTCHA token is missing."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        client_ip = self.get_client_ip(request)
+
+        url = f"https://www.google.com/recaptcha/api/siteverify",
+        params = {
+            "secret": settings.RECAPTCHA_SECRET_KEY,
+            "response": recaptcha_token,
+            "remoteip": client_ip,
+        }
+
+        response = requests.post(url, params=params)
+        data = response.json()
+
+        if data.get("success"):
+            return Response({"message": "ReCAPTCHA verification successful."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "ReCAPTCHA verification failed."}, status=status.HTTP_400_BAD_REQUEST)
+
+    @staticmethod
+    def get_client_ip(request):
+        # Extract client IP from request headers or remote address
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip

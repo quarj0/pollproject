@@ -11,7 +11,7 @@ urlpatterns = [
 
     path('<poll_id>/link/', PaymentLinkView.as_view(), name='payment-link'),
 
-    path('<int:poll_id>/withdraw/request/',
+    path('account/<int:poll_id>/withdraw/',
          InitiateWithdrawalView.as_view(), name='withdrawal'),
 
     path('account/balance', AccountBalanceView.as_view(), name="account-balance"),

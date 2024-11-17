@@ -419,7 +419,6 @@ class AccountBalanceView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-logger = logging.getLogger(__name__)
 
 
 def get_transaction_type(poll):
