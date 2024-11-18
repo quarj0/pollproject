@@ -17,7 +17,10 @@ import axiosInstance from "../apis/api";
 import { FaUserCircle, FaVoteYea } from "react-icons/fa";
 
 const navigation = [
+  { name: "Home", href: "/home", current: false },
   { name: "Create Poll", href: "/create-poll", current: false },
+  { name: "Events", href: "/polls", current: false },
+  { name: "Results", href: "/results", current: false },
 ];
 
 Navbar.propTypes = {

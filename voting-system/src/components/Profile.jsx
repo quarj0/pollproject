@@ -71,8 +71,8 @@ const Profile = ({ authTokens }) => {
   }, [authTokens, fetchBalance, fetchUser, fetchPaymentHistory]);
 
   const handleProfileUpdate = () => {
-    fetchUser(); // Re-fetch user data to update the profile
-    setIsModalOpen(false); // Close the modal
+    fetchUser(); 
+    setIsModalOpen(false);
   };
 
   if (loading) {

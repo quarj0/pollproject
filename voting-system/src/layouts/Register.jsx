@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { FaExclamationCircle } from "react-icons/fa";
 import axiosInstance from "../apis/api";
 import { useNavigate } from "react-router-dom";
 import votelap from "../assets/votelap.jpg";
@@ -68,11 +67,6 @@ const RegisterPage = () => {
         <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           Register an Account
         </h2>
-        <p className="font-montserrat mb-6 text-center text-sm text-gray-600">
-          <FaExclamationCircle className="inline-block mr-2 text-red-600" />
-          Your phone number will be used for transactions. It cannot be changed
-          later. Please ensure it is correct.
-        </p>
 
         {error && (
           <p className="text-red-600 text-center bg-red-100 p-2 rounded mb-4">

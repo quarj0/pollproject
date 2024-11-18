@@ -79,6 +79,7 @@ const PollsList = () => {
     <div className="p-4 border rounded-md">
       <h3 className="text-md font-semibold">{poll.title}</h3>
       <p>Description: {poll.description}</p>
+      <img src={poll.image} alt={poll.title} className="w-full h-48 object-cover rounded-md mt-4" />
       <p>Start Time: {new Date(poll.start_time).toLocaleString()}</p>
       <p>End Time: {new Date(poll.end_time).toLocaleString()}</p>
       <p>

@@ -8,12 +8,13 @@ import {
 import Navbar from "./layouts/Navbar";
 import Login from "./layouts/Login";
 import HomePage from "./components/Homepage";
-import Home from "./components/Home";
 import Profile from "./components/Profile";
 import RegisterPage from "./layouts/Register";
 import PasswordResetConfirmPage from "./layouts/PasswordResetConfirm";
 import PasswordResetRequestPage from "./layouts/PasswordReset";
 import axiosInstance from "./apis/api";
+import Footer from "./layouts/Footer";
+import CreatePoll from "./components/CreatePoll";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -83,8 +84,8 @@ const App = () => {
         <div className="max-w-7xl mx-auto p-4">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/home" element={<Home />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/create-poll" element={<CreatePoll />} />
             <Route
               path="/login"
               element={
@@ -127,9 +128,11 @@ const App = () => {
                 )
               }
             />
+           <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
       </div>
+    <Footer />
     </Router>
   );
 };
