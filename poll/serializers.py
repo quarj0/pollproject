@@ -1,7 +1,30 @@
+from django.core.files.images import get_image_dimensions
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from .models import Poll, Contestant
+
+
+def validate_image(self, image):
+
+    # Validate file type
+    valid_mime_types = ['image/jpeg', 'image/png']
+    if image.content_type not in valid_mime_types:
+        raise serializers.ValidationError(
+            "Image must be in JPG or PNG format.")
+
+    # Validate file size
+    max_size = 3 * 1024 * 1024  # 3 MB
+    if image.size > max_size:
+        raise serializers.ValidationError(
+            "Image size must be less than 3MB.")
+
+    width, height = get_image_dimensions(image)
+    max_width = 3000
+    max_height = 3000
+    if width > max_width or height > max_height:
+        raise serializers.ValidationError(
+            f"Image dimensions must not exceed {max_width}x{max_height} pixels.")
 
 
 class ContestantSerializer(serializers.ModelSerializer):
@@ -12,13 +35,6 @@ class ContestantSerializer(serializers.ModelSerializer):
             'image'
         ]
         read_only_fields = ['nominee_code']
-
-    def validate_image(self, image):
-        if not image.name.endswith(('.jpg', '.jpeg', '.png')):
-            raise serializers.ValidationError("Image must be in jpg, jpeg or png format.")
-        
-        if image.size > 3 * 1024 * 1024:
-            raise serializers.ValidationError("Image size must be less than 3MB.")
 
     def create(self, validated_data):
         return Contestant.objects.create(**validated_data)
@@ -38,6 +54,10 @@ class PollSerializer(serializers.ModelSerializer):
     def validate(self, data):
         start_time = data.get('start_time')
         end_time = data.get('end_time')
+        image = data.get('image')
+
+        if image:
+            validate_image(self, image)
 
         # Check to see if user has logged out or in
         request = self.context.get('request')
@@ -48,17 +68,6 @@ class PollSerializer(serializers.ModelSerializer):
         if start_time and start_time < timezone.now():
             raise serializers.ValidationError(
                 "Start time must be in the future.")
-        image = data.get('image')
-        if image:
-            self.validate_image(image)
-        if image:
-            if not image.name.endswith(('.jpg', '.jpeg', '.png')):
-                raise serializers.ValidationError(
-                    "Image must be in jpg, jpeg or png format.")
-                
-            if image.size > 3 * 1024 * 1024:
-                raise serializers.ValidationError(
-                    "Image size must be less than 3MB.")
 
         if end_time and end_time < timezone.now():
             data['active'] = False
@@ -125,21 +134,24 @@ class UpdatePollSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
+        image = data.get('image')
+
+        if image:
+            validate_image(self, image)
 
         # Prevent reducing end_time for active polls
         if self.instance and self.instance.active and 'end_time' in data and data['end_time'] < self.instance.end_time:
-            raise ValidationError( "End time cannot be reduced for an active poll.")
-        
-        image = data.get('image')
-        if image:
-            self.validate_image(image)
-            raise ValidationError("Image size must be less than 3MB.")
-            
+            raise ValidationError(
+                "End time cannot be reduced for an active poll.")
 
         return data
 
     def update(self, instance, validated_data):
         contestants_data = validated_data.pop('contestants', [])
+
+        if 'image' in validated_data:
+            validate_image(self, validated_data['image'])
+            instance.image = validated_data['image']
 
         if instance.active:
             for field in ['poll_type', 'expected_voters', 'voting_fee']:
