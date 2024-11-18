@@ -101,8 +101,8 @@ class PasswordResetRequestView(APIView):
             if user:
                 token = default_token_generator.make_token(user)
                 uid = urlsafe_base64_encode(str(user.pk).encode('utf-8'))
-                reset_url = request.build_absolute_uri(
-                    f"/auth/reset/password/{uid}/{token}/")
+                reset_url = f"{
+                    settings.FRONTEND_URL}/auth/reset/password/{uid}/{token}/"
 
                 send_mail(
                     "Password Reset Request",

@@ -1,24 +1,38 @@
+import { Link } from "react-router-dom";
+
 const HomePage = () => {
   return (
     <div className="font-roboto bg-background text-dark">
-      {/* Header */}
+      {/* Navbar */}
 
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-primary to-accent text-white text-center p-6">
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-4">
-          Vote for What Matters
-        </h1>
-        <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-          Join thousands of users and participate in secure, transparent voting.
-          A seamless experience for all your voting needs.
-        </p>
-        <div className="space-x-4">
-          <button className="bg-secondary text-white py-3 px-6 rounded-full hover:bg-accent transition-all duration-300">
-            Start Voting
-          </button>
-          <button className="bg-transparent border-2 border-white text-white py-3 px-6 rounded-full hover:bg-white hover:text-dark transition-all duration-300">
-            Learn More
-          </button>
+      <section
+        className="relative flex flex-col items-center justify-center h-screen bg-cover bg-center text-white text-center p-6"
+        style={{ backgroundImage: "url(/assets/hero-bg.jpg)" }}
+      >
+        <div className="absolute inset-0 bg-black opacity-50"></div>
+        <div className="relative z-10">
+          <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-4">
+            Vote for What Matters
+          </h1>
+          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
+            Join thousands of users and participate in secure, transparent
+            voting. A seamless experience for all your voting needs.
+          </p>
+          <div className="space-x-4">
+            <Link
+              to={"/home"}
+              className="bg-secondary text-white py-3 px-6 rounded-full hover:bg-accent transition-all duration-300"
+            >
+              Start Voting
+            </Link>
+            <Link
+              to={"/register"}
+              className="bg-transparent border-2 border-white text-white py-3 px-6 rounded-full hover:bg-white hover:text-dark transition-all duration-300"
+            >
+              Create Poll
+            </Link>
+          </div>
         </div>
       </section>
 

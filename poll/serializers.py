@@ -13,6 +13,13 @@ class ContestantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['nominee_code']
 
+    def validate_image(self, image):
+        if not image.name.endswith(('.jpg', '.jpeg', '.png')):
+            raise serializers.ValidationError("Image must be in jpg, jpeg or png format.")
+        
+        if image.size > 3 * 1024 * 1024:
+            raise serializers.ValidationError("Image size must be less than 3MB.")
+
     def create(self, validated_data):
         return Contestant.objects.create(**validated_data)
 
@@ -23,7 +30,7 @@ class PollSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poll
         fields = [
-            'id', 'title', 'description', 'start_time', 'end_time',
+            'id', 'title', 'image', 'description', 'start_time', 'end_time',
             'poll_type', 'expected_voters', 'voting_fee',
             'active', 'contestants', 'setup_fee'
         ]
@@ -31,23 +38,28 @@ class PollSerializer(serializers.ModelSerializer):
     def validate(self, data):
         start_time = data.get('start_time')
         end_time = data.get('end_time')
-        
+
         # Check to see if user has logged out or in
         request = self.context.get('request')
         if not request or not request.user or not request.user.is_authenticated:
-            raise serializers.ValidationError("User must be logged in to create or update a poll.")
+            raise serializers.ValidationError(
+                "User must be logged in to create or update a poll.")
 
         if start_time and start_time < timezone.now():
             raise serializers.ValidationError(
                 "Start time must be in the future.")
-        if end_time and start_time >= end_time:
-            raise serializers.ValidationError(
-                "End time must be after start time.")
+        image = data.get('image')
+        if image:
+            self.validate_image(image)
+        if image:
+            if not image.name.endswith(('.jpg', '.jpeg', '.png')):
+                raise serializers.ValidationError(
+                    "Image must be in jpg, jpeg or png format.")
+                
+            if image.size > 3 * 1024 * 1024:
+                raise serializers.ValidationError(
+                    "Image size must be less than 3MB.")
 
-        if 'contestants' not in data or len(data['contestants']) < 2:
-            raise serializers.ValidationError(
-                "A poll must have at least 2 contestants")
-            
         if end_time and end_time < timezone.now():
             data['active'] = False
 
@@ -107,7 +119,7 @@ class UpdatePollSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poll
         fields = [
-            'id', 'title', 'description', 'start_time', 'end_time',
+            'id', 'title', 'image', 'description', 'start_time', 'end_time',
             'poll_type', 'expected_voters', 'voting_fee',
             'active', 'contestants', 'setup_fee'
         ]
@@ -116,8 +128,13 @@ class UpdatePollSerializer(serializers.ModelSerializer):
 
         # Prevent reducing end_time for active polls
         if self.instance and self.instance.active and 'end_time' in data and data['end_time'] < self.instance.end_time:
-            raise ValidationError(
-                "End time can only be extended, not reduced, for an active poll.")
+            raise ValidationError( "End time cannot be reduced for an active poll.")
+        
+        image = data.get('image')
+        if image:
+            self.validate_image(image)
+            raise ValidationError("Image size must be less than 3MB.")
+            
 
         return data
 

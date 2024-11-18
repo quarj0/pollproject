@@ -1,172 +1,181 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import axiosInstance from "../apis/api";
+import UpdateUserModal from "./UpdateUserModal";
 
-const Profile = ({ user, authTokens }) => {
-  const [balance, setBalance] = useState(null);
-  const [withdrawAmount, setWithdrawAmount] = useState(0);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [paymentHistory, setPaymentHistory] = useState([]);
+const Profile = ({ authTokens }) => {
+  const [user, setUser] = useState(null);
+  const [availableBalance, setAvailableBalance] = useState(null);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to manage modal
 
-  // Fetch account balance
-  useEffect(() => {
-    axiosInstance
-      .get("payment/account/balance", {
-        headers: {
-          Authorization: `Bearer ${authTokens.access}`,
-        },
-      })
-      .then((response) => {
-        setBalance(response.data.balance);
-      })
-      .catch((error) => {
-        console.error("Error fetching balance:", error);
-        setError("Failed to fetch account balance.");
-      });
-  }, [authTokens]);
-
-  // Fetch payment history
-  useEffect(() => {
-    axiosInstance
-      .get("payment/history/", {
-        headers: {
-          Authorization: `Bearer ${authTokens.access}`,
-        },
-      })
-      .then((response) => {
-        setPaymentHistory(response.data.history || []);
-      })
-      .catch((error) => {
-        console.error("Error fetching payment history:", error);
-        setError("Failed to fetch payment history.");
-      });
-  }, [authTokens]);
-
-  const handleWithdraw = () => {
-    if (withdrawAmount <= 0 || isNaN(withdrawAmount)) {
-      setError("Please enter a valid amount.");
-      return;
-    }
-
-    if (withdrawAmount > balance) {
-      setError("Insufficient balance.");
-      return;
-    }
-
-    setLoading(true);
-
-    axiosInstance
-      .post(
-        `payment/account/${user.poll_id}/withdraw/`,
-        { amount: withdrawAmount },
-        {
+  const fetchPaymentHistory = useCallback(
+    async (url = "payment/history") => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(url, {
           headers: {
             Authorization: `Bearer ${authTokens.access}`,
           },
-        }
-      )
-      .then(() => {
-        setSuccessMessage("Withdrawal successful.");
-        setBalance(balance - withdrawAmount);
-        setWithdrawAmount(0);
-      })
-      .catch((error) => {
-        console.error("Error during withdrawal:", error);
-        setError(
-          error.response?.data?.detail ||
-            "Withdrawal failed due to network error."
-        );
-      })
-      .finally(() => {
+        });
+        setPaymentHistory(response.data);
+      } catch (error) {
+        setError("Failed to load payment history.");
+        console.error("Error fetching payment history:", error);
+      } finally {
         setLoading(false);
+      }
+    },
+    [authTokens.access]
+  );
+
+  const fetchUser = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get("auth/user/", {
+        headers: {
+          Authorization: `Bearer ${authTokens.access}`,
+        },
       });
+      setUser(response.data);
+    } catch (error) {
+      setError("Failed to load user data.");
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [authTokens.access]);
+
+  const fetchBalance = useCallback(async () => {
+    try {
+      const response = await axiosInstance.get("payment/account/balance", {
+        headers: {
+          Authorization: `Bearer ${authTokens.access}`,
+        },
+      });
+      setAvailableBalance(response.data.available_balance);
+      setTotalWithdrawn(response.data.total_withdrawn);
+    } catch (error) {
+      setError("Failed to load balance data.");
+      console.error("Error fetching balance:", error);
+    }
+  }, [authTokens.access]);
+
+  useEffect(() => {
+    fetchUser();
+    fetchBalance();
+    fetchPaymentHistory();
+  }, [authTokens, fetchBalance, fetchUser, fetchPaymentHistory]);
+
+  const handleProfileUpdate = () => {
+    fetchUser(); // Re-fetch user data to update the profile
+    setIsModalOpen(false); // Close the modal
   };
 
-  const formattedBalance = balance
-    ? new Intl.NumberFormat("en-GH", {
-        style: "currency",
-        currency: "GHS",
-      }).format(balance)
-    : "Loading...";
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading user profile...
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-semibold mb-4">
-        Hi, {user?.username || "User"}
-      </h1>
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">Your Profile</h1>
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-      {/* Account Balance */}
-      <div className="mb-4">
-        <p className="text-l">
-          <strong>Account Balance:</strong> {formattedBalance}
+      <div className="p-6 border rounded-md shadow-md mb-6 bg-white">
+        <h3 className="text-xl font-semibold mb-2">
+          Username: {user?.username}
+        </h3>
+        <p className="text-gray-700">Email: {user?.email}</p>
+        <p className="text-gray-700">
+          Phone Number: {user?.account_number || "N/A"}
         </p>
-      </div>
-
-      {/* Withdraw Funds */}
-      <div className="mb-4">
-        <h2 className="text-lg font-medium">Withdraw Funds</h2>
-        <input
-          type="number"
-          className="border p-2 rounded w-full"
-          placeholder="Enter amount to withdraw"
-          value={withdrawAmount}
-          onChange={(e) => setWithdrawAmount(e.target.value)}
-        />
         <button
-          className={`bg-blue-600 text-white p-2 mt-2 rounded w-full ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-          onClick={handleWithdraw}
-          disabled={loading}
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-gray-200 rounded mt-4"
         >
-          {loading ? "Processing..." : "Withdraw"}
+          Update Profile
         </button>
       </div>
 
-      {/* Payment History */}
-      <div className="mb-4">
-        <h2 className="text-lg font-medium">Payment History</h2>
-        {paymentHistory.length > 0 ? (
-          <ul className="list-disc pl-5">
-            {paymentHistory.map((payment, index) => (
-              <li key={index}>
-                <strong>{payment.type}:</strong> {payment.amount} GHS on{" "}
-                {new Date(payment.date).toLocaleDateString()}
-              </li>
-            ))}
-          </ul>
+      <div className="p-6 border rounded-md shadow-md mb-6 bg-white">
+        <h3 className="text-xl font-semibold mb-2">Balance</h3>
+        <p className="text-gray-700">Available: {availableBalance || 0}</p>
+        <p className="text-gray-700">Withdrawn: {totalWithdrawn || 0}</p>
+      </div>
+
+      <div className="p-6 border rounded-md shadow-md bg-white">
+        <h3 className="text-xl font-semibold mb-4">Payment History</h3>
+        {paymentHistory && paymentHistory.results?.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr>
+                  <th className="py-2 px-4 border-b">Transaction Type</th>
+                  <th className="py-2 px-4 border-b">Poll ID</th>
+                  <th className="py-2 px-4 border-b">Amount</th>
+                  <th className="py-2 px-4 border-b">Success</th>
+                  <th className="py-2 px-4 border-b">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentHistory.results.map((payment, index) => (
+                  <tr key={index}>
+                    <td className="py-2 px-4 border-b">
+                      {payment.transaction_type}
+                    </td>
+                    <td className="py-2 px-4 border-b">{payment.poll_id}</td>
+                    <td className="py-2 px-4 border-b">{payment.amount}</td>
+                    <td className="py-2 px-4 border-b">
+                      {payment.success ? "Yes" : "No"}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {new Date(payment.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={() => fetchPaymentHistory(paymentHistory.previous)}
+                disabled={!paymentHistory.previous}
+                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => fetchPaymentHistory(paymentHistory.next)}
+                disabled={!paymentHistory.next}
+                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         ) : (
-          <p>No payment history available.</p>
+          <p className="text-gray-700">No payment history available.</p>
         )}
       </div>
 
-      {/* Error and Success Messages */}
-      {error && (
-        <div className="bg-red-200 p-2 rounded mt-4 text-red-600">{error}</div>
+      {isModalOpen && (
+        <UpdateUserModal
+          authTokens={authTokens}
+          onClose={() => setIsModalOpen(false)}
+          onUpdate={handleProfileUpdate}
+        />
       )}
-      {successMessage && (
-        <div className="bg-green-200 p-2 rounded mt-4 text-green-600">
-          {successMessage}
-        </div>
-      )}
-
-      {/* Edit Profile Button */}
-      <div className="mt-4">
-        <button className="bg-yellow-500 text-white p-2 rounded w-full">
-          Edit Profile
-        </button>
-      </div>
     </div>
   );
 };
 
 Profile.propTypes = {
-  user: PropTypes.shape({
-    username: PropTypes.string.isRequired,
-    poll_id: PropTypes.number.isRequired,
-  }),
   authTokens: PropTypes.shape({
     access: PropTypes.string.isRequired,
   }).isRequired,

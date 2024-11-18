@@ -1,4 +1,5 @@
 import csv
+from uuid import uuid4
 from django.http import HttpResponse
 import requests
 from rest_framework import status, generics
@@ -132,7 +133,7 @@ class PollCreateView(APIView):
         payment_data = {
             "email": user.email,
             "amount": int(amount * 100),
-            "reference": f"poll-{poll_id}-activation",
+            "reference": f"activate-{poll_id}-{uuid4().hex[:5]}",
         }
 
         headers = {

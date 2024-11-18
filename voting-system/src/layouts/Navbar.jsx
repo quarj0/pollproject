@@ -9,23 +9,25 @@ import {
   MenuItem,
   MenuItems,
 } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import axiosInstance from "../apis/api";
+import { FaUserCircle, FaVoteYea } from "react-icons/fa";
 
 const navigation = [
   { name: "Create Poll", href: "/create-poll", current: false },
-  { name: "Update Details", href: "/update-details", current: false },
-  { name: "View Results", href: "/view-results", current: false },
 ];
 
-AccountNavbar.propTypes = {
+Navbar.propTypes = {
   authTokens: PropTypes.shape({
     access: PropTypes.string.isRequired,
   }).isRequired,
   logout: PropTypes.func.isRequired,
 };
 
-export default function AccountNavbar({ authTokens, logout }) {
+export default function Navbar({ authTokens, logout }) {
   const [balance, setBalance] = useState({ available: 0, withdrawn: 0 });
 
   useEffect(() => {
@@ -40,7 +42,6 @@ export default function AccountNavbar({ authTokens, logout }) {
         .then((response) => {
           setBalance({
             available: response.data.available_balance,
-            withdrawn: response.data.total_withdrawn,
           });
         })
         .catch((error) => {
@@ -67,13 +68,9 @@ export default function AccountNavbar({ authTokens, logout }) {
               />
             </DisclosureButton>
           </div>
-          <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+          <div className="flex flex-1 items-center justify-between sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 items-center">
-              <img
-                alt="Poll Application"
-                src="/path/to/your/logo.png"
-                className="h-8 w-auto"
-              />
+              <FaVoteYea className="h-8 w-auto" />
             </div>
             <div className="hidden sm:ml-6 sm:block">
               <div className="flex space-x-4">
@@ -96,22 +93,16 @@ export default function AccountNavbar({ authTokens, logout }) {
           </div>
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
             <div className="text-white mr-4">
-              <p>
-                Balance: ${balance.available} | Withdrawn: ${balance.withdrawn}
-              </p>
+              <p>Balance: GHS{balance.available} </p>
+              
             </div>
-
 
             {/* Profile dropdown */}
             <Menu as="div" className="relative ml-3">
               <div>
                 <MenuButton className="relative flex rounded-full bg-blue-600 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600">
                   <span className="sr-only">Open user menu</span>
-                  <img
-                    alt="User Profile"
-                    src="https://via.placeholder.com/32"
-                    className="size-8 rounded-full"
-                  />
+                  <FaUserCircle className="size-8 rounded-full" />
                 </MenuButton>
               </div>
               <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">

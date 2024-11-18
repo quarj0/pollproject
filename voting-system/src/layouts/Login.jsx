@@ -48,7 +48,7 @@ const LoginPage = ({ login }) => {
       if (response.data) {
         login(response.data); 
         alert(response.data.message || "Login successful!");
-        navigate("/profile"); 
+        navigate("/home"); 
       } else {
         setError(response.data.message || "Invalid credentials");
       }

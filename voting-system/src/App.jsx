@@ -8,6 +8,7 @@ import {
 import Navbar from "./layouts/Navbar";
 import Login from "./layouts/Login";
 import HomePage from "./components/Homepage";
+import Home from "./components/Home";
 import Profile from "./components/Profile";
 import RegisterPage from "./layouts/Register";
 import PasswordResetConfirmPage from "./layouts/PasswordResetConfirm";
@@ -44,7 +45,7 @@ const App = () => {
     const fetchUser = async () => {
       if (authTokens) {
         try {
-          const response = await axiosInstance.get("auth/user", {
+          const response = await axiosInstance.get("auth/user/", {
             headers: {
               Authorization: `Bearer ${authTokens.access}`,
             },
@@ -79,10 +80,10 @@ const App = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
-        <Navbar isAuthenticated={!!authTokens} user={user} onLogout={logout} />
         <div className="max-w-7xl mx-auto p-4">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route
               path="/login"
@@ -94,14 +95,30 @@ const App = () => {
                 )
               }
             />
-            <Route path="/password/reset" element={<PasswordResetRequestPage />} />
-            <Route path="/password/reset/confirm" element={<PasswordResetConfirmPage />} />
+            <Route
+              path="/password/reset"
+              element={<PasswordResetRequestPage />}
+            />
+            <Route
+              path="/auth/reset/password/:uidb64/:token"
+              element={<PasswordResetConfirmPage />}
+            />
+
             <Route
               path="/profile"
               element={
                 authTokens ? (
                   user ? (
-                    <Profile user={user} authTokens={authTokens} />
+                    <>
+                      <Navbar
+                        authTokens={authTokens}
+                        logout={logout}
+                        isAuthenticated={!!authTokens}
+                        user={user}
+                        onLogout={logout}
+                      />
+                      <Profile user={user} authTokens={authTokens} />
+                    </>
                   ) : (
                     <div>Loading...</div>
                   )
