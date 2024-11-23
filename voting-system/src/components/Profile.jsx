@@ -2,15 +2,18 @@ import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import axiosInstance from "../apis/api";
 import UpdateUserModal from "./UpdateUserModal";
+import WithdrawModal from "./WithdrawModal";
 
 const Profile = ({ authTokens }) => {
   const [user, setUser] = useState(null);
   const [availableBalance, setAvailableBalance] = useState(null);
   const [totalWithdrawn, setTotalWithdrawn] = useState(null);
+  const [pollId, setPollId] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State to manage modal
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   const fetchPaymentHistory = useCallback(
     async (url = "payment/history") => {
@@ -41,6 +44,7 @@ const Profile = ({ authTokens }) => {
         },
       });
       setUser(response.data);
+      setPollId(response.data.poll_id); // Ensure pollId is set correctly
     } catch (error) {
       setError("Failed to load user data.");
       console.error("Error fetching user data:", error);
@@ -71,8 +75,13 @@ const Profile = ({ authTokens }) => {
   }, [authTokens, fetchBalance, fetchUser, fetchPaymentHistory]);
 
   const handleProfileUpdate = () => {
-    fetchUser(); 
-    setIsModalOpen(false);
+    fetchUser();
+    setIsUpdateModalOpen(false);
+  };
+
+  const handleWithdraw = (data) => {
+    console.log("Withdrawal successful:", data);
+    fetchBalance();
   };
 
   if (loading) {
@@ -97,7 +106,7 @@ const Profile = ({ authTokens }) => {
           Phone Number: {user?.account_number || "N/A"}
         </p>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setIsUpdateModalOpen(true)}
           className="px-4 py-2 bg-gray-200 rounded mt-4"
         >
           Update Profile
@@ -108,6 +117,15 @@ const Profile = ({ authTokens }) => {
         <h3 className="text-xl font-semibold mb-2">Balance</h3>
         <p className="text-gray-700">Available: {availableBalance || 0}</p>
         <p className="text-gray-700">Withdrawn: {totalWithdrawn || 0}</p>
+        <button
+          onClick={() => {
+            setPollId(user.poll_id); // Set the pollId before opening the modal
+            setIsWithdrawModalOpen(true);
+          }}
+          className="px-4 py-2 bg-gray-200 rounded mt-4"
+        >
+          Withdraw
+        </button>
       </div>
 
       <div className="p-6 border rounded-md shadow-md bg-white">
@@ -164,11 +182,18 @@ const Profile = ({ authTokens }) => {
         )}
       </div>
 
-      {isModalOpen && (
+      {isUpdateModalOpen && (
         <UpdateUserModal
           authTokens={authTokens}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => setIsUpdateModalOpen(false)}
           onUpdate={handleProfileUpdate}
+        />
+      )}
+      {isWithdrawModalOpen && (
+        <WithdrawModal
+          pollId={pollId}
+          onClose={() => setIsWithdrawModalOpen(false)}
+          onWithdraw={handleWithdraw}
         />
       )}
     </div>

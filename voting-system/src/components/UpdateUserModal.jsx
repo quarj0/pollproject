@@ -14,7 +14,6 @@ const UpdateUserModal = ({ authTokens, onClose, onUpdate }) => {
     setLoading(true);
     setError(null);
 
-    // Build payload with only non-empty fields
     const payload = {};
     if (username) payload.username = username;
     if (email) payload.email = email;
@@ -26,7 +25,7 @@ const UpdateUserModal = ({ authTokens, onClose, onUpdate }) => {
           Authorization: `Bearer ${authTokens.access}`,
         },
       });
-      onUpdate(); // Notify parent component to refresh user data
+      onUpdate();
     } catch (error) {
       setError("Failed to update profile.");
       console.error("Error updating profile:", error);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+// import PropTypes from "prop-types";
 import {
   BrowserRouter as Router,
   Routes,
@@ -78,22 +79,28 @@ const App = () => {
 
   if (loading) return <div>Loading...</div>;
 
+  // eslint-disable-next-line react/prop-types
+  const PrivateRoute = ({ children }) => {
+    return authTokens ? children : <Navigate to="/login" />;
+  };
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
+        <Navbar
+          authTokens={authTokens}
+          logout={logout}
+          isAuthenticated={!!authTokens}
+          user={user}
+        />
         <div className="max-w-7xl mx-auto p-4">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/create-poll" element={<CreatePoll />} />
             <Route
               path="/login"
               element={
-                authTokens ? (
-                  <Navigate to="/profile" />
-                ) : (
-                  <Login login={login} />
-                )
+                authTokens ? <Navigate to="/" /> : <Login login={login} />
               }
             />
             <Route
@@ -104,37 +111,30 @@ const App = () => {
               path="/auth/reset/password/:uidb64/:token"
               element={<PasswordResetConfirmPage />}
             />
-
             <Route
               path="/profile"
               element={
-                authTokens ? (
-                  user ? (
-                    <>
-                      <Navbar
-                        authTokens={authTokens}
-                        logout={logout}
-                        isAuthenticated={!!authTokens}
-                        user={user}
-                        onLogout={logout}
-                      />
-                      <Profile user={user} authTokens={authTokens} />
-                    </>
-                  ) : (
-                    <div>Loading...</div>
-                  )
-                ) : (
-                  <Navigate to="/login" />
-                )
+                <PrivateRoute>
+                  <Profile user={user} authTokens={authTokens} />
+                </PrivateRoute>
               }
             />
-           <Route path="*" element={<Navigate to="/" />} />
+            <Route
+              path="/create-poll"
+              element={
+                <PrivateRoute>
+                  <CreatePoll authTokens={authTokens} />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
+        <Footer />
       </div>
-    <Footer />
     </Router>
   );
 };
 
 export default App;
+

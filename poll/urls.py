@@ -1,20 +1,32 @@
-
 from django.urls import path
-
-from .views import PollCreateView, UpdatePollView, PollDetailView, PollListView, DeletePollView, DownloadVoterCodesView
-
+from .views import (
+    PollCreateView,
+    UpdatePollView,
+    PollDetailView,
+    PollListView,
+    DeletePollView,
+    DownloadVoterCodesView,
+    ContestantCreateView,
+    ContestantDetails,
+    ContestantUpdateView,
+)
 
 urlpatterns = [
-
-    path('create/', PollCreateView.as_view(), name='poll_create'),
-
-    path('update/<int:pk>/', UpdatePollView.as_view(), name='poll_update'),
-
+    # Poll Management
+    path('create/', PollCreateView.as_view(), name='poll-create'),
+    
+    path('<int:pk>/update/', UpdatePollView.as_view(), name='poll-update'),
+    
     path('<int:poll_id>/', PollDetailView.as_view(), name='poll-detail'),
+    
+    path('list/', PollListView.as_view(), name='poll-list'),
+    path("<int:poll_id>/contestants/", ContestantDetails.as_view(), name="contestant-details"),
+    
+    path('<int:poll_id>/delete/',DeletePollView.as_view(), name='poll-delete'),
+    
+    path('<int:poll_id>/voter-codes/download/',DownloadVoterCodesView.as_view(), name='download-voter-codes'),
 
-    path('list/', PollListView.as_view(), name='poll_list'),
-
-    path('delete/<int:poll_id>/', DeletePollView.as_view(), name='poll_delete'),
-
-    path('download_voter_codes/<int:poll_id>/', DownloadVoterCodesView.as_view(), name='download_voter_codes'),
+    # Contestant Management
+    path('contestants/create/', ContestantCreateView.as_view(), name='contestant-create'),
+    path('contestants/<int:pk>/update/',ContestantUpdateView.as_view(), name='contestant-update'),
 ]

@@ -1,4 +1,4 @@
-import PollImage from "../assets/registration-day.jpg";
+import PollImage from "../assets/rb_4190.png";
 import PastPollImage from "../assets/voter-registeration.jpg";
 import PollsList from "./PollList";
 const Homepage = () => {
@@ -7,7 +7,7 @@ const Homepage = () => {
       {/* Hero Section */}
       <section
         className="relative bg-cover bg-center h-screen flex items-center justify-end px-8"
-        style={{ backgroundImage: `url(${PollImage})` }}
+        style={{ backgroundImage: `url(${PollImage})`, opacity: 0.6 }}
       >
         <div className="max-w-lg bg-white bg-opacity-70 p-8 rounded shadow-lg">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
@@ -17,10 +17,10 @@ const Homepage = () => {
             Create, vote, and explore exciting polls and events!
           </p>
           <a
-            href="#register"
+            href="/create-poll"
             className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
           >
-            Register & Create Poll
+            Create Poll
           </a>
         </div>
       </section>

@@ -13,24 +13,21 @@ from django.utils.crypto import get_random_string
 import string
 
 from vote.models import VoterCode
-from .models import Poll
-from .serializers import PollSerializer, UpdatePollSerializer
+from .models import Poll, Contestant
+from .serializers import PollSerializer, UpdatePollSerializer, ContestantSerializer
 
 import logging
 from rest_framework.permissions import IsAuthenticated
 
 logger = logging.getLogger(__name__)
 
+# ---- Poll Management Views ----
+
 
 class PollCreateView(APIView):
-    """
-    API view to handle the creation of polls.
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        
-        # Handle poll creation via serializer
         serializer = PollSerializer(
             data=request.data, context={'request': request})
 
@@ -53,7 +50,7 @@ class PollCreateView(APIView):
                         "short_url": short_url,
                         "ussd_code": ussd_code,
                         "payment_link": payment_link,
-                        "download_voter_codes": reverse('download_voter_codes', args=[poll.id]),
+                        "download_voter_codes": reverse('download-voter-codes', args=[poll.id]),
                         "message": "Poll created successfully. Please complete payment to activate the poll."
                     }, status=status.HTTP_201_CREATED)
                 else:
@@ -72,28 +69,17 @@ class PollCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def generate_voter_codes(self, poll):
-        """
-        Generate a number of unique voter codes for a given poll based on expected voters.
-        """
-        # Ensure the poll has expected voters set
         if not poll.expected_voters:
             return f"Poll '{poll.title}' does not have expected voters set."
 
-        # Create the required number of unique voter codes based on expected voters
         for _ in range(poll.expected_voters):
             code = get_random_string(
                 length=5, allowed_chars=string.ascii_uppercase + string.digits)
-
-            # Create a vote entry for tracking purposes (code is not tied to a contestant here)
             VoterCode.objects.create(poll=poll, code=code)
 
         return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
 
-
     def generate_bitly_url(self, poll_id, request):
-        """
-        Generate a shortened URL using Bitly API with dynamically built URL
-        """
         bitly_url = "https://api-ssl.bitly.com/v4/bitlinks"
         headers = {
             "Authorization": f"Bearer {settings.BITLY_ACCESS_TOKEN}",
@@ -101,35 +87,24 @@ class PollCreateView(APIView):
         }
 
         site = get_current_site(request)
-        
-        long_url = f"http://{site.domain}{reverse('poll-detail', args=[poll_id])}"
-
-        title = Poll.objects.get(id=poll_id).title
+        long_url = f"http://{site.domain}{
+            reverse('poll-detail', args=[poll_id])}"
 
         payload = {
             "long_url": long_url,
-            "title": title,
+            "title": Poll.objects.get(id=poll_id).title,
         }
 
         try:
             response = requests.post(bitly_url, json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
-
-            if "link" in data:
-                return data['link']
-            else:
-                logger.error(
-                    f"Bitly API response did not contain link. Data: {data}")
-                return None
-        except requests.exceptions.RequestException as e:
+            return data.get('link', None)
+        except requests.RequestException as e:
             logger.error(f"Error shortening URL with Bitly: {e}")
             return None
 
     def create_payment_link(self, user, amount, poll_id):
-        """
-        Create a payment link with Paystack.
-        """
         payment_data = {
             "email": user.email,
             "amount": int(amount * 100),
@@ -147,22 +122,15 @@ class PollCreateView(APIView):
                 json=payment_data,
                 headers=headers,
             )
-
             if response.status_code == 200:
                 response_data = response.json()
                 if response_data.get("status"):
                     return response_data["data"]["authorization_url"]
-                else:
-                    logger.error(f"Paystack error: {response_data.get('message')}")
-                    return None
-            else:
-                logger.error(f"Failed to connect to payment gateway. Status Code: {response.status_code}")
-                return None
-
+            logger.error(f"Paystack error: {response_data.get('message')}")
         except requests.RequestException as e:
             logger.error(
                 f"Exception during payment gateway initialization: {e}")
-            return None
+        return None
 
 
 class UpdatePollView(generics.UpdateAPIView):
@@ -181,8 +149,22 @@ class PollDetailView(APIView):
         if not poll.active:
             return Response({"detail": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = PollSerializer(poll)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        contestants = poll.contestants.values('name', 'category', 'nominee_code', 'award')
+        return Response({
+            "poll": PollSerializer(poll).data,
+            "contestants": list(contestants)}, status=status.HTTP_200_OK)
+
+
+class ContestantDetails(APIView):
+    def get(self, request, poll_id, *args, **kwargs):
+        # Fetch all contestants for the given poll ID
+        contestants = Contestant.objects.filter(poll_id=poll_id).values('name', 'nominee_code', 'image')
+
+        if not contestants.exists():
+            return Response({
+                "error": "No contestants found for this poll."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"contestants": list(contestants)}, status=status.HTTP_200_OK)
 
 
 class PollListView(APIView):
@@ -205,20 +187,13 @@ class DeletePollView(APIView):
 
 
 class DownloadVoterCodesView(APIView):
-    """
-    View to download the voter codes for a specific poll as a CSV file.
-    """
-
     def get(self, request, poll_id):
         poll = get_object_or_404(Poll, id=poll_id)
-
-        # Check if the poll has any voter codes
         voter_codes = VoterCode.objects.filter(poll=poll, used=False)
 
         if not voter_codes:
             return Response({"error": "No voter codes available for this poll."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create a CSV file in memory
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="voter_codes_{
             poll_id}.csv"'
@@ -226,8 +201,26 @@ class DownloadVoterCodesView(APIView):
         writer = csv.writer(response)
         writer.writerow(['Voter Code', 'Used'])
 
-        # Write each voter code to the CSV
         for voter_code in voter_codes:
             writer.writerow([voter_code.code, voter_code.used])
 
         return response
+
+# ---- Contestant Management Views ----
+
+
+class ContestantCreateView(generics.CreateAPIView):
+    queryset = Contestant.objects.all()
+    serializer_class = ContestantSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class ContestantUpdateView(generics.UpdateAPIView):
+    queryset = Contestant.objects.all()
+    serializer_class = ContestantSerializer
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if 'name' in serializer.validated_data:
+            instance.nominee_code = instance.generate_nominee_code()
+            instance.save()

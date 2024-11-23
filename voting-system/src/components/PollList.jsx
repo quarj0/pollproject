@@ -9,6 +9,7 @@ const PollsList = () => {
     const fetchPolls = async () => {
       try {
         const response = await axiosInstance.get("polls/list/");
+        console.log(response.data)
         setPolls(response.data);
       } catch (error) {
         console.error("Error fetching polls:", error);
@@ -47,7 +48,7 @@ const PollsList = () => {
         {contestants.map((contestant) => (
           <li key={contestant.id} className="mb-4 flex items-start space-x-4">
             <img
-              src={contestant.image || placeholderImage}
+              src={contestant["contestants_images"] || placeholderImage}
               alt={contestant.name}
               className="w-16 h-16 object-cover rounded-md"
             />
@@ -79,7 +80,7 @@ const PollsList = () => {
     <div className="p-4 border rounded-md">
       <h3 className="text-md font-semibold">{poll.title}</h3>
       <p>Description: {poll.description}</p>
-      <img src={poll.image} alt={poll.title} className="w-full h-48 object-cover rounded-md mt-4" />
+      <img src={poll["poll_image"]} alt={poll.title} className="w-full h-48 object-cover rounded-md mt-4" />
       <p>Start Time: {new Date(poll.start_time).toLocaleString()}</p>
       <p>End Time: {new Date(poll.end_time).toLocaleString()}</p>
       <p>

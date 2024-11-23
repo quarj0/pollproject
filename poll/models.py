@@ -12,7 +12,8 @@ class Poll(models.Model):
     ]
 
     title = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='poll_images/', blank=True, null=True)
+    poll_image = models.ImageField(
+        upload_to='poll_images/', blank=True, null=True)
     description = models.TextField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -41,18 +42,19 @@ class Contestant(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.nominee_code:
-            name_parts = self.name.split()
-            if len(name_parts) == 1:
-                code = name_parts[0][:3].upper()
-            elif len(name_parts) == 2:
-                code = (name_parts[0][:2] + name_parts[1][:1]).upper()
-            else:
-                code = (name_parts[0][:1] + name_parts[1]
-                        [:1] + name_parts[2][:1]).upper()
-            poll_id_code = str(self.poll.id)
-            self.nominee_code = f"{code}{poll_id_code}"
+            self.nominee_code = self.generate_nominee_code()
         super().save(*args, **kwargs)
+
+    def generate_nominee_code(self):
+        name_parts = self.name.split()
+        if len(name_parts) == 1:
+            code = name_parts[0][:3].upper()
+        elif len(name_parts) == 2:
+            code = (name_parts[0][:2] + name_parts[1][:1]).upper()
+        else:
+            code = (name_parts[0][:1] + name_parts[1]
+                    [:1] + name_parts[2][:1]).upper()
+        return f"{code}{self.poll.id}"
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"
-
