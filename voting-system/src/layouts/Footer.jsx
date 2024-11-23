@@ -1,47 +1,8 @@
 const Footer = () => {
   return (
-    <footer className="py-10 bg-gray-800 text-white">
+    <footer className="py-10 bg-gradient-to-br from-teal-800 to-blue-950 text-white">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Quick Links */}
-          <div>
-            <h5 className="text-lg font-semibold mb-4">Quick Links</h5>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="/home"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Home
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#about"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  About
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#services"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Services
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#contact"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-
+        <div className="flex flex-col md:flex-row md:justify-center md:space-x-16 text-center md:text-left">
           {/* Other Links */}
           <div>
             <h5 className="text-lg font-semibold mb-4">Other Links</h5>
@@ -76,6 +37,45 @@ const Footer = () => {
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Support
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h5 className="text-lg font-semibold mb-4">Quick Links</h5>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="/home"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Home
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#about"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  About
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#services"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Services
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#contact"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Contact
                 </a>
               </li>
             </ul>

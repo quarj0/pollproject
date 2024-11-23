@@ -93,7 +93,7 @@ const App = () => {
           isAuthenticated={!!authTokens}
           user={user}
         />
-        <div className="max-w-7xl mx-auto p-4">
+        <div>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/register" element={<RegisterPage />} />
