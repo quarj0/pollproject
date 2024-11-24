@@ -16,6 +16,9 @@ import PasswordResetRequestPage from "./layouts/PasswordReset";
 import axiosInstance from "./apis/api";
 import Footer from "./layouts/Footer";
 import CreatePoll from "./components/CreatePoll";
+import PastPolls from "./components/PastPolls";
+import UpcomingPolls from "./components/UpcomingPolls";
+import ContestantsPage from "./components/ContestantsPage";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -96,6 +99,13 @@ const App = () => {
         <div>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/events" element={<UpcomingPolls />} />
+            <Route
+              path="/polls/:pollId/contestants"
+              element={<ContestantsPage />}
+            />
+
+            <Route path="/past/events" element={<PastPolls />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route
               path="/login"

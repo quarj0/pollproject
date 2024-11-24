@@ -20,6 +20,7 @@ urlpatterns = [
     path('<int:poll_id>/', PollDetailView.as_view(), name='poll-detail'),
     
     path('list/', PollListView.as_view(), name='poll-list'),
+    
     path("<int:poll_id>/contestants/", ContestantDetails.as_view(), name="contestant-details"),
     
     path('<int:poll_id>/delete/',DeletePollView.as_view(), name='poll-delete'),
