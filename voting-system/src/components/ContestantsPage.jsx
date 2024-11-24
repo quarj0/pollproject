@@ -4,12 +4,11 @@ import { FaArrowLeft } from "react-icons/fa";
 import axiosInstance from "../apis/api";
 
 const ContestantsPage = () => {
-  const { pollId } = useParams(); 
+  const { pollId } = useParams();
   const [contestants, setContestants] = useState([]);
   const [pollTitle, setPollTitle] = useState("");
 
   useEffect(() => {
-    // Fetch contestants for the specific poll
     const fetchContestants = async () => {
       try {
         const response = await axiosInstance.get(
@@ -54,8 +53,7 @@ const ContestantsPage = () => {
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300"
                 >
                   <img
-                          src={`http://localhost:8000/${contestant.image}`}
-                          {...console.log(contestants)}
+                    src={`http://localhost:8000${contestant.image}`}
                     alt={contestant.name}
                     className="w-full h-48 object-cover"
                   />
@@ -65,6 +63,9 @@ const ContestantsPage = () => {
                     <p className="text-xs text-gray-500 mt-2">
                       Nominee Code: {contestant.nominee_code}
                     </p>
+                    <button className="mt-4 w-1/2 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-900 transition">
+                              Vote for <span>{ contestant.nominee_code}</span>
+                    </button>
                   </div>
                 </div>
               ))}
