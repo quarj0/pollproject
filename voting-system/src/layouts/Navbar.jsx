@@ -14,9 +14,8 @@ import { FaUserCircle } from "react-icons/fa";
 import axiosInstance from "../apis/api";
 
 const navigation = [
-  { name: "Home", href: "/home", current: false },
+  { name: "Home", href: "/dashboard", current: false },
   { name: "Create Poll", href: "/create-poll", current: false },
-  { name: "Events", href: "/polls", current: false },
   { name: "Results", href: "/results", current: false },
 ];
 

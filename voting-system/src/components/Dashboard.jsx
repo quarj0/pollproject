@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../apis/api";
-import LaptopImage from "../assets/laptopandphone.png";
 
-const Homepage = () => {
+const DashBoard = () => {
   const [upcomingPolls, setUpcomingPolls] = useState([]);
   const [pastPolls, setPastPolls] = useState([]);
 
@@ -15,17 +14,14 @@ const Homepage = () => {
 
         // Filter and slice polls
         const currentDateTime = new Date();
-        const filteredUpcomingPolls = response.data
-          .filter((poll) => {
-            // const startTime = new Date(poll.start_time);
-            const endTime = new Date(poll.end_time).getTime();
-            return  currentDateTime <= endTime;
-          })
-          .slice(0, 3);
+        const filteredUpcomingPolls = response.data.filter((poll) => {
+          const endTime = new Date(poll.end_time).getTime();
+          return currentDateTime <= endTime;
+        });
 
-        const filteredPastPolls = response.data
-          .filter((poll) => new Date(poll.start_time) <= currentDateTime)
-          .slice(0, 10);
+        const filteredPastPolls = response.data.filter(
+          (poll) => new Date(poll.start_time) <= currentDateTime
+        );
 
         setUpcomingPolls(filteredUpcomingPolls);
         setPastPolls(filteredPastPolls);
@@ -103,36 +99,6 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="bg-gradient-to-br from-teal-800 to-blue-950 text-white py-10 w-full">
-        <div className="flex flex-col md:flex-row items-center justify-between px-4 md:px-16">
-          {/* Left Section: Text */}
-          <div className="md:w-1/2 text-center md:text-left">
-            <h2 className="text-6xl font-bold mb-4 font-poppins">
-              Create Your <span className="text-yellow-500">Event</span> Today
-            </h2>
-            <p className="mb-6 text-lg">
-              Create an interactive poll and engage with your audience in
-              real-time.
-            </p>
-            <a
-              href="/register"
-              className="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition"
-            >
-              Register Now
-            </a>
-          </div>
-
-          {/* Right Section: Image */}
-          <div className="md:w-1/2 flex justify-center mt-6 md:mt-0">
-            <img
-              src={LaptopImage}
-              alt="Join Us Illustration"
-              className="w-full max-w-md rounded-2xl"
-            />
-          </div>
-        </div>
-      </section>
-
       {/* Past Events Section */}
 
       {/* Past Events Section */}
@@ -174,4 +140,4 @@ const Homepage = () => {
   );
 };
 
-export default Homepage;
+export default DashBoard;

@@ -22,9 +22,11 @@ const PastPolls = () => {
     fetchPolls();
   }, []);
 
-  const currentDate = new Date();
+  const currentDateTime = new Date(); // Includes both date and time
+
+  // Past polls should end before the current date and time
   const pastPolls = polls.filter(
-    (poll) => new Date(poll.end_time) < currentDate
+    (poll) => new Date(poll.end_time) < currentDateTime
   );
 
   if (loading) {

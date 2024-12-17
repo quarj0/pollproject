@@ -26,11 +26,10 @@ const currentDate = new Date();
 
 // Filter for upcoming or ongoing polls
 const upcomingPolls = polls.filter((poll) => {
-  const startTime = new Date(poll.start_time);
-  const endTime = new Date(poll.end_time);
+  const endTime = new Date(poll.end_time).getTime();
 
   // Check if the current date is between the start_time and end_time
-  return currentDate >= startTime && currentDate <= endTime;
+  return currentDate <= endTime;
 });
 
 
@@ -73,7 +72,7 @@ const upcomingPolls = polls.filter((poll) => {
               <p className="text-sm text-gray-600 mt-1">
                 Starts: {new Date(poll.start_time).toLocaleString()}
               </p>
-              <p className="mt-2 text-gray-700 line-clamp-3">
+              <p className="my-3 text-gray-700 line-clamp-3">
                 {poll.description}
               </p>
               <Link

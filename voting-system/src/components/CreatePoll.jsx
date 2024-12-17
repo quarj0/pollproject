@@ -2,6 +2,7 @@ import { useState } from "react";
 import axiosInstance from "../apis/api";
 import { motion, AnimatePresence } from "framer-motion";
 import ContestantField from "./ContestantField";
+// import PollDetailsModal from "./PollResponseModal";
 
 const PollCreation = () => {
   const [formData, setFormData] = useState({
@@ -18,16 +19,17 @@ const PollCreation = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [setupFee, setSetupFee] = useState(0);
+  // const [PollDetails, setPollDetails] = useState(null);
+  // const [showModal, setShowModal] = useState(false);
 
   const calculateSetupFee = (expectedVoters) => {
     if (expectedVoters <= 20) return 25;
     if (expectedVoters <= 60) return 25;
     if (expectedVoters <= 100) return 35;
     if (expectedVoters <= 200) return 50;
-    return 0; // Should not reach here due to validation
+    return 0;
   };
 
-  // Handle changes for form inputs
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
@@ -57,7 +59,6 @@ const PollCreation = () => {
     }
   };
 
-  // Add a new contestant
   const addContestant = () => {
     setContestants((prev) => [
       ...prev,
@@ -123,6 +124,19 @@ const PollCreation = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // const pollResponseHandler = async () => {
+  //   const response = {
+  //     poll_id: "",
+  //     short_url: "",
+  //     download_voter_codes: "",
+  //     payment_link: "",
+  //     ussd_code: "",
+  //     message: "",
+  //   };
+  //   setPollDetails(response);
+  //   setShowModal(true);
+  // };
+
   // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,7 +149,8 @@ const PollCreation = () => {
     submissionData.append("end_time", formData.end_time);
     submissionData.append("poll_type", formData.poll_type);
 
-    if (formData.poll_image) submissionData.append("poll_image", formData.poll_image);
+    if (formData.poll_image)
+      submissionData.append("poll_image", formData.poll_image);
     if (formData.poll_type === "creator-pay") {
       submissionData.append("expected_voters", formData.expected_voters);
     }
@@ -143,12 +158,13 @@ const PollCreation = () => {
       submissionData.append("voting_fee", formData.voting_fee);
     }
 
-    // Loop through contestants and append their fields correctly
     contestants.forEach((contestant, index) => {
       submissionData.append(`contestants[${index}][name]`, contestant.name);
-      submissionData.append(`contestants[${index}][category]`, contestant.category);
+      submissionData.append(
+        `contestants[${index}][category]`,
+        contestant.category
+      );
       submissionData.append(`contestants[${index}][award]`, contestant.award);
-      
 
       if (contestant.image) {
         submissionData.append(`contestants[${index}][image]`, contestant.image);
@@ -239,7 +255,7 @@ const PollCreation = () => {
             className="w-full border rounded p-2"
           >
             <option value="">Select Poll Type</option>
-            <option value="voter-pay">Voter-Pay</option>
+            <option value="voters-pay">Voter-Pay</option>
             <option value="creator-pay">Creator-Pay</option>
           </select>
           {errors.poll_type && (
@@ -263,7 +279,7 @@ const PollCreation = () => {
             )}
             {setupFee > 0 && (
               <p className="text-green-500 mt-2">
-                Total Setup Fee: ${setupFee}
+                Total Setup Fee: GHS {setupFee.toFixed(2)}
               </p>
             )}
           </div>
@@ -299,7 +315,9 @@ const PollCreation = () => {
               className="mt-2 h-32 w-32 object-cover"
             />
           )}
-          {errors.poll_image && <p className="text-red-500">{errors.poll_image}</p>}
+          {errors.poll_image && (
+            <p className="text-red-500">{errors.poll_image}</p>
+          )}
         </div>
         <div className="mb-4">
           <button

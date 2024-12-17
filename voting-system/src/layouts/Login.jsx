@@ -2,27 +2,12 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../apis/api";
-// import ReCAPTCHA from "react-google-recaptcha";
 
 const LoginPage = ({ login }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  // const [recaptchaResponse, setRecaptchaResponse] = useState(""); // To store the recaptcha response
-  // const [captcha, setCaptcha] = useState(false); // To track recaptcha completion
   const navigate = useNavigate();
-
-  // const verifyCallback = (response) => {
-  //   if (response) {
-  //     setCaptcha(true);
-  //     setRecaptchaResponse(response);
-  //   }
-  // };
-
-  // const expiredCallback = () => {
-  //   setCaptcha(false);
-  //   setRecaptchaResponse("");
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,22 +18,16 @@ const LoginPage = ({ login }) => {
       return;
     }
 
-    // if (!captcha) {
-    //   setError("Please complete the reCAPTCHA.");
-    //   return;
-    // }
-
     try {
       const response = await axiosInstance.post("auth/login/", {
         email,
         password,
-        // "g-recaptcha-response": recaptchaResponse, // Include reCAPTCHA response
       });
 
       if (response.data) {
-        login(response.data); 
+        login(response.data);
         alert(response.data.message || "Login successful!");
-        navigate("/home"); 
+        navigate("/dashboard");
       } else {
         setError(response.data.message || "Invalid credentials");
       }
@@ -78,7 +57,9 @@ const LoginPage = ({ login }) => {
       {/* Right Section */}
       <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md">
-          <h2 className="text-2xl font-bold font-lato mb-4 text-gray-700 text-center">Login</h2>
+          <h2 className="text-2xl font-bold font-lato mb-4 text-gray-700 text-center">
+            Login
+          </h2>
           {error && <p className="text-red-600 mb-4">{error}</p>}
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
@@ -119,13 +100,6 @@ const LoginPage = ({ login }) => {
               Register
             </a>
           </div>
-          {/* <div className="my-4 mx-4 items-center">
-            <ReCAPTCHA
-              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-              onChange={verifyCallback}
-              onExpired={expiredCallback}
-            />
-          </div> */}
         </div>
       </div>
     </div>
