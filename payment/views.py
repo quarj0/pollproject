@@ -76,7 +76,7 @@ class VerifyPaymentView(APIView):
             poll_id = reference_parts[1]
 
             # Check if this is a poll activation or vote payment
-            if "activation" in reference:
+            if "activate" in reference:
                 poll = get_object_or_404(Poll, id=poll_id)
                 transaction_type = get_transaction_type(poll)
 
@@ -173,8 +173,10 @@ class PaymentLinkView(APIView):
         if pending_transaction:
             reference = pending_transaction.payment_reference
         else:
+
             # Create a unique reference for a new transaction
-            reference = f"activate-{poll_id}-{uuid().hex[:5]}" if poll.poll_type == Poll.CREATOR_PAY else f"vote-{poll_id}"
+            reference = f"activate-{poll_id}-{uuid.uuid4(
+            ).hex[:5]}" if poll.poll_type == Poll.CREATOR_PAY else f"vote-{poll_id}"
             pending_transaction = Transaction.objects.create(
                 user_id=request.user.id,
                 poll_id=poll_id,

@@ -112,6 +112,14 @@ export default function Navbar({ authTokens, logout }) {
                   </MenuItem>
                   <MenuItem>
                     <a
+                      href="/payment/new"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      New Payment Link
+                    </a>
+                  </MenuItem>
+                  <MenuItem>
+                    <a
                       href="/settings"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >

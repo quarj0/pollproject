@@ -9,7 +9,7 @@ urlpatterns = [
 
     path('history/', PaymentHistoryView.as_view(), name='payment-history'),
 
-    path('<poll_id>/link/', PaymentLinkView.as_view(), name='payment-link'),
+    path('poll/<poll_id>/link/', PaymentLinkView.as_view(), name='payment-link'),
 
     path('account/<int:poll_id>/withdraw/',
          InitiateWithdrawalView.as_view(), name='withdrawal'),
