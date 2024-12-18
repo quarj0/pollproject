@@ -69,9 +69,7 @@ export default function Navbar({ authTokens, logout }) {
               </DisclosureButton>
             </div>
             <div className="flex flex-1 items-center justify-between sm:items-stretch sm:justify-start">
-              <div className="flex shrink-0 items-center">
-                {/* Logo */}
-              </div>
+              <div className="flex shrink-0 items-center">{/* Logo */}</div>
               <div className="hidden sm:ml-6 sm:block">
                 <div className="flex space-x-4">
                   {navigation.map((item) => (
@@ -153,9 +151,6 @@ export default function Navbar({ authTokens, logout }) {
           </div>
         </DisclosurePanel>
       </Disclosure>
-
-      {/* Content container with padding to prevent overlap */}
-      <div className="pt-16">{/* Page content goes here */}</div>
     </>
   );
 }

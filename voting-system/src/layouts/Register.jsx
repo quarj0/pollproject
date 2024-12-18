@@ -18,7 +18,6 @@ const RegisterPage = () => {
     setError("");
     setLoading(true);
 
-    // Validate account number (digits only)
     if (!/^\d+$/.test(accountNumber)) {
       setLoading(false);
       setError("Account number must contain only numeric digits.");

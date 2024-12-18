@@ -22,9 +22,15 @@ const WithdrawModal = ({ pollId, onClose, onWithdraw }) => {
       );
       onWithdraw(response.data);
       onClose();
-    } catch (err) {
-      setError("Failed to initiate withdrawal. Please try again.");
-      console.error("Error initiating withdrawal:", err);
+    } catch (error) {
+      if (error.response && error.response.data) {
+        const serverError =
+          error.response.data.non_field_errors?.[0] ||
+          error.response.data.detail;
+        setError(serverError || "Withdrawal failed. Please try again.");
+      } else {
+        setError("An error occurred. Please try again later.");
+      }
     }
   };
 

@@ -32,10 +32,14 @@ const LoginPage = ({ login }) => {
         setError(response.data.message || "Invalid credentials");
       }
     } catch (error) {
-      console.error("Error during login:", error);
-      setError(
-        error.response?.data?.message || "An error occurred. Please try again."
-      );
+      if (error.response && error.response.data) {
+        const serverError =
+          error.response.data.non_field_errors?.[0] ||
+          error.response.data.detail;
+        setError(serverError || "Login failed. Please try again.");
+      } else {
+        setError("An error occurred. Please try again later.");
+      }
     }
   };
 

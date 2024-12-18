@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   BrowserRouter as Router,
   Routes,
@@ -19,6 +20,7 @@ import PastPolls from "./components/PastPolls";
 import UpcomingPolls from "./components/UpcomingPolls";
 import ContestantsPage from "./components/ContestantsPage";
 import DashBoard from "./components/Dashboard";
+import Settings from "./layouts/Settings";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -82,9 +84,12 @@ const App = () => {
 
   if (loading) return <div>Loading...</div>;
 
-  // eslint-disable-next-line react/prop-types
   const PrivateRoute = ({ children }) => {
     return authTokens ? children : <Navigate to="/login" />;
+  };
+
+  PrivateRoute.propTypes = {
+    children: PropTypes.node.isRequired,
   };
 
   return (
@@ -122,6 +127,14 @@ const App = () => {
             />
 
             <Route path="/dashboard" element={<DashBoard />} />
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <Settings authTokens={authTokens} />
+                </PrivateRoute>
+              }
+            />
 
             <Route
               path="/password/reset"

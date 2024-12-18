@@ -44,7 +44,7 @@ const Profile = ({ authTokens }) => {
         },
       });
       setUser(response.data);
-      setPollId(response.data.poll_id); // Ensure pollId is set correctly
+      setPollId(response.data.poll_id);
     } catch (error) {
       setError("Failed to load user data.");
       console.error("Error fetching user data:", error);
