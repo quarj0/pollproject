@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axiosInstance from "../apis/api";
 import { Link } from "react-router-dom";
 import { FaArrowAltCircleLeft } from "react-icons/fa";
@@ -18,31 +18,18 @@ const Message = ({ type, message }) => {
 };
 
 const NewPaymentLink = ({ authTokens }) => {
-  const [polls, setPolls] = useState([]);
+  const [pollId, setPollId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingPolls, setLoadingPolls] = useState(true);
 
-  useEffect(() => {
-    axiosInstance
-      .get("/polls/list/", {
-        headers: {
-          Authorization: `Bearer ${authTokens.access}`,
-        },
-      })
-      .then((response) => {
-        setPolls(response.data);
-        console.log(response.data);
-        setLoadingPolls(false);
-      })
-      .catch(() => {
-        setError("Failed to load polls.");
-        setLoadingPolls(false);
-      });
-  }, [authTokens]);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!pollId.trim()) {
+      setError("Please enter a valid Poll ID or name.");
+      return;
+    }
 
-  const handleCreateLink = async (pollId) => {
     setMessage("");
     setError("");
     setLoading(true);
@@ -56,6 +43,7 @@ const NewPaymentLink = ({ authTokens }) => {
           },
         }
       );
+
       setMessage(
         <span>
           Payment link created successfully. Click{" "}
@@ -71,16 +59,18 @@ const NewPaymentLink = ({ authTokens }) => {
         </span>
       );
     } catch (error) {
+      setLoading(false);
+      console.error("Error details:", error);
       if (error.response && error.response.data) {
         const serverError =
           error.response.data.non_field_errors?.[0] ||
           error.response.data.detail;
-        setError(serverError || "Failed to create payment link.");
+        setError(serverError || "Server returned an unknown error.");
+      } else if (error.request) {
+        setError("No response from the server. Please check your connection.");
       } else {
-        setError("An error occurred. Please try again later.");
+        setError(`Request error: ${error.message}`);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -91,41 +81,38 @@ const NewPaymentLink = ({ authTokens }) => {
           <FaArrowAltCircleLeft className="text-xl" />
         </Link>
         <h2 className="text-2xl font-bold text-gray-800 ml-2">
-          Create Payment Link
+          Generate Payment Link
         </h2>
       </div>
-      <Message type="success" message={message} />
-      <Message type="error" message={error} />
-      {loadingPolls ? (
-        <p>Loading polls...</p>
-      ) : (
+      <form onSubmit={handleSubmit}>
+        {/* Success or Error Messages */}
+        <Message type="success" message={message} />
+        <Message type="error" message={error} />
         <div className="mb-4">
-          <h3 className="text-xl font-semibold mb-2">Your Polls</h3>
-          {polls.length === 0 ? (
-            <p className="text-gray-700">No polls available.</p>
-          ) : (
-            <ul className="space-y-4">
-              {polls.map((poll) => (
-                <li key={poll.id} className="flex justify-between items-center p-4 border rounded">
-                  <div>
-                    <h4 className="text-lg font-semibold">{poll.name}</h4>
-                    <p className="text-gray-600">{poll.description}</p>
-                  </div>
-                  <button
-                    onClick={() => handleCreateLink(poll.id)}
-                    className={`px-4 py-2 text-white rounded ${
-                      loading ? "bg-gray-400" : "bg-blue-500"
-                    }`}
-                    disabled={loading}
-                  >
-                    {loading ? "Processing..." : "Create Link"}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <label htmlFor="pollId" className="block text-gray-700">
+            Poll Name or ID
+          </label>
+          <input
+            id="pollId"
+            type="text"
+            value={pollId}
+            onChange={(e) => setPollId(e.target.value)}
+            className="w-full p-2 border rounded"
+            placeholder="Enter Poll Name or ID"
+          />
         </div>
-      )}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className={`px-4 py-2 text-white rounded ${
+              loading ? "bg-gray-400" : "bg-blue-500"
+            }`}
+            disabled={loading}
+          >
+            {loading ? "Processing..." : "Generate"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
@@ -136,7 +123,7 @@ NewPaymentLink.propTypes = {
 
 Message.propTypes = {
   type: PropTypes.string.isRequired,
-  message: PropTypes.string,
+  message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 };
 
 export default NewPaymentLink;

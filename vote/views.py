@@ -48,6 +48,10 @@ class VoteView(APIView):
             return Response({"error": "Voter code is required for creator-pay polls."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        if not nominee_code and not contestant_id:
+            return Response({"error": "Either nominee_code or contestant_id must be provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         # Validate and retrieve voter code
         voter_code = self.validate_voter_code(poll, code)
         if isinstance(voter_code, Response):

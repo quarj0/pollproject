@@ -42,9 +42,10 @@ class VoteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Contestant does not belong to this poll.")
 
-        if contestant and contestant.poll != poll:
-            raise serializers.ValidationError(
-                "Contestant does not belong to this poll.")
+        if not contestant:
+            raise serializers.ValidationError("Provide a valid contestant.")
+        
+        
 
         return data
 
