@@ -353,6 +353,6 @@ class VoteResultView(APIView):
         results = Contestant.objects.filter(poll=poll).annotate(
             vote_count=Sum('votes__number_of_votes')
         ).values(
-            'name', 'vote_count'
+            'name', 'image', 'vote_count'
         )
         return Response(results, status=status.HTTP_200_OK)

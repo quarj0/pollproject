@@ -1,5 +1,6 @@
 from django.db import models
 from authentication.models import User
+import uuid
 
 
 class Poll(models.Model):
@@ -54,7 +55,7 @@ class Contestant(models.Model):
         else:
             code = (name_parts[0][:1] + name_parts[1]
                     [:1] + name_parts[2][:1]).upper()
-        return f"{code}{self.poll.id}"
+        return f"{code}{self.poll.id}{uuid.uuid4().hex[:2]}".upper()
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"

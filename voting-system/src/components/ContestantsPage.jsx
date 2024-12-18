@@ -51,7 +51,7 @@ const ContestantsPage = () => {
       setLoading(true);
 
       // Determine payload based on poll type
-      const payload = pollId.startsWith("voter-pay")
+      const payload = pollId.startsWith("voters-pay")
         ? { nominee_code: selectedNominee, votes: parseInt(voteCount, 10) }
         : { code: voterCode, nominee_code: selectedNominee };
 
@@ -129,11 +129,11 @@ const ContestantsPage = () => {
               <p className="text-center text-red-600 font-medium">{error}</p>
             )}
             <h3 className="text-xl font-semibold mb-4">
-              {pollId.startsWith("voter-pay")
-                ? "Enter Vote Count"
+              {pollId.startsWith("voters-pay")
+                ? "Enter Number of Votes"
                 : "Enter Voter Code"}
             </h3>
-            {pollId.startsWith("voter-pay") ? (
+            {pollId.startsWith("voters-pay") ? (
               <input
                 type="number"
                 value={voteCount}
