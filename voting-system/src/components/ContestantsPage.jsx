@@ -13,21 +13,33 @@ const ContestantsPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedNominee, setSelectedNominee] = useState(null);
   const [voterCode, setVoterCode] = useState("");
-  const [voteCount, setVoteCount] = useState("");
 
   useEffect(() => {
+    const fetchPollDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(`polls/${pollId}/`);
+        setPollTitle(response.data.title);
+      } catch (error) {
+        console.error("Error fetching poll details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const fetchContestants = async () => {
       try {
         const response = await axiosInstance.get(
           `polls/${pollId}/contestants/`
         );
         setContestants(response.data.contestants);
-        setPollTitle(response.data.poll_title);
       } catch (error) {
         console.error("Error fetching contestants:", error);
       }
     };
 
+    // Fetch both data
+    fetchPollDetails();
     fetchContestants();
   }, [pollId]);
 
@@ -39,7 +51,6 @@ const ContestantsPage = () => {
   const closeModal = () => {
     setModalOpen(false);
     setVoterCode("");
-    setVoteCount("");
     setSelectedNominee(null);
   };
 
@@ -47,15 +58,20 @@ const ContestantsPage = () => {
     setError("");
     setSuccess("");
 
+    if (!voterCode) {
+      setError("Please enter your voter code.");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Determine payload based on poll type
-      const payload = pollId.startsWith("voters-pay")
-        ? { nominee_code: selectedNominee, votes: parseInt(voteCount, 10) }
-        : { code: voterCode, nominee_code: selectedNominee };
+      // Send voter code and nominee code to the backend
+      const payload = {
+        code: voterCode,
+        nominee_code: selectedNominee,
+      };
 
-      // Send vote request
       const response = await axiosInstance.post(`vote/${pollId}/`, payload);
 
       setSuccess(response.data.message || "Vote cast successfully!");
@@ -80,8 +96,6 @@ const ContestantsPage = () => {
       <main className="py-10">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center">Contestants</h2>
-
-          {/* Success or Error Messages */}
 
           {contestants.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -128,28 +142,17 @@ const ContestantsPage = () => {
             {error && (
               <p className="text-center text-red-600 font-medium">{error}</p>
             )}
-            <h3 className="text-xl font-semibold mb-4">
-              {pollId.startsWith("voters-pay")
-                ? "Enter Number of Votes"
-                : "Enter Voter Code"}
-            </h3>
-            {pollId.startsWith("voters-pay") ? (
-              <input
-                type="number"
-                value={voteCount}
-                onChange={(e) => setVoteCount(e.target.value)}
-                placeholder="Number of votes"
-                className="w-full px-4 py-2 border rounded-lg mb-4"
-              />
-            ) : (
-              <input
-                type="text"
-                value={voterCode}
-                onChange={(e) => setVoterCode(e.target.value)}
-                placeholder="Voter code"
-                className="w-full px-4 py-2 border rounded-lg mb-4"
-              />
-            )}
+
+            <h3 className="text-xl font-semibold mb-4">Enter Voter Code</h3>
+
+            <input
+              type="text"
+              value={voterCode}
+              onChange={(e) => setVoterCode(e.target.value)}
+              placeholder="Voter code"
+              className="w-full px-4 py-2 border rounded-lg mb-4"
+            />
+
             <div className="flex justify-end gap-4">
               <button
                 onClick={closeModal}
@@ -168,6 +171,7 @@ const ContestantsPage = () => {
           </div>
         </div>
       )}
+
       <Link
         to={"/"}
         className="inline-flex items-center text-gray-500 hover:text-gray-700"

@@ -22,6 +22,7 @@ import ContestantsPage from "./components/ContestantsPage";
 import DashBoard from "./components/Dashboard";
 import Settings from "./layouts/Settings";
 import NewPaymentLink from "./components/NewPaymentLink";
+import ResultsPage from "./layouts/ResultsPage";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -129,7 +130,7 @@ const App = () => {
 
             <Route path="/dashboard" element={<DashBoard />} />
             <Route path="/payment/new" element={<NewPaymentLink />} />
-
+            <Route path="/results/:pollId/" element={<ResultsPage />} />
             <Route
               path="/settings"
               element={

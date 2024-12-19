@@ -1722,3 +1722,7 @@ Traceback (most recent call last):
     raise RuntimeError(
 RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to localhost:8000/vote/results/5/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
 "POST /vote/results/5 HTTP/1.1" 500 72504
+Internal Server Error: /payment/verify/vote-4-22-d12815d0/
+"GET /payment/verify/vote-4-22-d12815d0/ HTTP/1.1" 500 49
+Internal Server Error: /payment/verify/vote-5-28-adb20722/
+"GET /payment/verify/vote-5-28-adb20722/ HTTP/1.1" 500 49

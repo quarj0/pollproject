@@ -84,7 +84,7 @@ class VerifyPaymentView(APIView):
                 contestant_id = reference_parts[2]
                 contestant = get_object_or_404(
                     Contestant, id=contestant_id, poll=poll)
-                self._process_vote(transaction, poll, contestant, amount_paid)
+                self._process_vote(transaction, poll, contestant, amount_paid, reference)
                 return Response({"message": "Vote recorded."}, status=status.HTTP_201_CREATED)
 
             return Response({"message": "Payment verified."}, status=status.HTTP_200_OK)
