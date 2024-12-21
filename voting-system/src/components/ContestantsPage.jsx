@@ -16,6 +16,7 @@ const ContestantsPage = () => {
   const [voterCode] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
   const [pollType, setPollType] = useState(""); // Track poll type
+  const [groupedContestants, setGroupedContestants] = useState({});
 
   useEffect(() => {
     const fetchPollDetails = async () => {
@@ -23,7 +24,7 @@ const ContestantsPage = () => {
         setLoading(true);
         const response = await axiosInstance.get(`polls/${pollId}/`);
         setPollTitle(response.data.title);
-        setPollType(response.data.poll_type); // Set poll type
+        setPollType(response.data.poll_type); 
       } catch (error) {
         console.error("Error fetching poll details:", error);
       } finally {
@@ -45,6 +46,19 @@ const ContestantsPage = () => {
     fetchPollDetails();
     fetchContestants();
   }, [pollId]);
+
+  useEffect(() => {
+    if (contestants.length > 0) {
+      // Group contestants by category
+      const grouped = contestants.reduce((acc, contestant) => {
+        const category = contestant.category || "Uncategorized"; 
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(contestant);
+        return acc;
+      }, {});
+      setGroupedContestants(grouped);
+    }
+  }, [contestants]);
 
   const openModal = (nomineeCode) => {
     setSelectedNominee(nomineeCode);
@@ -80,7 +94,7 @@ const ContestantsPage = () => {
           : `vote/voter-pay/${pollId}/`;
 
       const response = await axiosInstance.post(endpoint, payload);
-      if (pollType === "voter-pay") {
+      if (pollType === "voters-pay") {
         setPaymentUrl(response.data.payment_url);
       } else {
         setSuccess("Vote cast successfully.");
@@ -112,33 +126,42 @@ const ContestantsPage = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center">Contestants</h2>
 
-          {contestants.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {contestants.map((contestant) => (
-                <div
-                  key={contestant.nominee_code}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300"
-                >
-                  <img
-                    src={`http://localhost:8000${contestant.image}`}
-                    alt={contestant.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold">{contestant.name}</h3>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Nominee Code: {contestant.nominee_code}
-                    </p>
-                    <button
-                      className="mt-4 w-1/2 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-900 transition"
-                      onClick={() => openModal(contestant.nominee_code)}
+          {Object.keys(groupedContestants).length > 0 ? (
+            Object.keys(groupedContestants).map((category) => (
+              <div key={category} className="mb-8">
+                <h3 className="text-xl font-semibold text-teal-600 mb-4">
+                  {category}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {groupedContestants[category].map((contestant) => (
+                    <div
+                      key={contestant.nominee_code}
+                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300"
                     >
-                      Vote for {contestant.nominee_code}
-                    </button>
-                  </div>
+                      <img
+                        src={`http://localhost:8000${contestant.image}`}
+                        alt={contestant.name}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="p-4">
+                        <h3 className="text-lg font-semibold">
+                          {contestant.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Nominee Code: {contestant.nominee_code}
+                        </p>
+                        <button
+                          className="mt-4 w-1/2 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-900 transition"
+                          onClick={() => openModal(contestant.nominee_code)}
+                        >
+                          Vote for {contestant.nominee_code}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))
           ) : (
             <p className="text-center text-gray-500">No contestants found.</p>
           )}
@@ -186,7 +209,7 @@ const ContestantsPage = () => {
                 </h3>
                 <input
                   type="text"
-                  value={voterCode} 
+                  value={voterCode}
                   onChange={(e) => setVotes(e.target.value)}
                   placeholder="Voter code"
                   className="w-full px-4 py-2 border rounded-lg mb-4"

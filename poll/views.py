@@ -80,7 +80,7 @@ class PollCreateView(APIView):
         return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
 
     def generate_bitly_url(self, poll_id, request):
-        bitly_url = "https://api-ssl.bitly.com/v4/bitlinks"
+        bitly_url = "https://api-ssl.bitly.com/v4/shorten"
         headers = {
             "Authorization": f"Bearer {settings.BITLY_ACCESS_TOKEN}",
             "Content-Type": "application/json",
@@ -92,8 +92,7 @@ class PollCreateView(APIView):
 
         payload = {
             "long_url": long_url,
-            "title": Poll.objects.get(id=poll_id).title,
-        }
+            "domain": "bit.ly", }
 
         try:
             response = requests.post(bitly_url, json=payload, headers=headers)
@@ -149,7 +148,8 @@ class PollDetailView(APIView):
         if not poll.active:
             return Response({"detail": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
-        contestants = poll.contestants.values('name', 'category', 'nominee_code', 'award')
+        contestants = poll.contestants.values(
+            'name', 'category', 'nominee_code', 'award')
         return Response({
             "poll": PollSerializer(poll).data,
             "contestants": list(contestants)}, status=status.HTTP_200_OK)
@@ -158,7 +158,8 @@ class PollDetailView(APIView):
 class ContestantDetails(APIView):
     def get(self, request, poll_id, *args, **kwargs):
         # Fetch all contestants for the given poll ID
-        contestants = Contestant.objects.filter(poll_id=poll_id).values('name', 'nominee_code', 'image')
+        contestants = Contestant.objects.filter(
+            poll_id=poll_id).values('name', 'nominee_code', 'image')
 
         if not contestants.exists():
             return Response({
@@ -171,6 +172,13 @@ class PollListView(APIView):
     def get(self, request, *args, **kwargs):
         polls = Poll.objects.all()
         serializer = PollSerializer(polls, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ContestantListView(APIView):
+    def get(self, request, *args, **kwargs):
+        contestants = Contestant.objects.all()
+        serializer = ContestantSerializer(contestants, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -205,8 +213,6 @@ class DownloadVoterCodesView(APIView):
             writer.writerow([voter_code.code, voter_code.used])
 
         return response
-
-# ---- Contestant Management Views ----
 
 
 class ContestantCreateView(generics.CreateAPIView):

@@ -23,7 +23,10 @@ import DashBoard from "./components/Dashboard";
 import Settings from "./layouts/Settings";
 import NewPaymentLink from "./components/NewPaymentLink";
 import ResultsPage from "./layouts/ResultsPage";
-
+import PollManagement from "./layouts/PollManagement";
+import UpdatePoll from "./components/UpdatePoll";
+import UpdateContestant from "./components/UpdateContestant";
+import PaymentCompletion from "./layouts/PaymentVerification";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -110,11 +113,15 @@ const App = () => {
         <div>
           <Routes>
             <Route path="/" element={<HomePage />} />
+
             <Route path="/events" element={<UpcomingPolls />} />
-            <Route
-              path="/polls/:pollId/contestants"
-              element={<ContestantsPage />}
-            />
+
+            <Route path="/payment/verify/:reference" element={<PaymentCompletion />} />
+            <Route path="/polls/:pollId/contestants" element={<ContestantsPage />} />
+            
+            <Route path="/manage-polls" element={<PollManagement />} />
+            <Route path="/edit/poll/:pollId" element={<UpdatePoll />} />
+            <Route path="/edit/contestant/:contestantId" element={<UpdateContestant />} />
 
             <Route path="/past/events" element={<PastPolls />} />
             <Route path="/register" element={<RegisterPage />} />

@@ -25,9 +25,9 @@ export default function Navbar({ authTokens, logout }) {
       current: location.pathname === "/dashboard",
     },
     {
-      name: "Create Poll",
-      href: "/create-poll",
-      current: location.pathname === "/create-poll",
+      name: "Manage Poll",
+      href: "/manage-polls",
+      current: location.pathname === "/manage-polls",
     },
   ];
 
