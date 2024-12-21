@@ -54,7 +54,7 @@ const LoginPage = ({ login }) => {
         />
         <h1 className="text-2xl md:text-4xl font-bold">Welcome Back!</h1>
         <p className="mt-4 text-sm md:text-lg">
-          Login to access your manage your polls.
+          Login to access and manage your polls.
         </p>
       </div>
 

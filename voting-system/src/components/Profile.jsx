@@ -119,7 +119,7 @@ const Profile = ({ authTokens }) => {
         <p className="text-gray-700">Withdrawn: {totalWithdrawn || 0}</p>
         <button
           onClick={() => {
-            setPollId(user.poll_id); // Set the pollId before opening the modal
+            setPollId(user.poll_id);
             setIsWithdrawModalOpen(true);
           }}
           className="px-4 py-2 bg-gray-200 rounded mt-4"

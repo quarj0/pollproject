@@ -109,7 +109,7 @@ export default function Navbar({ authTokens, logout }) {
                     Unable to load balance
                   </span>
                 ) : (
-                  <p>Balance: GHS{balance.available}</p>
+                  <p>Balance: GHS {balance.available}</p>
                 )}
               </div>
 

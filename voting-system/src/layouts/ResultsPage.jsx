@@ -1,29 +1,37 @@
-import { useEffect, useState, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
 import axiosInstance from "../apis/api";
-import PropTypes from "prop-types";
+import { FaArrowAltCircleLeft } from "react-icons/fa";
 import avatar from "../assets/user-icon.jpg";
+
 import {
+  ResponsiveContainer,
   BarChart,
-  PieChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
   Legend,
-  Pie,
   Cell,
+  PieChart,
+  Pie,
 } from "recharts";
+import CustomBarLabel from "./CustomBarLabel";
 
-const ResultsPage = ({ pollId }) => {
+const ResultsPage = () => {
+  // Get the pollId from the URL parameters
+  const { pollId } = useParams();
+
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Fetch results whenever pollId changes
   useEffect(() => {
     fetchResults();
   }, [pollId]);
 
+  // Function to fetch results for the specific pollId
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
@@ -41,6 +49,7 @@ const ResultsPage = ({ pollId }) => {
     }
   }, [pollId]);
 
+  // Function to process and aggregate results
   const processResults = (data) => {
     const resultMap = new Map();
     data.forEach((item) => {
@@ -60,30 +69,9 @@ const ResultsPage = ({ pollId }) => {
     );
   };
 
+  // Function to generate dynamic colors for the chart
   const getDynamicColor = (index, total) =>
     `hsl(${(index * 360) / total}, 70%, 50%)`;
-
-  const renderCustomBarLabel = useCallback(
-      ({ x, y, width, index }) => {
-      const imageUrl = results[index]?.image || avatar;
-
-      if (!imageUrl) return avatar;
-
-      return (
-        <g>
-          <image
-            href={imageUrl}
-            x={x + width / 2 - 15}
-            y={y - 40}
-            height="30"
-            width="30"
-            style={{ borderRadius: "50%" }}
-          />
-        </g>
-      );
-    },
-    [results]
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -126,7 +114,7 @@ const ResultsPage = ({ pollId }) => {
                     <Bar
                       dataKey="vote_count"
                       animationDuration={800}
-                      label={renderCustomBarLabel}
+                      label={<CustomBarLabel results={results} />}
                     >
                       {results.map((entry, index) => (
                         <Cell
@@ -202,8 +190,8 @@ const ResultsPage = ({ pollId }) => {
                         </td>
                         <td className="border border-gray-300 px-4 py-2">
                           <img
-                            src={result.image}
-                            alt={`${result.name}'s profile picture`}
+                            src={result.image || avatar}
+                            alt={`${result.name}`}
                             className="w-10 h-10 object-cover rounded-full"
                             loading="lazy"
                           />
@@ -217,16 +205,15 @@ const ResultsPage = ({ pollId }) => {
           )}
         </div>
       </main>
+      <Link
+        to={"/home"}
+        className="inline-flex items-center text-gray-500 hover:text-gray-700"
+      >
+        <FaArrowAltCircleLeft className="mx-3" />
+        Back
+      </Link>
     </div>
   );
-};
-
-ResultsPage.defaultProps = {
-  pollId: "1",
-};
-
-ResultsPage.propTypes = {
-  pollId: PropTypes.string.isRequired,
 };
 
 export default ResultsPage;

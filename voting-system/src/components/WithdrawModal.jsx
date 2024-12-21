@@ -44,6 +44,7 @@ const WithdrawModal = ({ pollId, onClose, onWithdraw }) => {
             <label className="block text-gray-700 mb-2">Amount</label>
             <input
               type="number"
+              step={0.1}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full px-4 py-2 border rounded"

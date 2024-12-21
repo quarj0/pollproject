@@ -70,7 +70,7 @@ const upcomingPolls = polls.filter((poll) => {
                 {poll.title}
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                Starts: {new Date(poll.start_time).toLocaleString()}
+                Ends: {new Date(poll.end_time).toLocaleString()}
               </p>
               <p className="my-3 text-gray-700 line-clamp-3">
                 {poll.description}

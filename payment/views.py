@@ -215,12 +215,10 @@ class PaymentLinkView(APIView):
                     pending_transaction.save()
                     return Response({"payment_link": payment_url}, status=status.HTTP_200_OK)
                 else:
-                    logger.error(f"Paystack error: {
-                                 response_data.get('message')}")
+                    logger.error(f"Paystack error: {response_data.get('message')}")
                     return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                logger.error(f"Failed to connect to Paystack. Status Code: {
-                             response.status_code}")
+                logger.error(f"Failed to connect to Paystack. Status Code: {response.status_code}")
                 return Response({"error": "Failed to connect to payment gateway."}, status=status.HTTP_400_BAD_REQUEST)
 
         except requests.RequestException as e:

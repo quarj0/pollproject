@@ -24,6 +24,7 @@ import Settings from "./layouts/Settings";
 import NewPaymentLink from "./components/NewPaymentLink";
 import ResultsPage from "./layouts/ResultsPage";
 
+
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
     const storedTokens = localStorage.getItem("access");
@@ -130,7 +131,7 @@ const App = () => {
 
             <Route path="/dashboard" element={<DashBoard />} />
             <Route path="/payment/new" element={<NewPaymentLink />} />
-            <Route path="/results/:pollId/" element={<ResultsPage />} />
+            <Route path="/poll/:pollId/results" element={<ResultsPage />} />
             <Route
               path="/settings"
               element={

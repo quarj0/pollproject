@@ -12,7 +12,10 @@ const ContestantsPage = () => {
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedNominee, setSelectedNominee] = useState(null);
-  const [voterCode, setVoterCode] = useState("");
+  const [votes, setVotes] = useState(1);
+  const [voterCode] = useState("");
+  const [paymentUrl, setPaymentUrl] = useState("");
+  const [pollType, setPollType] = useState(""); // Track poll type
 
   useEffect(() => {
     const fetchPollDetails = async () => {
@@ -20,6 +23,7 @@ const ContestantsPage = () => {
         setLoading(true);
         const response = await axiosInstance.get(`polls/${pollId}/`);
         setPollTitle(response.data.title);
+        setPollType(response.data.poll_type); // Set poll type
       } catch (error) {
         console.error("Error fetching poll details:", error);
       } finally {
@@ -38,7 +42,6 @@ const ContestantsPage = () => {
       }
     };
 
-    // Fetch both data
     fetchPollDetails();
     fetchContestants();
   }, [pollId]);
@@ -50,49 +53,61 @@ const ContestantsPage = () => {
 
   const closeModal = () => {
     setModalOpen(false);
-    setVoterCode("");
+    setVotes(1);
     setSelectedNominee(null);
   };
 
-  const handleVote = async () => {
+  const handlePayment = async () => {
     setError("");
     setSuccess("");
 
-    if (!voterCode) {
-      setError("Please enter your voter code.");
+    if (votes < 1) {
+      setError("Please enter a valid number of votes.");
       return;
     }
 
     try {
       setLoading(true);
-
-      // Send voter code and nominee code to the backend
       const payload = {
-        code: voterCode,
         nominee_code: selectedNominee,
+        votes,
+        voter_code: voterCode,
       };
 
-      const response = await axiosInstance.post(`vote/${pollId}/`, payload);
+      const endpoint =
+        pollType === "creator-pay"
+          ? `vote/creator-pay/${pollId}/`
+          : `vote/voter-pay/${pollId}/`;
 
-      setSuccess(response.data.message || "Vote cast successfully!");
-      closeModal();
+      const response = await axiosInstance.post(endpoint, payload);
+      if (pollType === "voter-pay") {
+        setPaymentUrl(response.data.payment_url);
+      } else {
+        setSuccess("Vote cast successfully.");
+      }
     } catch (err) {
-      setError(err.response?.data?.error || "An error occurred while voting.");
+      setError(
+        err.response?.data?.error || "An error occurred during payment."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl;
+    }
+  }, [paymentUrl]);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
       <header className="bg-gradient-to-r from-blue-500 to-teal-500 text-white py-6">
         <div className="container mx-auto px-4 flex items-center gap-4">
           <h1 className="text-2xl md:text-3xl font-bold">{pollTitle}</h1>
         </div>
       </header>
 
-      {/* Contestants Section */}
       <main className="py-10">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center">Contestants</h2>
@@ -127,10 +142,18 @@ const ContestantsPage = () => {
           ) : (
             <p className="text-center text-gray-500">No contestants found.</p>
           )}
+
+          <div className="mt-6 text-center">
+            <Link
+              to={`/poll/${pollId}/results`}
+              className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-900 transition"
+            >
+              View Results
+            </Link>
+          </div>
         </div>
       </main>
 
-      {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg p-6 w-80">
@@ -143,15 +166,33 @@ const ContestantsPage = () => {
               <p className="text-center text-red-600 font-medium">{error}</p>
             )}
 
-            <h3 className="text-xl font-semibold mb-4">Enter Voter Code</h3>
-
-            <input
-              type="text"
-              value={voterCode}
-              onChange={(e) => setVoterCode(e.target.value)}
-              placeholder="Voter code"
-              className="w-full px-4 py-2 border rounded-lg mb-4"
-            />
+            {pollType === "voters-pay" ? (
+              <>
+                <h3 className="text-xl font-semibold mb-4">
+                  Enter Number of Votes
+                </h3>
+                <input
+                  type="number"
+                  value={votes}
+                  onChange={(e) => setVotes(e.target.value)}
+                  placeholder="Number of votes"
+                  className="w-full px-4 py-2 border rounded-lg mb-4"
+                />
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold mb-4">
+                  Enter Your Voter Code
+                </h3>
+                <input
+                  type="text"
+                  value={voterCode} 
+                  onChange={(e) => setVotes(e.target.value)}
+                  placeholder="Voter code"
+                  className="w-full px-4 py-2 border rounded-lg mb-4"
+                />
+              </>
+            )}
 
             <div className="flex justify-end gap-4">
               <button
@@ -161,7 +202,7 @@ const ContestantsPage = () => {
                 Cancel
               </button>
               <button
-                onClick={handleVote}
+                onClick={handlePayment}
                 className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
                 disabled={loading}
               >
@@ -173,7 +214,7 @@ const ContestantsPage = () => {
       )}
 
       <Link
-        to={"/"}
+        to={"/home"}
         className="inline-flex items-center text-gray-500 hover:text-gray-700"
       >
         <FaArrowAltCircleLeft className="mx-3" />

@@ -1,129 +1,107 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axiosInstance from "../apis/api";
-import { Link } from "react-router-dom";
-import { FaArrowAltCircleLeft } from "react-icons/fa";
-import PropTypes from "prop-types";
 
-const Message = ({ type, message }) => {
-  if (!message) return null;
-  return (
-    <div
-      className={`p-3 mb-4 text-sm text-white rounded ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      }`}
-    >
-      {message}
-    </div>
-  );
-};
-
-const NewPaymentLink = ({ authTokens }) => {
-  const [pollId, setPollId] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+const PaymentLinkGenerator = () => {
+  const [polls, setPolls] = useState([]);
+  const [selectedPollId, setSelectedPollId] = useState(null);
+  const [paymentLink, setPaymentLink] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!pollId.trim()) {
-      setError("Please enter a valid Poll ID or name.");
+  useEffect(() => {
+    const fetchPolls = async () => {
+      try {
+        const response = await axiosInstance.get("/polls/list/", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setPolls(response.data);
+      } catch {
+        setError("Failed to fetch polls.");
+      }
+    };
+
+    fetchPolls();
+  }, []);
+
+  const fetchPaymentLink = async () => {
+    if (!selectedPollId) {
+      setError("Please select a poll.");
       return;
     }
 
-    setMessage("");
-    setError("");
     setLoading(true);
+    setError("");
+    setPaymentLink("");
 
     try {
       const response = await axiosInstance.get(
-        `/payment/poll/${pollId}/link/`,
+        `/payment/poll/${selectedPollId}/link/`,
         {
           headers: {
-            Authorization: `Bearer ${authTokens.access}`,
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         }
       );
 
-      setMessage(
-        <span>
-          Payment link created successfully. Click{" "}
-          <a
-            href={response.data.payment_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline"
-          >
-            here
-          </a>{" "}
-          to proceed.
-        </span>
-      );
-    } catch (error) {
-      setLoading(false);
-      console.error("Error details:", error);
-      if (error.response && error.response.data) {
-        const serverError =
-          error.response.data.non_field_errors?.[0] ||
-          error.response.data.detail;
-        setError(serverError || "Server returned an unknown error.");
-      } else if (error.request) {
-        setError("No response from the server. Please check your connection.");
+      if (response.data?.payment_link) {
+        setPaymentLink(response.data.payment_link);
       } else {
-        setError(`Request error: ${error.message}`);
+        setError(response.data?.message || "An unexpected error occurred.");
       }
+    } catch {
+      setError("Failed to fetch payment link. Check poll type and try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center mb-4">
-        <Link to="/dashboard" className="text-blue-500">
-          <FaArrowAltCircleLeft className="text-xl" />
-        </Link>
-        <h2 className="text-2xl font-bold text-gray-800 ml-2">
-          Generate Payment Link
-        </h2>
-      </div>
-      <form onSubmit={handleSubmit}>
-        {/* Success or Error Messages */}
-        <Message type="success" message={message} />
-        <Message type="error" message={error} />
-        <div className="mb-4">
-          <label htmlFor="pollId" className="block text-gray-700">
-            Poll Name or ID
-          </label>
-          <input
-            id="pollId"
-            type="text"
-            value={pollId}
-            onChange={(e) => setPollId(e.target.value)}
-            className="w-full p-2 border rounded"
-            placeholder="Enter Poll Name or ID"
-          />
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className={`px-4 py-2 text-white rounded ${
-              loading ? "bg-gray-400" : "bg-blue-500"
-            }`}
-            disabled={loading}
+    <div className="flex flex-col items-center p-6 bg-white shadow-md rounded-lg">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        Get Your Payment Link
+      </h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <select
+        value={selectedPollId || ""}
+        onChange={(e) => setSelectedPollId(e.target.value)}
+        className="mb-4 px-4 py-2 border rounded-md"
+      >
+        <option value="" disabled>
+          Select a Poll
+        </option>
+        {polls.map((poll) => (
+          <option key={poll.id} value={poll.id}>
+            {poll.title}
+          </option>
+        ))}
+      </select>
+      {paymentLink ? (
+        <div className="bg-green-100 p-4 rounded-md shadow-inner">
+          <p className="text-green-700 font-medium mb-2">
+            Payment link successfully generated:
+          </p>
+          <a
+            href={paymentLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline break-words"
           >
-            {loading ? "Processing..." : "Generate"}
-          </button>
+            Proceed to Payment
+          </a>
         </div>
-      </form>
+      ) : (
+        <button
+          onClick={fetchPaymentLink}
+          className="px-6 py-3 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 transition duration-300 ease-in-out"
+          disabled={loading}
+        >
+          {loading ? "Generating Link..." : "Generate Payment Link"}
+        </button>
+      )}
     </div>
   );
 };
 
-NewPaymentLink.propTypes = {
-  authTokens: PropTypes.object.isRequired,
-};
-
-Message.propTypes = {
-  type: PropTypes.string.isRequired,
-  message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
-};
-
-export default NewPaymentLink;
+export default PaymentLinkGenerator;
