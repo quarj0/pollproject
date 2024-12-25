@@ -30,24 +30,24 @@ def validate_poll_type(data):
         if data.get('voting_fee') is None or data['voting_fee'] <= 0:
             raise serializers.ValidationError(
                 "Voting fee is required for voters-pay polls.")
-            
+
         if data.get('expected_voters') is not None:
             raise serializers.ValidationError(
                 "Expected voters should not be set for voters-pay polls.")
-            
+
     elif poll_type == Poll.CREATOR_PAY:
         if data.get('voting_fee') is not None:
             raise serializers.ValidationError(
                 "Voting fee should not be set for creator-pay polls.")
-            
+
         if data.get('expected_voters') is None:
             raise serializers.ValidationError(
                 "Expected voters is required for creator-pay polls.")
-            
+
         if data.get('expected_voters') < 20:
             raise serializers.ValidationError(
                 "Expected voters should be at least 20 for creator-pay polls.")
-            
+
         if data.get('expected_voters') > 200:
             raise serializers.ValidationError(
                 "Expected voters cannot exceed 200 for creator-pay polls.")
@@ -123,9 +123,10 @@ class UpdatePollSerializer(serializers.ModelSerializer):
             if 'start_time' in validated_data and validated_data['start_time'] != instance.start_time:
                 raise ValidationError(
                     "Start time cannot be modified for an active poll.")
-                
+
             if instance.end_time <= timezone.now():
-                raise ValidationError("You cannot update a poll that has already ended.")
+                raise ValidationError(
+                    "You cannot update a poll that has already ended.")
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -137,7 +138,7 @@ class ContestantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contestant
         fields = ['id', 'poll', 'category', 'name',
-                  'award', 'nominee_code', 'image']
+                  'nominee_code', 'image']
         read_only_fields = ['nominee_code']
 
     def validate(self, data):

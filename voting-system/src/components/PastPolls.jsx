@@ -22,7 +22,7 @@ const PastPolls = () => {
     fetchPolls();
   }, []);
 
-  const currentDateTime = new Date(); // Includes both date and time
+  const currentDateTime = new Date();
 
   // Past polls should end before the current date and time
   const pastPolls = polls.filter(
@@ -37,7 +37,12 @@ const PastPolls = () => {
 
   if (pastPolls.length === 0) {
     return (
-      <div className="text-center text-gray-500">No past polls found.</div>
+      <div className="text-center text-gray-500 py-48">
+        <h1 className="">No past polls found.</h1>
+        <Link to={"/home"} className="text-blue-500 text-center">
+          Back Home
+        </Link>
+      </div>
     );
   }
 
@@ -82,7 +87,7 @@ const PastPolls = () => {
         ))}
       </div>
       <Link
-        to={"/"}
+        to={"/home"}
         className="inline-flex items-center text-gray-500 hover:text-gray-700"
       >
         <FaArrowAltCircleLeft className="mr-2" />

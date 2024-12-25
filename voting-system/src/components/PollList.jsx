@@ -54,9 +54,7 @@ const PollsList = () => {
             />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <span className="font-semibold">
-                  {contestant.name} ({contestant.category}) - {contestant.award}
-                </span>
+               
                 <button
                   className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600 transition duration-200"
                   onClick={() => console.log(`Vote for ${contestant.name}`)}

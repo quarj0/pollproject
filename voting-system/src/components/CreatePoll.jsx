@@ -2,7 +2,6 @@ import { useState } from "react";
 import axiosInstance from "../apis/api";
 import { motion, AnimatePresence } from "framer-motion";
 import ContestantField from "./ContestantField";
-// import PollDetailsModal from "./PollResponseModal";
 
 const PollCreation = () => {
   const [formData, setFormData] = useState({
@@ -19,8 +18,6 @@ const PollCreation = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [setupFee, setSetupFee] = useState(0);
-  // const [PollDetails, setPollDetails] = useState(null);
-  // const [showModal, setShowModal] = useState(false);
 
   const calculateSetupFee = (expectedVoters) => {
     if (expectedVoters <= 20) return 25;
@@ -62,7 +59,7 @@ const PollCreation = () => {
   const addContestant = () => {
     setContestants((prev) => [
       ...prev,
-      { name: "", category: "", award: "", image: null, preview: null },
+      { name: "", category: "", image: null, preview: null },
     ]);
   };
 
@@ -107,8 +104,7 @@ const PollCreation = () => {
     if (formData.poll_image && formData.poll_image.size > 3 * 1024 * 1024) {
       newErrors.image = "Image size must be less than 3MB.";
     }
-    if (contestants.length === 0)
-      newErrors.contestants = "At least one contestant is required.";
+
     contestants.forEach((contestant, index) => {
       if (!contestant.name)
         newErrors[`contestant_name_${index}`] = "Name is required.";
@@ -124,20 +120,8 @@ const PollCreation = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // const pollResponseHandler = async () => {
-  //   const response = {
-  //     poll_id: "",
-  //     short_url: "",
-  //     download_voter_codes: "",
-  //     payment_link: "",
-  //     ussd_code: "",
-  //     message: "",
-  //   };
-  //   setPollDetails(response);
-  //   setShowModal(true);
-  // };
+  const [responseData, setResponseData] = useState(null);
 
-  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -164,7 +148,6 @@ const PollCreation = () => {
         `contestants[${index}][category]`,
         contestant.category
       );
-      submissionData.append(`contestants[${index}][award]`, contestant.award);
 
       if (contestant.image) {
         submissionData.append(`contestants[${index}][image]`, contestant.image);
@@ -177,6 +160,7 @@ const PollCreation = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       console.log("Poll created successfully:", res.data);
+      setResponseData(res.data); // Store the response data in state
     } catch (err) {
       const apiErrors = err.response?.data || {};
       setErrors((prev) => ({
@@ -269,6 +253,7 @@ const PollCreation = () => {
               type="number"
               name="expected_voters"
               value={formData.expected_voters}
+              placeholder="Enter the number of voters"
               onChange={handleInputChange}
               className="w-full border rounded p-2"
               min="20"
@@ -292,6 +277,7 @@ const PollCreation = () => {
               name="voting_fee"
               value={formData.voting_fee}
               onChange={handleInputChange}
+              placeholder="voting fee for each vote"
               className="w-full border rounded p-2"
             />
             {errors.voting_fee && (
@@ -359,6 +345,43 @@ const PollCreation = () => {
           {loading ? "Submitting..." : "Submit"}
         </button>
       </form>
+      {/* Display the response data */}
+      {responseData ? (
+        <div className="bg-gray-100 p-4 rounded shadow mb-4">
+          <h2 className="text-lg font-bold mb-2">Poll Created Successfully</h2>
+          <p>
+            <strong>Short url:</strong>{" "}
+            {responseData.short_url ||
+              "oops! couldn't generate the shorten url."}
+          </p>
+          <p>
+            <strong>Payment Link:</strong>{" "}
+            <a
+              href={responseData.payment_link || errors}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline"
+            >
+              Pay Here
+            </a>
+          </p>
+          <p>
+            <strong>USSD Code:</strong> {responseData.ussd_code}
+          </p>
+          <p>
+            <strong>Download Voter Codes:</strong>{" "}
+            <a
+              href={responseData.download_voter_codes}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline"
+            >
+              Download
+            </a>
+          </p>
+          <p>{responseData.message}</p>
+        </div>
+      ) : null}
     </div>
   );
 };

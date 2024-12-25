@@ -157,7 +157,9 @@ class PollDetailView(APIView):
 
 class ContestantDetails(APIView):
     def get(self, request, poll_id, *args, **kwargs):
-        # Fetch all contestants for the given poll ID
+        """
+        Fetch all contestants for the given poll ID
+        """
         contestants = Contestant.objects.filter(
             poll_id=poll_id).values('name', 'nominee_code', 'image')
 
@@ -177,6 +179,9 @@ class PollListView(APIView):
 
 class ContestantListView(APIView):
     def get(self, request, *args, **kwargs):
+        """    
+        Get all contestants from all polls
+        """
         contestants = Contestant.objects.all()
         serializer = ContestantSerializer(contestants, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -184,6 +189,7 @@ class ContestantListView(APIView):
 
 class DeletePollView(APIView):
     def delete(self, request, poll_id=None):
+        
         if poll_id:
             poll = get_object_or_404(Poll, id=poll_id)
             poll.delete()

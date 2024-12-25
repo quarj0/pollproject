@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../apis/api";
 import { useParams, useNavigate } from "react-router-dom";
+import Message from "./Message";
+import { FaArrowLeft } from "react-icons/fa";
 
 const UpdatePoll = () => {
   const { pollId } = useParams();
@@ -14,10 +16,10 @@ const UpdatePoll = () => {
       try {
         const res = await axiosInstance.get(`/polls/${pollId}/`);
         setPoll(res.data);
-        console.log(res.data); // Log the entire poll object
+        console.log(res.data);
       } catch (err) {
         setError("Failed to fetch poll details.");
-        console.error(err); // Log the error if it occurs
+        console.error(err); 
       } finally {
         setLoading(false);
       }
@@ -52,7 +54,7 @@ const UpdatePoll = () => {
   }
 
   // If the poll is not active, show details instead of the form
-  if (poll.active === true) {
+  if (!poll.active) {
     return (
       <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded">
         <h1 className="text-2xl font-bold mb-4">Poll Details</h1>
@@ -83,6 +85,13 @@ const UpdatePoll = () => {
           <label className="block mb-2">End Time</label>
           <p>{new Date(poll.end_time).toLocaleString()}</p>
         </div>
+        <p className="text-red-500">This poll is not active.</p>
+        <button
+          onClick={() => history(`/manage-polls`)}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          <FaArrowLeft className="inline-block" /> Go Back
+        </button>
       </div>
     );
   }
@@ -104,7 +113,7 @@ const UpdatePoll = () => {
             value={poll.title}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            required
+            
           />
         </div>
         <div className="mb-4">
@@ -114,7 +123,7 @@ const UpdatePoll = () => {
             value={poll.description}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            required
+            
           />
         </div>
         <div className="mb-4">
@@ -148,7 +157,7 @@ const UpdatePoll = () => {
             value={poll.start_time}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            required
+            
           />
         </div>
         <div className="mb-4">
@@ -159,7 +168,7 @@ const UpdatePoll = () => {
             value={poll.end_time}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            required
+            
           />
         </div>
 
@@ -169,6 +178,7 @@ const UpdatePoll = () => {
         >
           Update Poll
         </button>
+        {Message && <Message type="error" message={error} />}
       </form>
     </div>
   );

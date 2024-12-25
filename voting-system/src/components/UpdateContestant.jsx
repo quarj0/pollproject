@@ -7,7 +7,6 @@ const UpdateContestant = () => {
   const [contestant, setContestant] = useState({
     name: "",
     category: "",
-    award: "",
     image: null,
     preview: null,
   });
@@ -60,6 +59,12 @@ const UpdateContestant = () => {
     }));
   };
 
+  if (contestant < 0) return (
+    <div>
+      No contestants was been added 
+    </div>
+  )
+
   if (loading) return <p>Loading contestant...</p>;
   if (error) return <p>{error}</p>;
 
@@ -89,16 +94,7 @@ const UpdateContestant = () => {
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-2">Award</label>
-          <input
-            name="award"
-            value={contestant.award}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
+
         <div className="mb-4">
           <label className="block mb-2">Contestant Image</label>
           <input

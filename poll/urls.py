@@ -25,5 +25,6 @@ urlpatterns = [
 
     # Contestant Management
     path('<int:poll_id>/contestants/create/',ContestantCreateView.as_view(), name='contestant-create'),
-    path('<int:poll_id>/contestants/<int:contestant_id>/update/',ContestantUpdateView.as_view(), name='contestant-update'),
+    path('<int:poll_id>/contestants/<int:pk>/update/',
+         ContestantUpdateView.as_view(), name='contestant-update'),
 ]

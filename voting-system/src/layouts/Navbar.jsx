@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import axiosInstance from "../apis/api";
+import logo from "../assets/votelab.png";
 
 export default function Navbar({ authTokens, logout }) {
   const [balance, setBalance] = useState({ available: 0 });
@@ -75,7 +76,7 @@ export default function Navbar({ authTokens, logout }) {
             <div className="flex flex-1 items-center justify-between sm:items-stretch sm:justify-start">
               <div className="flex shrink-0 items-center">
                 <img
-                  src="/logo.svg"
+                  src={logo}
                   alt="Logo"
                   className="h-8 w-auto sm:h-10"
                 />

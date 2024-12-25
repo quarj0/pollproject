@@ -21,15 +21,7 @@ const ContestantField = ({ index, contestant, handleChange, handleRemove }) => {
           className="w-full border rounded p-2"
         />
       </div>
-      <div className="mb-4">
-        <label className="block font-medium">Award</label>
-        <input
-          type="text"
-          value={contestant.award}
-          onChange={(e) => handleChange(index, "award", e.target.value)}
-          className="w-full border rounded p-2"
-        />
-      </div>
+    
       <div className="mb-4">
         <label className="block font-medium">Image</label>
         <input
@@ -62,7 +54,6 @@ ContestantField.propTypes = {
   contestant: PropTypes.shape({
     category: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
-    award: PropTypes.string.isRequired,
     preview: PropTypes.string,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,

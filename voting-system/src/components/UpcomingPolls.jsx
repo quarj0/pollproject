@@ -41,7 +41,12 @@ const upcomingPolls = polls.filter((poll) => {
 
   if (upcomingPolls.length === 0) {
     return (
-      <div className="text-center text-gray-500">No upcoming polls found.</div>
+      <div className="text-center text-gray-500 py-48">
+          <h1 className="">No past polls found.</h1>
+        <Link to={"/home"} className="text-blue-500 text-center">
+          Back Home
+        </Link>
+        </div>
     );
   }
 

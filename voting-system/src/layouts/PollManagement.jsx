@@ -67,6 +67,7 @@ const PollManagement = () => {
                 <th className="p-3 text-left">Start Time</th>
                 <th className="p-3 text-left">End Time</th>
                 <th className="p-3 text-left">Poll Type</th>
+                <th className="p-3 text-left">Status</th>
                 <th className="p-3 text-center">Actions</th>
               </tr>
             </thead>
@@ -86,6 +87,8 @@ const PollManagement = () => {
                     {new Date(poll.end_time).toLocaleString()}
                   </td>
                   <td className="p-3">{poll.poll_type}</td>
+                  <td className="p-3">{poll.contesed}</td>
+                  
                   <td className="p-3 flex justify-center space-x-2">
                     <button
                       onClick={() => handleEditPoll(poll.id)}
