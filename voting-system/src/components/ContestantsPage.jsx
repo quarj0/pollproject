@@ -13,10 +13,11 @@ const ContestantsPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedNominee, setSelectedNominee] = useState(null);
   const [votes, setVotes] = useState(1);
-  const [voterCode] = useState("");
+  const [voterCode, setVoterCode] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
-  const [pollType, setPollType] = useState(""); // Track poll type
+  const [pollType, setPollType] = useState("");
   const [groupedContestants, setGroupedContestants] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchPollDetails = async () => {
@@ -24,9 +25,9 @@ const ContestantsPage = () => {
         setLoading(true);
         const response = await axiosInstance.get(`polls/${pollId}/`);
         setPollTitle(response.data.title);
-        setPollType(response.data.poll_type); 
-      } catch (error) {
-        console.error("Error fetching poll details:", error);
+        setPollType(response.data.poll_type);
+      } catch {
+        setError("Error fetching poll details.");
       } finally {
         setLoading(false);
       }
@@ -38,8 +39,8 @@ const ContestantsPage = () => {
           `polls/${pollId}/contestants/`
         );
         setContestants(response.data.contestants);
-      } catch (error) {
-        console.error("Error fetching contestants:", error);
+      } catch {
+        setError("Error fetching contestants.");
       }
     };
 
@@ -49,9 +50,8 @@ const ContestantsPage = () => {
 
   useEffect(() => {
     if (contestants.length > 0) {
-      // Group contestants by category
       const grouped = contestants.reduce((acc, contestant) => {
-        const category = contestant.category || "Uncategorized"; 
+        const category = contestant.category || "Uncategorized";
         if (!acc[category]) acc[category] = [];
         acc[category].push(contestant);
         return acc;
@@ -69,6 +69,7 @@ const ContestantsPage = () => {
     setModalOpen(false);
     setVotes(1);
     setSelectedNominee(null);
+    setVoterCode("");
   };
 
   const handlePayment = async () => {
@@ -91,7 +92,7 @@ const ContestantsPage = () => {
       const endpoint =
         pollType === "creator-pay"
           ? `vote/creator-pay/${pollId}/`
-          : `vote/voter-pay/${pollId}/`;
+          : `vote/voters-pay/${pollId}/`;
 
       const response = await axiosInstance.post(endpoint, payload);
       if (pollType === "voters-pay") {
@@ -114,6 +115,10 @@ const ContestantsPage = () => {
     }
   }, [paymentUrl]);
 
+  const filteredContestants = contestants.filter((contestant) =>
+    contestant.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-blue-500 to-teal-500 text-white py-6">
@@ -125,6 +130,13 @@ const ContestantsPage = () => {
       <main className="py-10">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center">Contestants</h2>
+          <input
+            type="text"
+            placeholder="Search contestants"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg mb-6"
+          />
 
           {Object.keys(groupedContestants).length > 0 ? (
             Object.keys(groupedContestants).map((category) => (
@@ -139,7 +151,9 @@ const ContestantsPage = () => {
                       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300"
                     >
                       <img
-                        src={`http://localhost:8000${contestant.image}`}
+                        src={`http://localhost:8000${
+                          contestant.image || "/default-placeholder.png"
+                        }`}
                         alt={contestant.name}
                         className="w-full h-48 object-cover"
                       />
@@ -198,6 +212,7 @@ const ContestantsPage = () => {
                   type="number"
                   value={votes}
                   onChange={(e) => setVotes(e.target.value)}
+                  min="1"
                   placeholder="Number of votes"
                   className="w-full px-4 py-2 border rounded-lg mb-4"
                 />
@@ -210,7 +225,7 @@ const ContestantsPage = () => {
                 <input
                   type="text"
                   value={voterCode}
-                  onChange={(e) => setVotes(e.target.value)}
+                  onChange={(e) => setVoterCode(e.target.value)}
                   placeholder="Voter code"
                   className="w-full px-4 py-2 border rounded-lg mb-4"
                 />

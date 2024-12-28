@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../apis/api";
 import LaptopImage from "../assets/laptopandphone.png";
+import PollCard from "../layouts/PollCard";
 
 const Homepage = () => {
   const [upcomingPolls, setUpcomingPolls] = useState([]);
   const [pastPolls, setPastPolls] = useState([]);
+  const [filteredPolls, setFilteredPolls] = useState([]); 
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch the first three upcoming/ongoing polls and past polls
   useEffect(() => {
@@ -13,13 +16,11 @@ const Homepage = () => {
       try {
         const response = await axiosInstance.get("polls/list/");
 
-        // Filter and slice polls
         const currentDateTime = new Date();
         const filteredUpcomingPolls = response.data
           .filter((poll) => {
-            // const startTime = new Date(poll.start_time);
             const endTime = new Date(poll.end_time).getTime();
-            return  currentDateTime <= endTime;
+            return currentDateTime <= endTime;
           })
           .slice(0, 3);
 
@@ -29,6 +30,7 @@ const Homepage = () => {
 
         setUpcomingPolls(filteredUpcomingPolls);
         setPastPolls(filteredPastPolls);
+        setFilteredPolls(response.data); 
       } catch (error) {
         console.error("Error fetching polls:", error);
       }
@@ -36,6 +38,19 @@ const Homepage = () => {
 
     fetchPolls();
   }, []);
+
+  // Handle Search Input
+  const handleSearch = (event) => {
+    const searchValue = event.target.value.toLowerCase();
+    setSearchTerm(searchValue);
+
+    const combinedPolls = [...upcomingPolls, ...pastPolls];
+    const searchResults = combinedPolls.filter((poll) =>
+      poll.title.toLowerCase().includes(searchValue)
+    );
+
+    setFilteredPolls(searchResults);
+  };
 
   return (
     <div>
@@ -48,8 +63,8 @@ const Homepage = () => {
           <div className="flex justify-center mt-4">
             <input
               type="text"
-              // value={searchTerm}
-              // onChange={handleSearch}
+              value={searchTerm}
+              onChange={handleSearch}
               placeholder="Search for polls..."
               className="w-full max-w-lg px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
@@ -57,7 +72,36 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Events Section */}
+      {/* Search Results Section */}
+      {searchTerm && (
+        <section className="py-10">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
+              Search Results
+            </h2>
+            {filteredPolls.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {filteredPolls.map((poll) => (
+                  <PollCard
+                    key={poll.id}
+                    item={{
+                      title: poll.title,
+                      description: poll.description,
+                      image: poll.poll_image,
+                    }}
+                    linkTo={`/polls/${poll.id}/details`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500">
+                No polls match your search.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Upcoming Events Section */}
       <section className="py-10">
         <div className="container mx-auto px-4">
@@ -74,30 +118,15 @@ const Homepage = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {upcomingPolls.map((poll) => (
-              <Link
-                to={`/polls/${poll.id}/contestants`}
-                key={poll.title}
-                className="relative h-64 md:h-80 w-full cursor-pointer hover:scale-105 transition-transform duration-300"
-              >
-                <img
-                  src={
-                    poll.poll_image
-                      ? `http://localhost:8000${poll.poll_image}`
-                      : "https://via.placeholder.com/300"
-                  }
-                  alt={poll.title}
-                  className="absolute inset-0 object-cover w-full h-full rounded-xl shadow-lg"
-                />
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-50 text-white flex flex-col justify-between p-4 rounded-xl">
-                  <h3 className="text-lg font-bold">{poll.title}</h3>
-                  <p className="text-sm">{poll.description}</p>
-                  <span className="text-xs">
-                    {new Date(poll.start_time).toLocaleDateString()} -{" "}
-                    {new Date(poll.start_time).toLocaleTimeString()}
-                  </span>
-                </div>
-              </Link>
+              <PollCard
+                key={poll.id}
+                item={{
+                  title: poll.title,
+                  description: poll.description,
+                  image: poll.poll_image,
+                }}
+                linkTo={`/polls/${poll.id}/contestants`}
+              />
             ))}
           </div>
         </div>
@@ -134,8 +163,6 @@ const Homepage = () => {
       </section>
 
       {/* Past Events Section */}
-
-      {/* Past Events Section */}
       <section className="py-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
@@ -151,21 +178,15 @@ const Homepage = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {pastPolls.map((poll) => (
-              <div
-                key={poll.title}
-                className="relative h-64 md:h-80 w-full cursor-pointer hover:scale-105 transition-transform duration-300"
-              >
-                <img
-                  src={`http://localhost:8000/${poll.poll_image}`}
-                  alt={poll.title}
-                  className="absolute inset-0 object-cover w-full h-full rounded-xl shadow-lg"
-                />
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-50 text-white flex flex-col justify-between p-4 rounded-xl">
-                  <h3 className="text-lg font-bold">{poll.title}</h3>
-                  <p className="text-sm">{poll.description}</p>
-                </div>
-              </div>
+              <PollCard
+                key={poll.id}
+                item={{
+                  title: poll.title,
+                  description: poll.description,
+                  image: poll.poll_image,
+                }}
+                linkTo={`/polls/${poll.id}/details`}
+              />
             ))}
           </div>
         </div>

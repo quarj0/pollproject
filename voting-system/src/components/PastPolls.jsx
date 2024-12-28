@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../apis/api";
 import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 const PastPolls = () => {
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchPolls = async () => {
@@ -14,6 +15,7 @@ const PastPolls = () => {
         setPolls(response.data);
       } catch (error) {
         console.error("Error fetching polls:", error);
+        setError("Failed to load polls. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -22,11 +24,11 @@ const PastPolls = () => {
     fetchPolls();
   }, []);
 
-  const currentDateTime = new Date();
+  const currentDateTime = useMemo(() => new Date(), []);
 
-  // Past polls should end before the current date and time
-  const pastPolls = polls.filter(
-    (poll) => new Date(poll.end_time) < currentDateTime
+  const pastPolls = useMemo(
+    () => polls.filter((poll) => new Date(poll.end_time) < currentDateTime),
+    [polls, currentDateTime]
   );
 
   if (loading) {
@@ -35,11 +37,22 @@ const PastPolls = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center text-red-500 py-48">
+        <h1>{error}</h1>
+        <Link to="/home" className="text-blue-500">
+          Back Home
+        </Link>
+      </div>
+    );
+  }
+
   if (pastPolls.length === 0) {
     return (
       <div className="text-center text-gray-500 py-48">
-        <h1 className="">No past polls found.</h1>
-        <Link to={"/home"} className="text-blue-500 text-center">
+        <h1>No past polls found.</h1>
+        <Link to="/home" className="text-blue-500">
           Back Home
         </Link>
       </div>
@@ -61,9 +74,9 @@ const PastPolls = () => {
               src={
                 poll.poll_image
                   ? `http://localhost:8000${poll.poll_image}`
-                  : "https://via.placeholder.com/300"
+                  : "https://via.placeholder.com/300?text=No+Image+Available"
               }
-              alt={poll.title}
+              alt={poll.title || "Poll image"}
               className="w-full h-48 object-cover"
             />
             <div className="p-4">
@@ -74,24 +87,23 @@ const PastPolls = () => {
                 Ended: {new Date(poll.end_time).toLocaleString()}
               </p>
               <p className="mt-2 text-gray-700 line-clamp-3">
-                {poll.description}
+                {poll.description || "No description available."}
               </p>
               <button
                 className="mt-4 w-full bg-gray-500 text-white py-2 px-4 rounded-md text-sm font-medium cursor-not-allowed"
                 disabled
               >
-                Ended Event
+                Event Ended
               </button>
             </div>
           </div>
         ))}
       </div>
       <Link
-        to={"/home"}
+        to="/home"
         className="inline-flex items-center text-gray-500 hover:text-gray-700"
       >
-        <FaArrowAltCircleLeft className="mr-2" />
-        Back
+        <FaArrowAltCircleLeft className="mr-2" /> Back
       </Link>
     </div>
   );

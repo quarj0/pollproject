@@ -6,7 +6,14 @@ import { FaArrowLeft } from "react-icons/fa";
 
 const UpdatePoll = () => {
   const { pollId } = useParams();
-  const [poll, setPoll] = useState(null);
+  const [poll, setPoll] = useState({
+    title: "",
+    description: "",
+    image: null,
+    preview: null,
+    start_time: "",
+    end_time: "",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const history = useNavigate();
@@ -16,10 +23,9 @@ const UpdatePoll = () => {
       try {
         const res = await axiosInstance.get(`/polls/${pollId}/`);
         setPoll(res.data);
-        console.log(res.data);
       } catch (err) {
         setError("Failed to fetch poll details.");
-        console.error(err); 
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -29,9 +35,19 @@ const UpdatePoll = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const formData = new FormData();
+    Object.keys(poll).forEach((key) => {
+      if (poll[key] !== null) {
+        formData.append(key, poll[key]);
+      }
+    });
+
     try {
-      await axiosInstance.patch(`/polls/${pollId}/update/`, poll);
-      history.push(`/polls/${pollId}/`);
+      await axiosInstance.patch(`/polls/${pollId}/update/`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      history(`/polls/${pollId}/`);
     } catch {
       setError("Failed to update the poll.");
     }
@@ -47,11 +63,6 @@ const UpdatePoll = () => {
 
   if (loading) return <p>Loading poll...</p>;
   if (error) return <p>{error}</p>;
-
-  // Add a null check to ensure poll is fetched
-  if (!poll) {
-    return <p>Poll not found.</p>;
-  }
 
   // If the poll is not active, show details instead of the form
   if (!poll.active) {
@@ -106,14 +117,12 @@ const UpdatePoll = () => {
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block mb-2">Title</label>
-
           <input
             type="text"
             name="title"
             value={poll.title}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            
           />
         </div>
         <div className="mb-4">
@@ -123,7 +132,6 @@ const UpdatePoll = () => {
             value={poll.description}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            
           />
         </div>
         <div className="mb-4">
@@ -157,7 +165,6 @@ const UpdatePoll = () => {
             value={poll.start_time}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            
           />
         </div>
         <div className="mb-4">
@@ -168,7 +175,6 @@ const UpdatePoll = () => {
             value={poll.end_time}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
-            
           />
         </div>
 
@@ -178,7 +184,7 @@ const UpdatePoll = () => {
         >
           Update Poll
         </button>
-        {Message && <Message type="error" message={error} />}
+        {error && <Message type="error" message={error} />}
       </form>
     </div>
   );

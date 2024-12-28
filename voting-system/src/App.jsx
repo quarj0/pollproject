@@ -86,9 +86,15 @@ const App = () => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     setUser(null);
+    Navigate("/login");
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <div>
+        <p className="text-center text-gray-500">Loading...</p>
+      </div>
+    );
 
   const PrivateRoute = ({ children }) => {
     return authTokens ? children : <Navigate to="/login" />;
@@ -116,12 +122,21 @@ const App = () => {
 
             <Route path="/events" element={<UpcomingPolls />} />
 
-            <Route path="/payment/verify/:reference" element={<PaymentCompletion />} />
-            <Route path="/polls/:pollId/contestants" element={<ContestantsPage />} />
-            
+            <Route
+              path="/payment/verify/:reference"
+              element={<PaymentCompletion />}
+            />
+            <Route
+              path="/polls/:pollId/contestants"
+              element={<ContestantsPage />}
+            />
+
             <Route path="/manage-polls" element={<PollManagement />} />
             <Route path="/edit/poll/:pollId" element={<UpdatePoll />} />
-            <Route path="/edit/contestant/:contestantId" element={<UpdateContestant />} />
+            <Route
+              path="/edit/contestant/:contestantId"
+              element={<UpdateContestant />}
+            />
 
             <Route path="/past/events" element={<PastPolls />} />
             <Route path="/register" element={<RegisterPage />} />

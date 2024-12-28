@@ -36,7 +36,7 @@ class PollCreateView(APIView):
 
             ussd_code = f"*1398*{poll.id}#"
             short_url = self.generate_bitly_url(poll.id, request)
-
+            
             if poll.poll_type == Poll.CREATOR_PAY:
                 if poll.setup_fee:
                     payment_link = self.create_payment_link(
@@ -149,7 +149,7 @@ class PollDetailView(APIView):
             return Response({"detail": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
         contestants = poll.contestants.values(
-            'name', 'category', 'nominee_code', 'award')
+            'name', 'category', 'nominee_code', 'image')
         return Response({
             "poll": PollSerializer(poll).data,
             "contestants": list(contestants)}, status=status.HTTP_200_OK)
@@ -161,7 +161,7 @@ class ContestantDetails(APIView):
         Fetch all contestants for the given poll ID
         """
         contestants = Contestant.objects.filter(
-            poll_id=poll_id).values('name', 'nominee_code', 'image')
+            poll_id=poll_id).values('name', 'category', 'nominee_code', 'image')
 
         if not contestants.exists():
             return Response({

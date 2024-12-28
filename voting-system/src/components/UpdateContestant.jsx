@@ -17,7 +17,9 @@ const UpdateContestant = () => {
   useEffect(() => {
     const fetchContestant = async () => {
       try {
-        const res = await axiosInstance.get(`polls/${pollId}/contestants/`);
+        const res = await axiosInstance.get(
+          `polls/${pollId}/contestants/${contestantId}/`
+        );
         setContestant(res.data);
       } catch {
         setError("Failed to fetch contestant details.");
@@ -26,7 +28,7 @@ const UpdateContestant = () => {
       }
     };
     fetchContestant();
-  }, [pollId]);
+  }, [pollId, contestantId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +47,7 @@ const UpdateContestant = () => {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-      navigate(`polls/contestants/${contestantId}/`);
+      navigate(`/polls/${pollId}/contestants/${contestantId}/`);
     } catch {
       setError("Failed to update the contestant.");
     }
@@ -59,14 +61,10 @@ const UpdateContestant = () => {
     }));
   };
 
-  if (contestant < 0) return (
-    <div>
-      No contestants was been added 
-    </div>
-  )
-
   if (loading) return <p>Loading contestant...</p>;
   if (error) return <p>{error}</p>;
+
+  if (!contestant.name) return <div>No contestant details found</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded">

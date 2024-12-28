@@ -6,11 +6,20 @@ const PaymentCompletion = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const reference = queryParams.get("reference");
+
   const [status, setStatus] = useState("Verifying...");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const verifyPayment = async () => {
+      if (!reference) {
+        setStatus("Error");
+        setMessage("Payment reference is missing.");
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await axiosInstance.get(
           `/payment/verify/${reference}/`
@@ -18,15 +27,24 @@ const PaymentCompletion = () => {
         if (response.status === 200) {
           setStatus("Success");
           setMessage(response.data.message);
+        } else {
+          setStatus("Error");
+          setMessage("Payment verification failed.");
         }
-      } catch {
+      } catch (err) {
         setStatus("Error");
-        setMessage("Payment verification failed.");
+        setMessage(
+          err.response?.data?.message || "Payment verification failed."
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (reference) verifyPayment();
+    verifyPayment();
   }, [reference]);
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div>

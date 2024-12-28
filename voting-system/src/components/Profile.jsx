@@ -42,6 +42,7 @@ const Profile = ({ authTokens }) => {
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
         },
+        timeout: 5000,
       });
       setUser(response.data);
       setPollId(response.data.poll_id);

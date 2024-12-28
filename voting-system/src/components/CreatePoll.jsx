@@ -10,7 +10,7 @@ const PollCreation = () => {
     start_time: "",
     end_time: "",
     poll_type: "",
-    poll_image: "",
+    image: null,
     expected_voters: "",
     voting_fee: "",
   });
@@ -18,15 +18,17 @@ const PollCreation = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [setupFee, setSetupFee] = useState(0);
+  const [responseData, setResponseData] = useState(null);
 
   const calculateSetupFee = (expectedVoters) => {
     if (expectedVoters <= 20) return 25;
     if (expectedVoters <= 60) return 25;
     if (expectedVoters <= 100) return 35;
     if (expectedVoters <= 200) return 50;
-    return 0;
+    return 0; // Should not reach here due to validation
   };
 
+  // Handle changes for form inputs
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
@@ -56,6 +58,7 @@ const PollCreation = () => {
     }
   };
 
+  // Add a new contestant
   const addContestant = () => {
     setContestants((prev) => [
       ...prev,
@@ -101,10 +104,11 @@ const PollCreation = () => {
     if (formData.poll_type === "voters-pay" && !formData.voting_fee) {
       newErrors.voting_fee = "Voting fee is required.";
     }
-    if (formData.poll_image && formData.poll_image.size > 3 * 1024 * 1024) {
+    if (formData.image && formData.image.size > 3 * 1024 * 1024) {
       newErrors.image = "Image size must be less than 3MB.";
     }
-
+    if (contestants.length === 0)
+      newErrors.contestants = "At least one contestant is required.";
     contestants.forEach((contestant, index) => {
       if (!contestant.name)
         newErrors[`contestant_name_${index}`] = "Name is required.";
@@ -120,8 +124,7 @@ const PollCreation = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const [responseData, setResponseData] = useState(null);
-
+  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -132,9 +135,7 @@ const PollCreation = () => {
     submissionData.append("start_time", formData.start_time);
     submissionData.append("end_time", formData.end_time);
     submissionData.append("poll_type", formData.poll_type);
-
-    if (formData.poll_image)
-      submissionData.append("poll_image", formData.poll_image);
+    if (formData.image) submissionData.append("image", formData.image);
     if (formData.poll_type === "creator-pay") {
       submissionData.append("expected_voters", formData.expected_voters);
     }
@@ -148,7 +149,6 @@ const PollCreation = () => {
         `contestants[${index}][category]`,
         contestant.category
       );
-
       if (contestant.image) {
         submissionData.append(`contestants[${index}][image]`, contestant.image);
       }
@@ -159,8 +159,8 @@ const PollCreation = () => {
       const res = await axiosInstance.post("polls/create/", submissionData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      setResponseData(res.data);
       console.log("Poll created successfully:", res.data);
-      setResponseData(res.data); // Store the response data in state
     } catch (err) {
       const apiErrors = err.response?.data || {};
       setErrors((prev) => ({
@@ -170,6 +170,7 @@ const PollCreation = () => {
           return acc;
         }, {}),
       }));
+      setResponseData(null); // Ensure responseData is null on error
     } finally {
       setLoading(false);
     }
@@ -253,7 +254,6 @@ const PollCreation = () => {
               type="number"
               name="expected_voters"
               value={formData.expected_voters}
-              placeholder="Enter the number of voters"
               onChange={handleInputChange}
               className="w-full border rounded p-2"
               min="20"
@@ -264,7 +264,7 @@ const PollCreation = () => {
             )}
             {setupFee > 0 && (
               <p className="text-green-500 mt-2">
-                Total Setup Fee: GHS {setupFee.toFixed(2)}
+                Total Setup Fee: ${setupFee}
               </p>
             )}
           </div>
@@ -277,7 +277,6 @@ const PollCreation = () => {
               name="voting_fee"
               value={formData.voting_fee}
               onChange={handleInputChange}
-              placeholder="voting fee for each vote"
               className="w-full border rounded p-2"
             />
             {errors.voting_fee && (
@@ -289,21 +288,19 @@ const PollCreation = () => {
           <label className="block font-medium">Poll Image</label>
           <input
             type="file"
-            name="poll_image"
+            name="image"
             accept="image/jpg, image/png"
             onChange={handleInputChange}
             className="w-full border rounded p-2"
           />
-          {formData.poll_image && (
+          {formData.image && (
             <img
-              src={URL.createObjectURL(formData.poll_image)}
+              src={URL.createObjectURL(formData.image)}
               alt="Poll Preview"
               className="mt-2 h-32 w-32 object-cover"
             />
           )}
-          {errors.poll_image && (
-            <p className="text-red-500">{errors.poll_image}</p>
-          )}
+          {errors.image && <p className="text-red-500">{errors.image}</p>}
         </div>
         <div className="mb-4">
           <button
@@ -345,33 +342,31 @@ const PollCreation = () => {
           {loading ? "Submitting..." : "Submit"}
         </button>
       </form>
-      {/* Display the response data */}
       {responseData ? (
-        <div className="bg-gray-100 p-4 rounded shadow mb-4">
-          <h2 className="text-lg font-bold mb-2">Poll Created Successfully</h2>
+        <div className="mt-6 p-4 bg-gray-100 rounded shadow">
+          <h2 className="text-xl font-bold mb-4">{responseData.message}</h2>
+
           <p>
-            <strong>Short url:</strong>{" "}
-            {responseData.short_url ||
-              "oops! couldn't generate the shorten url."}
+            <strong>USSD Code:</strong> {responseData.ussd_code}
           </p>
+
           <p>
             <strong>Payment Link:</strong>{" "}
             <a
-              href={responseData.payment_link || errors}
+              href={responseData.payment_link || null}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 underline"
             >
-              Pay Here
+              Complete Payment
             </a>
-          </p>
-          <p>
-            <strong>USSD Code:</strong> {responseData.ussd_code}
           </p>
           <p>
             <strong>Download Voter Codes:</strong>{" "}
             <a
-              href={responseData.download_voter_codes}
+              href={`${`http://localhost:8000`}${
+                responseData.download_voter_codes || null
+              }`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 underline"
@@ -379,9 +374,19 @@ const PollCreation = () => {
               Download
             </a>
           </p>
-          <p>{responseData.message}</p>
         </div>
-      ) : null}
+      ) : (
+        Object.keys(errors).length > 0 && (
+          <div className="mt-6 p-4 bg-red-100 rounded shadow">
+            <h2 className="text-xl font-bold mb-4">Errors</h2>
+            {Object.keys(errors).map((field, index) => (
+              <p key={index}>
+                <strong>{field}:</strong> {errors[field]}
+              </p>
+            ))}
+          </div>
+        )
+      )}
     </div>
   );
 };

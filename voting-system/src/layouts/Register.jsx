@@ -57,7 +57,7 @@ const RegisterPage = () => {
         />
         <h1 className="text-4xl font-bold text-white mb-2">VoteLab</h1>
         <p className="text-center px-4 text-white text-lg italic">
-          Innovating the way you vote. <br/>Register now and create polls to get your audience&apos;s opinion.
+          &quoteleft;Innovating the way you vote&quoteright;. <br/>Register now and create polls to get your audience&apos;s opinion.
         </p>
       </div>
 

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-let isRefreshing = false; 
-let refreshSubscribers = []; 
+let isRefreshing = false;
+let refreshSubscribers = [];
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8000/",
@@ -11,17 +11,6 @@ const axiosInstance = axios.create({
     accept: "application/json",
   },
 });
-
-// const axiosMultipartInstance = axios.create({
-//   baseURL: "http://localhost:8000/",
-//   timeout: 5000,
-//   headers: {
-//     "Content-Type": "multipart/form-data",
-//     accept: "application/json",
-//   },
-// });
-
-
 
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -40,7 +29,7 @@ const onRefreshed = (newToken) => {
 };
 
 axiosInstance.interceptors.response.use(
-  (response) => response, 
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
@@ -65,8 +54,8 @@ axiosInstance.interceptors.response.use(
         } catch (refreshError) {
           console.error("Token refresh failed:", refreshError);
           isRefreshing = false;
-          localStorage.clear(); 
-          window.location.href = "/login"; 
+          localStorage.clear();
+          window.location.href = "/login";
         }
       }
 
