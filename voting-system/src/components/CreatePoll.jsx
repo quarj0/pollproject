@@ -1,7 +1,5 @@
 import { useState } from "react";
 import axiosInstance from "../apis/api";
-import { motion, AnimatePresence } from "framer-motion";
-import ContestantField from "./ContestantField";
 
 const PollCreation = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +12,6 @@ const PollCreation = () => {
     expected_voters: "",
     voting_fee: "",
   });
-  const [contestants, setContestants] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [setupFee, setSetupFee] = useState(0);
@@ -58,33 +55,6 @@ const PollCreation = () => {
     }
   };
 
-  // Add a new contestant
-  const addContestant = () => {
-    setContestants((prev) => [
-      ...prev,
-      { name: "", category: "", image: null, preview: null },
-    ]);
-  };
-
-  const handleContestantChange = (index, field, value) => {
-    setContestants((prev) => {
-      const updated = [...prev];
-      if (field === "image") {
-        const file = value.target.files[0];
-        updated[index][field] = file;
-        updated[index].preview = URL.createObjectURL(file);
-      } else {
-        updated[index][field] = value;
-      }
-      return updated;
-    });
-  };
-
-  // Remove a contestant
-  const handleRemoveContestant = (index) => {
-    setContestants((prev) => prev.filter((_, i) => i !== index));
-  };
-
   // Validate the form
   const validateForm = () => {
     const newErrors = {};
@@ -107,18 +77,6 @@ const PollCreation = () => {
     if (formData.image && formData.image.size > 3 * 1024 * 1024) {
       newErrors.image = "Image size must be less than 3MB.";
     }
-    if (contestants.length === 0)
-      newErrors.contestants = "At least one contestant is required.";
-    contestants.forEach((contestant, index) => {
-      if (!contestant.name)
-        newErrors[`contestant_name_${index}`] = "Name is required.";
-      if (!contestant.category)
-        newErrors[`contestant_category_${index}`] = "Category is required.";
-      if (contestant.image && contestant.image.size > 3 * 1024 * 1024) {
-        newErrors[`contestant_image_${index}`] =
-          "Image size must be less than 3MB.";
-      }
-    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -143,17 +101,6 @@ const PollCreation = () => {
       submissionData.append("voting_fee", formData.voting_fee);
     }
 
-    contestants.forEach((contestant, index) => {
-      submissionData.append(`contestants[${index}][name]`, contestant.name);
-      submissionData.append(
-        `contestants[${index}][category]`,
-        contestant.category
-      );
-      if (contestant.image) {
-        submissionData.append(`contestants[${index}][image]`, contestant.image);
-      }
-    });
-
     setLoading(true);
     try {
       const res = await axiosInstance.post("polls/create/", submissionData, {
@@ -170,7 +117,7 @@ const PollCreation = () => {
           return acc;
         }, {}),
       }));
-      setResponseData(null); // Ensure responseData is null on error
+      setResponseData("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -264,7 +211,7 @@ const PollCreation = () => {
             )}
             {setupFee > 0 && (
               <p className="text-green-500 mt-2">
-                Total Setup Fee: ${setupFee}
+                Total Setup Fee: GHS {setupFee}
               </p>
             )}
           </div>
@@ -302,33 +249,7 @@ const PollCreation = () => {
           )}
           {errors.image && <p className="text-red-500">{errors.image}</p>}
         </div>
-        <div className="mb-4">
-          <button
-            type="button"
-            onClick={addContestant}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Add Contestant
-          </button>
-        </div>
-        <AnimatePresence>
-          {contestants.map((contestant, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ContestantField
-                index={index}
-                contestant={contestant}
-                handleChange={handleContestantChange}
-                handleRemove={handleRemoveContestant}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+
         {errors.contestants && (
           <p className="text-red-500">{errors.contestants}</p>
         )}
@@ -375,18 +296,7 @@ const PollCreation = () => {
             </a>
           </p>
         </div>
-      ) : (
-        Object.keys(errors).length > 0 && (
-          <div className="mt-6 p-4 bg-red-100 rounded shadow">
-            <h2 className="text-xl font-bold mb-4">Errors</h2>
-            {Object.keys(errors).map((field, index) => (
-              <p key={index}>
-                <strong>{field}:</strong> {errors[field]}
-              </p>
-            ))}
-          </div>
-        )
-      )}
+      ) : null}
     </div>
   );
 };

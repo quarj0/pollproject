@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axiosInstance from "../apis/api";
 
 const PaymentCompletion = () => {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const reference = queryParams.get("reference");
-
+  const { reference } = useParams();
   const [status, setStatus] = useState("Verifying...");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -25,7 +22,7 @@ const PaymentCompletion = () => {
           `/payment/verify/${reference}/`
         );
         if (response.status === 200) {
-          setStatus("Success");
+          setStatus("Success!");
           setMessage(response.data.message);
         } else {
           setStatus("Error");
@@ -44,13 +41,49 @@ const PaymentCompletion = () => {
     verifyPayment();
   }, [reference]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-lg text-blue-600 animate-pulse">
+          Verifying payment, please wait...
+        </p>
+      </div>
+    );
 
   return (
-    <div>
-      <h1>Payment Completion</h1>
-      <p>Status: {status}</p>
-      {message && <p>{message}</p>}
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+        <h1
+          className={`text-2xl font-bold text-center ${
+            status === "Success!"
+              ? "text-green-600"
+              : status === "Error"
+              ? "text-red-600"
+              : "text-gray-700"
+          }`}
+        >
+          {status}
+        </h1>
+        <p className="mt-4 text-center text-gray-600">{message}</p>
+        {status === "Success!" && (
+          <button
+            className="w-full mt-6 px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-md transition"
+            onClick={() => window.location.replace("/dashboard")}
+          >
+            Go to Dashboard
+          </button>
+        )}
+        {status === "Error" && (
+          <button
+            className="w-full mt-6 px-4 py-2 text-white bg-red-500 hover:bg-red-600 rounded-md transition"
+            onClick={() =>
+              window.location.replace(`/payment/verify/${reference}/`)
+            }
+          >
+            Retry Payment
+          </button>
+        )}
+      </div>
     </div>
   );
 };

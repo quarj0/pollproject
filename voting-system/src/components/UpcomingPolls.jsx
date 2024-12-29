@@ -27,7 +27,6 @@ const UpcomingPolls = () => {
 
   const currentDate = new Date();
 
-  // Filter for upcoming or ongoing polls
   const upcomingPolls = polls.filter((poll) => {
     const endTime = new Date(poll.end_time).getTime();
     return currentDate <= endTime;

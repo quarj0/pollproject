@@ -22,7 +22,6 @@ const PollCard = ({ item, linkTo, placeholderImage }) => {
   );
 };
 
-// Default props for flexibility
 PollCard.defaultProps = {
   placeholderImage: "https://via.placeholder.com/300",
 };

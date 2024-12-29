@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axiosInstance from "../apis/api";
 
 const PaymentLinkGenerator = () => {
@@ -33,7 +33,7 @@ const PaymentLinkGenerator = () => {
 
     setLoading(true);
     setError("");
-    setPaymentLink("");
+    setPaymentLink(""); // Clear previous link
 
     try {
       const response = await axiosInstance.get(
@@ -60,7 +60,7 @@ const PaymentLinkGenerator = () => {
   return (
     <div className="flex flex-col items-center p-6 bg-white shadow-md rounded-lg">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        Get Your Payment Link
+        Generate New Payment Link
       </h2>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       <select

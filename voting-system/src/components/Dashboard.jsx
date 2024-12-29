@@ -11,19 +11,16 @@ const DashBoard = () => {
     const fetchPolls = async () => {
       try {
         const response = await axiosInstance.get("polls/list/");
+
         const currentDateTime = new Date();
-
-        // Filter upcoming and past polls
         const filteredUpcomingPolls = response.data.filter((poll) => {
-          const startTime = new Date(poll.start_time).getTime();
           const endTime = new Date(poll.end_time).getTime();
-          return currentDateTime >= startTime && currentDateTime <= endTime;
+          return currentDateTime <= endTime;
         });
 
-        const filteredPastPolls = response.data.filter((poll) => {
-          const endTime = new Date(poll.end_time).getTime();
-          return currentDateTime > endTime;
-        });
+        const filteredPastPolls = response.data.filter(
+          (poll) => new Date(poll.start_time) <= currentDateTime
+        );
 
         setUpcomingPolls(filteredUpcomingPolls);
         setPastPolls(filteredPastPolls);
@@ -36,15 +33,11 @@ const DashBoard = () => {
   }, []);
 
   const handleSearch = (e) => {
-    setSearchTerm(e.target.value.toLowerCase());
+    setSearchTerm(e.target.value);
   };
 
-  const filteredUpcomingPolls = upcomingPolls.filter((poll) =>
-    poll.title.toLowerCase().includes(searchTerm)
-  );
-
-  const filteredPastPolls = pastPolls.filter((poll) =>
-    poll.title.toLowerCase().includes(searchTerm)
+  const filteredPolls = upcomingPolls.filter((poll) =>
+    poll.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -58,15 +51,15 @@ const DashBoard = () => {
           <div className="flex justify-center mt-4">
             <input
               type="text"
-              value={searchTerm}
+              placeholder="Search Polls"
+              className="border-2 border-gray-300 px-4 py-2 rounded-lg w-full md:w-1/2"
               onChange={handleSearch}
-              placeholder="Search for polls..."
-              className="w-full max-w-lg px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
         </div>
       </section>
 
+      {/* Events Section */}
       {/* Upcoming Events Section */}
       <section className="py-10">
         <div className="container mx-auto px-4">
@@ -82,32 +75,38 @@ const DashBoard = () => {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filteredUpcomingPolls.map((poll) => (
-              <Link
-                to={`/polls/${poll.id}/contestants`}
-                key={poll.id}
-                className="relative h-64 md:h-80 w-full cursor-pointer hover:scale-105 transition-transform duration-300"
-              >
-                <img
-                  src={
-                    poll.poll_image
-                      ? `http://localhost:8000${poll.poll_image}`
-                      : "https://via.placeholder.com/300"
-                  }
-                  alt={poll.title}
-                  className="absolute inset-0 object-cover w-full h-full rounded-xl shadow-lg"
-                />
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-50 text-white flex flex-col justify-between p-4 rounded-xl">
-                  <h3 className="text-lg font-bold">{poll.title}</h3>
-                  <p className="text-sm">{poll.description}</p>
-                  <span className="text-xs">
-                    {new Date(poll.start_time).toLocaleDateString()} -{" "}
-                    {new Date(poll.start_time).toLocaleTimeString()}
-                  </span>
-                </div>
-              </Link>
-            ))}
+            {filteredPolls.length > 0 ? (
+              filteredPolls.map((poll) => (
+                <Link
+                  to={`/polls/${poll.id}/contestants`}
+                  key={poll.title}
+                  className="relative h-64 md:h-80 w-full cursor-pointer hover:scale-105 transition-transform duration-300"
+                >
+                  <img
+                    src={
+                      poll.poll_image
+                        ? `http://localhost:8000${poll.poll_image}`
+                        : "https://via.placeholder.com/300"
+                    }
+                    alt={poll.title}
+                    className="absolute inset-0 object-cover w-full h-full rounded-xl shadow-lg"
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-50 text-white flex flex-col justify-between p-4 rounded-xl">
+                    <h3 className="text-lg font-bold">{poll.title}</h3>
+                    <p className="text-sm">{poll.description}</p>
+                    <span className="text-xs">
+                      {new Date(poll.start_time).toLocaleDateString()} -{" "}
+                      {new Date(poll.start_time).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center col-span-full">
+                No upcoming events found.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -127,17 +126,13 @@ const DashBoard = () => {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filteredPastPolls.map((poll) => (
+            {pastPolls.map((poll) => (
               <div
-                key={poll.id}
+                key={poll.title}
                 className="relative h-64 md:h-80 w-full cursor-pointer hover:scale-105 transition-transform duration-300"
               >
                 <img
-                  src={
-                    poll.poll_image
-                      ? `http://localhost:8000${poll.poll_image}`
-                      : "https://via.placeholder.com/300"
-                  }
+                  src={`http://localhost:8000/${poll.poll_image}`}
                   alt={poll.title}
                   className="absolute inset-0 object-cover w-full h-full rounded-xl shadow-lg"
                 />
@@ -145,10 +140,6 @@ const DashBoard = () => {
                 <div className="absolute inset-0 bg-black bg-opacity-50 text-white flex flex-col justify-between p-4 rounded-xl">
                   <h3 className="text-lg font-bold">{poll.title}</h3>
                   <p className="text-sm">{poll.description}</p>
-                  <span className="text-xs">
-                    Ended on: {new Date(poll.end_time).toLocaleDateString()} -{" "}
-                    {new Date(poll.end_time).toLocaleTimeString()}
-                  </span>
                 </div>
               </div>
             ))}
@@ -160,3 +151,4 @@ const DashBoard = () => {
 };
 
 export default DashBoard;
+

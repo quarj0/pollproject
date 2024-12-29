@@ -137,8 +137,8 @@ const Profile = ({ authTokens }) => {
               <thead>
                 <tr>
                   <th className="py-2 px-4 border-b">Transaction Type</th>
-                  <th className="py-2 px-4 border-b">Poll ID</th>
                   <th className="py-2 px-4 border-b">Amount</th>
+
                   <th className="py-2 px-4 border-b">Success</th>
                   <th className="py-2 px-4 border-b">Date</th>
                 </tr>
@@ -149,10 +149,9 @@ const Profile = ({ authTokens }) => {
                     <td className="py-2 px-4 border-b">
                       {payment.transaction_type}
                     </td>
-                    <td className="py-2 px-4 border-b">{payment.poll_id}</td>
-                    <td className="py-2 px-4 border-b">{payment.amount}</td>
+                    <td className="py-2 px-4 border-b">GHS {payment.amount}</td>
                     <td className="py-2 px-4 border-b">
-                      {payment.success ? "Yes" : "No"}
+                      {payment.success ? "Paid" : "Not Paid"}
                     </td>
                     <td className="py-2 px-4 border-b">
                       {new Date(payment.created_at).toLocaleString()}

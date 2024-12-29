@@ -19,6 +19,8 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,').split(',')
 
 
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8080')
+
 # Security settings for production
 if not DEBUG:
     SESSION_COOKIE_SECURE = True

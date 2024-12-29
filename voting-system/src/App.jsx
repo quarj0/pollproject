@@ -27,6 +27,8 @@ import PollManagement from "./layouts/PollManagement";
 import UpdatePoll from "./components/UpdatePoll";
 import UpdateContestant from "./components/UpdateContestant";
 import PaymentCompletion from "./layouts/PaymentVerification";
+import AddContestant from "./components/ContestantField";
+import NotFoundPage from "./layouts/NotFound";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -132,6 +134,10 @@ const App = () => {
             />
 
             <Route path="/manage-polls" element={<PollManagement />} />
+            <Route
+              path="/create/:pollId/contestants"
+              element={<AddContestant />}
+            />
             <Route path="/edit/poll/:pollId" element={<UpdatePoll />} />
             <Route
               path="/edit/contestant/:contestantId"
@@ -187,7 +193,7 @@ const App = () => {
                 </PrivateRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
         <Footer />

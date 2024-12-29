@@ -105,7 +105,6 @@ class VerifyPaymentView(APIView):
                 amount=amount_paid,
                 success=False,
                 poll=poll,
-                user=requests.request.user,
             )
         transaction.success = True
         transaction.save()
