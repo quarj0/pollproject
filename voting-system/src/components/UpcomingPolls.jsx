@@ -66,7 +66,7 @@ const UpcomingPolls = () => {
     return (
       <div className="text-center text-gray-500 py-48">
         <h1 className="">No upcoming polls found.</h1>
-        <Link to={"/home"} className="text-blue-500 text-center">
+        <Link to={"/"} className="text-blue-500 text-center">
           Back Home
         </Link>
       </div>

@@ -26,12 +26,6 @@ const ResultsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch results whenever pollId changes
-  useEffect(() => {
-    fetchResults();
-  }, [pollId]);
-
-  // Function to fetch results for the specific pollId
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
@@ -49,7 +43,10 @@ const ResultsPage = () => {
     }
   }, [pollId]);
 
-  // Function to process and aggregate results
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
+
   const processResults = (data) => {
     const resultMap = new Map();
     data.forEach((item) => {
@@ -74,16 +71,15 @@ const ResultsPage = () => {
     `hsl(${(index * 360) / total}, 70%, 50%)`;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-green-500 to-blue-500 text-white py-6">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold">Poll Results</h1>
+    <div className="container-fluid mx-auto">
+      {/* Page Title */}
+      <div className="bg-blue-500 text-white ">
+        <div className="container-fluid mx-auto my-10 px-4">
+          <h1 className=" font-bold p-10 text-center">Poll Results</h1>
         </div>
-      </header>
-
+      </div>
       {/* Main Content */}
-      <main className="py-10">
+      <main className="py-5">
         <div className="container mx-auto px-4">
           {loading ? (
             <p className="text-center text-gray-500">Loading results...</p>
@@ -100,7 +96,7 @@ const ResultsPage = () => {
           ) : (
             <>
               {/* Bar Chart Section */}
-              <section className="mb-10">
+              <section className="mx-10">
                 <h2 className="text-xl font-bold mb-4">Results Overview</h2>
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart

@@ -8,6 +8,12 @@ const PastPolls = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    window.location.href = "/login";
+  }
+
   useEffect(() => {
     const fetchPolls = async () => {
       try {
@@ -41,7 +47,7 @@ const PastPolls = () => {
     return (
       <div className="text-center text-red-500 py-48">
         <h1>{error}</h1>
-        <Link to="/home" className="text-blue-500">
+        <Link to="/" className="text-blue-500">
           Back Home
         </Link>
       </div>
@@ -52,7 +58,7 @@ const PastPolls = () => {
     return (
       <div className="text-center text-gray-500 py-48">
         <h1>No past polls found.</h1>
-        <Link to="/home" className="text-blue-500">
+        <Link to="/dashboard" className="text-blue-500">
           Back Home
         </Link>
       </div>
@@ -100,7 +106,7 @@ const PastPolls = () => {
         ))}
       </div>
       <Link
-        to="/home"
+        to="/dashboard"
         className="inline-flex items-center text-gray-500 hover:text-gray-700"
       >
         <FaArrowAltCircleLeft className="mr-2" /> Back

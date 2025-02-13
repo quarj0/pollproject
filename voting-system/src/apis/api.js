@@ -3,8 +3,10 @@ import axios from "axios";
 let isRefreshing = false;
 let refreshSubscribers = [];
 
+const api_url = import.meta.env.VITE_API_URL;
+
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/",
+  baseURL: api_url,
   timeout: 5000,
   headers: {
     "Content-Type": "multipart/form-data",
@@ -59,7 +61,6 @@ axiosInstance.interceptors.response.use(
         }
       }
 
-      // Queue the requests while refreshing
       return new Promise((resolve) => {
         refreshSubscribers.push((newToken) => {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;

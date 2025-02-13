@@ -5,13 +5,13 @@ import axiosInstance from "../apis/api";
 const ContestantsPage = () => {
   const { pollId } = useParams();
   const [contestants, setContestants] = useState([]);
-  const [, setPollTitle] = useState("");
+  const [pollTitle, setPollTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedNominee, setSelectedNominee] = useState(null);
-  const [votes, setVotes] = useState(1);
+  const [votes, setVotes] = useState("");
   const [voterCode, setVoterCode] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
   const [pollType, setPollType] = useState("");
@@ -67,17 +67,22 @@ const ContestantsPage = () => {
 
   const closeModal = () => {
     setModalOpen(false);
-    setVotes(1);
-    setSelectedNominee(null);
+    setVotes("");
     setVoterCode("");
+    setSelectedNominee(null);
   };
 
   const handlePayment = async () => {
     setError("");
     setSuccess("");
 
-    if (votes < 1) {
+    if (pollType === "voters-pay" && votes < 1) {
       setError("Please enter a valid number of votes.");
+      return;
+    }
+
+    if (pollType === "creator-pay" && !voterCode) {
+      setError("Please enter a valid voter code.");
       return;
     }
 
@@ -85,8 +90,7 @@ const ContestantsPage = () => {
       setLoading(true);
       const payload = {
         nominee_code: selectedNominee,
-        votes,
-        voter_code: voterCode,
+        ...(pollType === "voters-pay" ? { votes } : { voter_code: voterCode }),
       };
 
       const endpoint =
@@ -95,14 +99,17 @@ const ContestantsPage = () => {
           : `vote/voter-pay/${pollId}/`;
 
       const response = await axiosInstance.post(endpoint, payload);
+
       if (pollType === "voters-pay") {
         setPaymentUrl(response.data.payment_url);
       } else {
         setSuccess("Vote cast successfully.");
+        closeModal(); // Reset the form for creator-pay
       }
     } catch (err) {
       setError(
-        err.response?.data?.error || "An error occurred during payment."
+        err.response?.data?.error ||
+          "An error occurred during the vote process."
       );
     } finally {
       setLoading(false);
@@ -118,7 +125,9 @@ const ContestantsPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-teal-600 text-white py-4">
-        <div className="container-fluid mx-auto px-4"></div>
+        <div className="container-fluid mx-auto px-4">
+          <h1 className="text-xl font-bold">{pollTitle}</h1>
+        </div>
       </header>
 
       <main className="py-10">
@@ -196,6 +205,8 @@ const ContestantsPage = () => {
             <h3 className="text-xl font-bold mb-4">Submit Your Vote</h3>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             {success && <p className="text-green-500 text-sm">{success}</p>}
+
+            {/* Conditional rendering based on pollType */}
             {pollType === "voters-pay" ? (
               <input
                 type="number"
@@ -205,15 +216,16 @@ const ContestantsPage = () => {
                 className="w-full px-3 py-2 border rounded-lg mb-4"
                 placeholder="Number of Votes"
               />
-            ) : (
+            ) : pollType === "creator-pay" ? (
               <input
                 type="text"
                 value={voterCode}
                 onChange={(e) => setVoterCode(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg mb-4"
-                placeholder="Enter Voter Code"
+                placeholder="Voter Code"
               />
-            )}
+            ) : null}
+
             <div className="flex justify-between">
               <button
                 onClick={closeModal}
@@ -224,7 +236,11 @@ const ContestantsPage = () => {
               <button
                 onClick={handlePayment}
                 className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
-                disabled={loading}
+                disabled={
+                  loading ||
+                  (pollType === "voters-pay" && votes < 1) ||
+                  (pollType === "creator-pay" && !voterCode)
+                }
               >
                 {loading ? "Processing..." : "Submit"}
               </button>

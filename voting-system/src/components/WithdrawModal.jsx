@@ -10,6 +10,11 @@ const WithdrawModal = ({ pollId, onClose, onWithdraw }) => {
     e.preventDefault();
     setError(null);
 
+    if (!pollId) {
+      setError("Poll ID is missing. Please select a poll.");
+      return;
+    }
+
     try {
       const response = await axiosInstance.post(
         `/payment/account/${pollId}/withdraw/`,
@@ -20,22 +25,21 @@ const WithdrawModal = ({ pollId, onClose, onWithdraw }) => {
           },
         }
       );
+      console.log("Withdrawal response:", response.data); // Debugging log
       onWithdraw(response.data);
       onClose();
     } catch (error) {
-      if (error.response && error.response.data) {
-        const serverError =
-          error.response.data.non_field_errors?.[0] ||
-          error.response.data.detail;
-        setError(serverError || "Withdrawal failed. Please try again.");
-      } else {
-        setError("An error occurred. Please try again later.");
-      }
+      console.error("Withdrawal error:", error); // Debugging log
+      const serverError =
+        error.response?.data?.non_field_errors?.[0] ||
+        error.response?.data?.detail ||
+        "Withdrawal failed. Please try again.";
+      setError(serverError);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
       <div className="bg-white p-6 rounded-md shadow-md w-96">
         <h2 className="text-xl font-bold mb-4">Initiate Withdrawal</h2>
         {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -49,6 +53,7 @@ const WithdrawModal = ({ pollId, onClose, onWithdraw }) => {
               onChange={(e) => setAmount(e.target.value)}
               className="w-full px-4 py-2 border rounded"
               min="0"
+              required
             />
           </div>
           <div className="flex justify-end">
@@ -73,7 +78,7 @@ const WithdrawModal = ({ pollId, onClose, onWithdraw }) => {
 };
 
 WithdrawModal.propTypes = {
-  pollId: PropTypes.number.isRequired,
+  pollId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   onClose: PropTypes.func.isRequired,
   onWithdraw: PropTypes.func.isRequired,
 };
