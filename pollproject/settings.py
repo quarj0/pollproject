@@ -2,6 +2,8 @@ from datetime import timedelta
 from pathlib import Path
 from decouple import config
 import os
+import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY=config('PAYSTACK_PUBLIC_KEY')
 BITLY_ACCESS_TOKEN = config('BITLY_ACCESS_TOKEN')
 FRONTEND_URL = config('FRONTEND_URL')
 
@@ -20,6 +23,8 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,').split(',')
 
 
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8080')
+
+CLOUDINARY_URL=config('CLOUDINARY_URL')
 
 # Security settings for production
 if not DEBUG:

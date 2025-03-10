@@ -21,8 +21,6 @@ from rest_framework.permissions import IsAuthenticated
 
 logger = logging.getLogger(__name__)
 
-# ---- Poll Management Views ----
-
 
 class PollCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -36,7 +34,7 @@ class PollCreateView(APIView):
 
             ussd_code = f"*1398*{poll.id}#"
             short_url = self.generate_bitly_url(poll.id, request)
-            
+
             if poll.poll_type == Poll.CREATOR_PAY:
                 if poll.setup_fee:
                     payment_link = self.create_payment_link(
@@ -189,7 +187,7 @@ class ContestantListView(APIView):
 
 class DeletePollView(APIView):
     def delete(self, request, poll_id=None):
-        
+
         if poll_id:
             poll = get_object_or_404(Poll, id=poll_id)
             poll.delete()

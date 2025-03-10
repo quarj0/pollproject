@@ -1491,3 +1491,368 @@ Traceback (most recent call last):
     raise ConnectionError(e, request=request)
 requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.paystack.co', port=443): Max retries exceeded with url: /transaction/initialize (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fa652526180>: Failed to resolve 'api.paystack.co' ([Errno -3] Temporary failure in name resolution)"))
 "POST /vote/voter-pay/31/ HTTP/1.1" 500 26404
+Internal Server Error: /auth/reset/password/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/authentication/views.py", line 108, in post
+    send_mail(
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/__init__.py", line 88, in send_mail
+    return mail.send()
+           ^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/message.py", line 301, in send
+    return self.get_connection(fail_silently).send_messages([self])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/backends/smtp.py", line 128, in send_messages
+    new_conn_created = self.open()
+                       ^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/backends/smtp.py", line 86, in open
+    self.connection = self.connection_class(
+                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/smtplib.py", line 258, in __init__
+    raise SMTPConnectError(code, msg)
+smtplib.SMTPConnectError: (451, b'Request action aborted on MFE proxy, SMTP server is not available.')
+Internal Server Error: /auth/reset/password/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/authentication/views.py", line 108, in post
+    send_mail(
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/__init__.py", line 88, in send_mail
+    return mail.send()
+           ^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/message.py", line 301, in send
+    return self.get_connection(fail_silently).send_messages([self])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/backends/smtp.py", line 128, in send_messages
+    new_conn_created = self.open()
+                       ^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/backends/smtp.py", line 86, in open
+    self.connection = self.connection_class(
+                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/smtplib.py", line 258, in __init__
+    raise SMTPConnectError(code, msg)
+smtplib.SMTPConnectError: (451, b'Request action aborted on MFE proxy, SMTP server is not available.')
+Internal Server Error: /auth/reset/password/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/authentication/views.py", line 108, in post
+    send_mail(
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/__init__.py", line 88, in send_mail
+    return mail.send()
+           ^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/message.py", line 301, in send
+    return self.get_connection(fail_silently).send_messages([self])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/backends/smtp.py", line 128, in send_messages
+    new_conn_created = self.open()
+                       ^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/mail/backends/smtp.py", line 86, in open
+    self.connection = self.connection_class(
+                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/smtplib.py", line 258, in __init__
+    raise SMTPConnectError(code, msg)
+smtplib.SMTPConnectError: (451, b'Request action aborted on MFE proxy, SMTP server is not available.')
+Internal Server Error: /polls/create/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/poll/views.py", line 40, in post
+    payment_link = self.create_payment_link(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/poll/views.py", line 126, in create_payment_link
+    logger.error(f"Paystack error: {response_data.get('message')}")
+                                    ^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'response_data' where it is not associated with a value
+"POST /polls/create/ HTTP/1.1" 500 20445
+Internal Server Error: /polls/create/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/poll/views.py", line 40, in post
+    payment_link = self.create_payment_link(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/poll/views.py", line 126, in create_payment_link
+    logger.error(f"Paystack error: {response_data.get('message')}")
+                                    ^^^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'response_data' where it is not associated with a value
+"POST /polls/create/ HTTP/1.1" 500 20489
+Internal Server Error: /polls/33/contestants/create/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/generics.py", line 194, in post
+    return self.create(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/mixins.py", line 24, in perform_create
+    serializer.save()
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "/home/quarjo/pollproject/poll/models.py", line 46, in save
+    super().save(*args, **kwargs)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 891, in save
+    self.save_base(
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 997, in save_base
+    updated = self._save_table(
+              ^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 1160, in _save_table
+    results = self._do_insert(
+              ^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 1201, in _do_insert
+    return manager._insert(
+           ^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/sql/compiler.py", line 1835, in execute_sql
+    for sql, params in self.as_sql():
+                       ^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/sql/compiler.py", line 1760, in as_sql
+    self.prepare_value(field, self.pre_save_val(field, obj))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/sql/compiler.py", line 1708, in pre_save_val
+    return field.pre_save(obj, add=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/models.py", line 112, in pre_save
+    instance_value = uploader.upload_resource(value, **options)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 252, in upload_resource
+    result = upload_func(file, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 197, in upload
+    return call_cacheable_api("upload", params, file=file, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 833, in call_cacheable_api
+    result = call_api(action, params, http_headers, return_error, unsigned, file, timeout, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 881, in call_api
+    params = utils.sign_request(params, options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/utils.py", line 617, in sign_request
+    raise ValueError("Must supply api_key")
+ValueError: Must supply api_key
+"POST /polls/33/contestants/create/ HTTP/1.1" 500 24787
+Internal Server Error: /polls/33/contestants/create/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/generics.py", line 194, in post
+    return self.create(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/mixins.py", line 24, in perform_create
+    serializer.save()
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "/home/quarjo/pollproject/poll/models.py", line 46, in save
+    super().save(*args, **kwargs)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 891, in save
+    self.save_base(
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 997, in save_base
+    updated = self._save_table(
+              ^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 1160, in _save_table
+    results = self._do_insert(
+              ^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 1201, in _do_insert
+    return manager._insert(
+           ^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/sql/compiler.py", line 1835, in execute_sql
+    for sql, params in self.as_sql():
+                       ^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/sql/compiler.py", line 1760, in as_sql
+    self.prepare_value(field, self.pre_save_val(field, obj))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/sql/compiler.py", line 1708, in pre_save_val
+    return field.pre_save(obj, add=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/models.py", line 112, in pre_save
+    instance_value = uploader.upload_resource(value, **options)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 252, in upload_resource
+    result = upload_func(file, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 197, in upload
+    return call_cacheable_api("upload", params, file=file, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 833, in call_cacheable_api
+    result = call_api(action, params, http_headers, return_error, unsigned, file, timeout, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/uploader.py", line 881, in call_api
+    params = utils.sign_request(params, options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/cloudinary/utils.py", line 617, in sign_request
+    raise ValueError("Must supply api_key")
+ValueError: Must supply api_key
+"POST /polls/33/contestants/create/ HTTP/1.1" 500 24785
