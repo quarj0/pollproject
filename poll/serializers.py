@@ -66,12 +66,19 @@ def calculate_setup_fee(expected_voters):
 
 
 class PollSerializer(serializers.ModelSerializer):
+    poll_image = serializers.SerializerMethodField()
+
     class Meta:
         model = Poll
         fields = [
             'id', 'title', 'poll_image', 'description', 'start_time', 'end_time',
             'poll_type', 'expected_voters', 'voting_fee', 'active', 'setup_fee'
         ]
+
+    def get_poll_image(self, obj):
+        if obj.poll_image:
+            return str(obj.poll_image.url)
+        return None
 
     def validate(self, data):
         start_time = data.get('start_time')
@@ -84,7 +91,6 @@ class PollSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Start time must be in the future.")
 
-        # Poll type-specific validation
         validate_poll_type(data)
         return data
 
@@ -135,11 +141,17 @@ class UpdatePollSerializer(serializers.ModelSerializer):
 
 
 class ContestantSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Contestant
-        fields = ['id', 'poll', 'category', 'name',
-                  'nominee_code', 'image']
+        fields = ['id', 'poll', 'category', 'name', 'nominee_code', 'image']
         read_only_fields = ['nominee_code']
+
+    def get_image(self, obj):
+        if obj.image:
+            return str(obj.image.url)
+        return None
 
     def validate(self, data):
         if 'image' in data and data['image']:
@@ -149,7 +161,6 @@ class ContestantSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        # Optionally regenerate nominee code if the name changes
         if 'name' in validated_data:
             instance.nominee_code = instance.generate_nominee_code()
         instance.save()
