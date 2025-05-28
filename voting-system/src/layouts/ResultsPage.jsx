@@ -19,7 +19,6 @@ import {
 import CustomBarLabel from "./CustomBarLabel";
 
 const ResultsPage = () => {
-  // Get the pollId from the URL parameters
   const { pollId } = useParams();
 
   const [results, setResults] = useState([]);
@@ -43,9 +42,44 @@ const ResultsPage = () => {
     }
   }, [pollId]);
 
-  useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+useEffect(() => {
+  fetchResults();
+}, [fetchResults]);
+
+// WebSocket setup for real-time results
+useEffect(() => {
+  const ws = new WebSocket(`ws://localhost:8000/ws/poll/${pollId}/`);
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      // Adjust this depending on your backend's message format
+      if (data.poll_results && Array.isArray(data.poll_results.votes)) {
+        setResults(processResults(data.poll_results.votes));
+      } else if (Array.isArray(data.poll_results)) {
+        setResults(processResults(data.poll_results));
+      }
+    } catch (e) {
+      console.error("Error processing WebSocket message:", e);
+      setError("Error processing live results data.");
+    }
+  };
+
+  ws.onerror = (e) => {
+    console.error("WebSocket error:", e);
+    setError("WebSocket connection error. Please refresh the page.");
+  };
+
+  ws.onclose = () => {
+    console.log("WebSocket connection closed.");
+    setError("WebSocket connection closed. Please refresh the page.");
+  };
+
+  return () => {
+    ws.close();
+  };
+}, [fetchResults, pollId]);
+
 
   const processResults = (data) => {
     const resultMap = new Map();
