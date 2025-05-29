@@ -2,8 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 from decouple import config
 import os
-import dj_database_url
-
+import cloudinary
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,7 +23,17 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,').split(',')
 
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8080')
 
-CLOUDINARY_URL=config('CLOUDINARY_URL')
+
+CLOUDINARY_CLOUD_NAME = config("CLOUDINARY_CLOUD_NAME", default="")
+CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
+CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET", default="")
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
+    secure=True
+)
 
 # Security settings for production
 if not DEBUG:
@@ -44,6 +53,8 @@ AUTH_USER_MODEL = 'authentication.User'
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,7 +67,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'djangochannelsrestframework',
     'authentication',
-    'channels',
     'poll',
     'payment',
     'vote',

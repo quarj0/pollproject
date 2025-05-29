@@ -146,11 +146,13 @@ class PollDetailView(APIView):
         if not poll.active:
             return Response({"detail": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
-        contestants = poll.contestants.values(
-            'name', 'category', 'nominee_code', 'image')
+        contestants = poll.contestants.all()
+        contestants_data = ContestantSerializer(contestants, many=True).data
+
         return Response({
             "poll": PollSerializer(poll).data,
-            "contestants": list(contestants)}, status=status.HTTP_200_OK)
+            "contestants": contestants_data
+        }, status=status.HTTP_200_OK)
 
 
 class ContestantDetails(APIView):
