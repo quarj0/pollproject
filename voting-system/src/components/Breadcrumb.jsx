@@ -6,7 +6,6 @@ const Breadcrumb = () => {
   const location = useLocation();
   const paths = location.pathname.split('/').filter(path => path);
 
-  // Convert path to readable format
   const formatPath = (path) => {
     return path
       .split('-')

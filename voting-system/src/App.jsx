@@ -24,7 +24,6 @@ import Settings from "./layouts/Settings";
 import NewPaymentLink from "./components/NewPaymentLink";
 import ResultsPage from "./layouts/ResultsPage";
 import PollManagement from "./layouts/PollManagement";
-import UpdatePoll from "./components/UpdatePoll";
 import UpdateContestant from "./components/UpdateContestant";
 import PaymentCompletion from "./layouts/PaymentVerification";
 import AddContestant from "./components/ContestantField";
@@ -37,6 +36,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Services from "./pages/Services";
 import Breadcrumb from "./components/Breadcrumb";
+import EditPoll from "./components/EditPoll";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -152,7 +152,7 @@ const App = () => {
               path="/create/:pollId/contestants"
               element={<AddContestant />}
             />
-            <Route path="/edit/poll/:pollId" element={<UpdatePoll />} />
+            <Route path="/edit/poll/:pollId" element={<EditPoll />} />
             <Route
               path="/edit/contestant/:contestantId"
               element={<UpdateContestant />}
