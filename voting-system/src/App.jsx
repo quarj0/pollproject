@@ -30,6 +30,13 @@ import PaymentCompletion from "./layouts/PaymentVerification";
 import AddContestant from "./components/ContestantField";
 import EditContestant from "./components/EditContestant";
 import NotFoundPage from "./layouts/NotFound";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import Services from "./pages/Services";
+import Breadcrumb from "./components/Breadcrumb";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -119,6 +126,7 @@ const App = () => {
             user={user}
           />
         )}
+        <Breadcrumb />
         <div>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -175,6 +183,14 @@ const App = () => {
               }
             />
 
+            {/* Footer Routes */}
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/services" element={<Services />} />
+
             <Route
               path="/password/reset"
               element={<PasswordResetRequestPage />}
@@ -199,6 +215,12 @@ const App = () => {
                 </PrivateRoute>
               }
             />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/services" element={<Services />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>

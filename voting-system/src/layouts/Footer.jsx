@@ -7,6 +7,8 @@ import {
   FaTwitter,
   FaWhatsapp,
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
     <footer className="py-10 bg-gradient-to-br from-gray-800 to-blue-950 text-white">
@@ -18,36 +20,36 @@ const Footer = () => {
             <h5 className="text-lg font-semibold mb-4">Quick Links</h5>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="/home"
+                <Link
+                  to="/"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#about"
+                <Link
+                  to="/about"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   About
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#services"
+                <Link
+                  to="/services"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Services
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#contact"
+                <Link
+                  to="/contact"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -57,42 +59,42 @@ const Footer = () => {
             <h5 className="text-lg font-semibold mb-4">Other Links</h5>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#privacy"
+                <Link
+                  to="/privacy-policy"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#terms"
+                <Link
+                  to="/terms"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#faq"
+                <Link
+                  to="/faq"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#support"
+                <Link
+                  to="/support"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Support
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
 
           {/* Contact Info */}
-          <div className="block justify-center md:justify-start ">
+          <div className="block justify-center md:justify-start">
             <h5 className="text-lg font-semibold mb-4">Contact Us</h5>
             <p className="text-gray-400 mb-4">
               <FaMapMarkerAlt className="text-xl text-red-500 mx-1" />
