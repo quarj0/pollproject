@@ -52,7 +52,7 @@ const CreatePoll = () => {
 
     // Calculate setup fee for creator-pay polls
     if (name === "expected_voters" && formData.poll_type === "creator-pay") {
-      const fee = Number(value) * 0.5; // Example: 50 pesewas per voter
+      const fee = Number(value) * 0.5; 
       setSetupFee(fee);
     }
   };

@@ -61,26 +61,56 @@ const ResultsPage = () => {
     fetchResults();
   }, [fetchResults]);
 
-  // WebSocket setup for real-time results
+  // WebSocket setup for real-time results with reconnection
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8000/ws/poll/${pollId}/`);
+    let ws = null;
+    let reconnectTimeout = null;
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.poll_results) {
-          setResults(processResults(data.poll_results));
-        } else {
-          setResults(processResults(data));
+    const connectWebSocket = () => {
+      ws = new WebSocket(`ws://localhost:8000/ws/poll/${pollId}/`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = null;
         }
-      } catch (e) {
-        console.error("Error processing WebSocket message:", e);
-        setError("Error processing live results data.");
-      }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.poll_results) {
+            setResults(processResults(data.poll_results));
+          } else {
+            setResults(processResults(data));
+          }
+        } catch (e) {
+          console.error("Error processing WebSocket message:", e);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected. Reconnecting...');
+        // Attempt to reconnect after 3 seconds
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        ws.close();
+      };
     };
 
+    connectWebSocket();
+
     return () => {
-      ws.close();
+      if (ws) {
+        ws.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
   }, [pollId]);
 

@@ -10,9 +10,11 @@ websocket_urlpatterns = [
 ]
 
 application = ProtocolTypeRouter({
-    'websocket': AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
-            URLRouter(websocket_urlpatterns)
+    'websocket': CorsMiddleware(
+        AllowedHostsOriginValidator(
+            AuthMiddlewareStack(
+                URLRouter(websocket_urlpatterns)
+            )
         )
     ),
 })

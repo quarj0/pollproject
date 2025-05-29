@@ -61,9 +61,9 @@ def calculate_setup_fee(expected_voters):
     elif 31 <= expected_voters <= 50:
         return 40
     elif 51 <= expected_voters <= 100:
-        return 95
+        return 100
     elif 101 <= expected_voters <= 200:
-        return 150
+        return 180
     elif 201 <= expected_voters <= 350:
         return 250
     return 0
