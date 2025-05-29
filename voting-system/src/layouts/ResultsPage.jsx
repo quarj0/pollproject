@@ -31,7 +31,6 @@ const ResultsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("bar");
-  const [animateNumbers, setAnimateNumbers] = useState(false);
   const [pollDetails, setPollDetails] = useState(null);
 
   const fetchResults = useCallback(async () => {
@@ -47,8 +46,6 @@ const ResultsPage = () => {
       const processedResults = processResults(resultsData);
       setResults(processedResults);
       setPollDetails(pollResponse.data);
-
-      setTimeout(() => setAnimateNumbers(true), 100);
     } catch (error) {
       console.error("Error fetching results:", error);
       setError(
@@ -71,10 +68,10 @@ const ResultsPage = () => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.poll_results && Array.isArray(data.poll_results.votes)) {
-          setResults(processResults(data.poll_results.votes));
-        } else if (Array.isArray(data.poll_results)) {
+        if (data.poll_results) {
           setResults(processResults(data.poll_results));
+        } else {
+          setResults(processResults(data));
         }
       } catch (e) {
         console.error("Error processing WebSocket message:", e);
@@ -88,31 +85,61 @@ const ResultsPage = () => {
   }, [pollId]);
 
   const processResults = (data) => {
-    if (!Array.isArray(data)) {
-      console.error("Expected array of results, got:", data);
-      return [];
+    if (!data) return [];
+
+    // If data has categories structure
+    if (data.categories) {
+      const allResults = [];
+      Object.values(data.categories).forEach((categoryResults) => {
+        categoryResults.forEach((result) => {
+          allResults.push({
+            name: result.name,
+            image: result.image || avatar,
+            vote_count: result.vote_count || 0,
+            category: result.category,
+          });
+        });
+      });
+      return allResults.sort((a, b) => b.vote_count - a.vote_count);
     }
 
-    const resultMap = new Map();
-    data.forEach((item) => {
-      const contestant = item.contestant || item;
-      const voteCount = item.total_votes || item.vote_count || 0;
+    // If data is a flat array
+    if (Array.isArray(data)) {
+      const resultMap = new Map();
+      data.forEach((item) => {
+        const contestant = item.contestant || item;
+        const voteCount = item.total_votes || item.vote_count || 0;
+        if (resultMap.has(contestant.name)) {
+          const existing = resultMap.get(contestant.name);
+          existing.vote_count += voteCount;
+        } else {
+          resultMap.set(contestant.name, {
+            name: contestant.name,
+            image: contestant.image || avatar,
+            vote_count: voteCount,
+          });
+        }
+      });
+      return Array.from(resultMap.values()).sort((a, b) => b.vote_count - a.vote_count);
+    }
 
-      if (resultMap.has(contestant.name)) {
-        const existing = resultMap.get(contestant.name);
-        existing.vote_count += voteCount;
-      } else {
-        resultMap.set(contestant.name, {
-          name: contestant.name,
-          image: contestant.image || avatar,
-          vote_count: voteCount,
+    // If data is an object with poll_title, total_votes format
+    if (data.poll_title && data.categories) {
+      const allResults = [];
+      Object.entries(data.categories).forEach(([category, results]) => {
+        results.forEach((result) => {
+          allResults.push({
+            name: result.name,
+            image: result.image || avatar,
+            vote_count: result.vote_count || 0,
+            category,
+          });
         });
-      }
-    });
+      });
+      return allResults.sort((a, b) => b.vote_count - a.vote_count);
+    }
 
-    return Array.from(resultMap.values()).sort(
-      (a, b) => b.vote_count - a.vote_count
-    );
+    return [];
   };
 
   const getDynamicColor = (index, total) =>

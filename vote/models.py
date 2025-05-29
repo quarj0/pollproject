@@ -1,5 +1,6 @@
 from django.db import models
 from poll.models import Poll, Contestant
+from payment.models import Transaction
 
 
 class Vote(models.Model):
@@ -8,17 +9,22 @@ class Vote(models.Model):
     contestant = models.ForeignKey(
         Contestant, on_delete=models.CASCADE, related_name="votes")
     number_of_votes = models.PositiveIntegerField(default=1)
+    transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="votes"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
-    payment_verified = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
-        return f"{self.number_of_votes} votes for {self.contestant.name}"
+        return f"{self.number_of_votes} vote(s) for {self.contestant.name}"
 
     def save(self, *args, **kwargs):
-        if not self.pk:  
-            poll = self.poll
-            if poll.poll_type == 'voters-pay' and not self.payment_verified:
-                raise ValueError(
-                    "Payment verification required for voter-pay polls")
         super().save(*args, **kwargs)
 
 

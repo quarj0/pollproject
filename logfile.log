@@ -690,3 +690,25 @@ Traceback (most recent call last):
                               ^^^^^^^
 AttributeError: 'Contestant' object has no attribute 'image'
 [35;1mHTTP GET /vote/results/38/ 500 [0.06, 127.0.0.1:52626][0m
+Internal Server Error: /vote/voter-pay/38/
+[35;1mHTTP POST /vote/voter-pay/38/ 500 [0.82, 127.0.0.1:42692][0m
+Internal Server Error: /vote/voter-pay/38/
+[35;1mHTTP POST /vote/voter-pay/38/ 500 [0.71, 127.0.0.1:42692][0m
+Internal Server Error: /payment/verify/vote-38-24-d9ea2111/
+[35;1mHTTP GET /payment/verify/vote-38-24-d9ea2111/ 500 [1.57, 127.0.0.1:57694][0m
+Internal Server Error: /payment/account/balance/
+[35;1mHTTP GET /payment/account/balance/ 500 [0.07, 127.0.0.1:55160][0m
+Internal Server Error: /payment/account/balance/
+[35;1mHTTP GET /payment/account/balance/ 500 [0.11, 127.0.0.1:55198][0m
+Internal Server Error: /payment/verify/vote-38-24-865edf99/
+[35;1mHTTP GET /payment/verify/vote-38-24-865edf99/ 500 [0.83, 127.0.0.1:39516][0m
+Internal Server Error: /payment/verify/vote-38-26-d45d0146/
+[35;1mHTTP GET /payment/verify/vote-38-26-d45d0146/ 500 [0.74, 127.0.0.1:39516][0m
+Internal Server Error: /payment/account/balance/
+[35;1mHTTP GET /payment/account/balance/ 500 [0.09, 127.0.0.1:42964][0m
+Internal Server Error: /payment/account/balance/
+[35;1mHTTP GET /payment/account/balance/ 500 [0.06, 127.0.0.1:43004][0m
+Internal Server Error: /payment/account/balance/
+[35;1mHTTP GET /payment/account/balance/ 500 [0.08, 127.0.0.1:39614][0m
+Internal Server Error: /payment/account/balance/
+[35;1mHTTP GET /payment/account/balance/ 500 [0.09, 127.0.0.1:39618][0m

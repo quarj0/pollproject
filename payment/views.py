@@ -19,6 +19,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import ListAPIView
 
+from vote.models import Vote
+
 from .serializers import TransactionSerializer
 from vote.serializers import VoteSerializer
 from .models import Withdrawal, Transaction
@@ -37,56 +39,75 @@ class VerifyPaymentView(APIView):
     Verify payment with Paystack and activate poll or record votes if successful.
     """
 
+    def _process_vote(self, transaction, poll, contestant, amount_paid, reference):
+        try:
+            voting_fee = Decimal(poll.voting_fee)
+            vote_count = int(amount_paid // voting_fee)
+
+            if vote_count < 1:
+                raise ValueError("Insufficient amount for voting.")
+
+            # Update or create transaction
+            if not transaction:
+                transaction = Transaction.objects.create(
+                    payment_reference=reference,
+                    transaction_type='vote',
+                    amount=amount_paid,
+                    success=True,
+                    poll=poll,
+                )
+            else:
+                transaction.success = True
+                transaction.save()
+
+            # Create vote
+            vote = Vote.objects.create(
+                poll=poll,
+                contestant=contestant,
+                number_of_votes=vote_count,
+                transaction=transaction
+            )
+            return vote
+
+        except Exception as e:
+            logger.error(f"Error processing vote: {str(e)}")
+            raise ValueError(f"Vote processing failed: {str(e)}")
+
     def get(self, request, reference):
         url = f"https://api.paystack.co/transaction/verify/{reference}"
         headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
 
         try:
-            # Fetch or create the transaction
-            transaction = Transaction.objects.filter(
-                payment_reference=reference).first()
-            if transaction and transaction.success:
-                return Response({"message": "Transaction already verified."}, status=status.HTTP_200_OK)
-
-            # Verify with Paystack
-            session = requests.Session()
-            retries = Retry(total=3, backoff_factor=0.3,
-                            status_forcelist=[500, 502, 503, 504])
-            session.mount("https://", HTTPAdapter(max_retries=retries))
-            response = session.get(url, headers=headers)
+            # Verify with Paystack first
+            response = requests.get(url, headers=headers)
             response_data = response.json()
 
-            if not response_data.get('status', False):
+            if not response_data.get('status'):
                 logger.error(f"Paystack verification failed: {response_data}")
                 return Response({"error": "Payment verification failed"}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Get the transaction data
             amount_paid = Decimal(
                 response_data['data']['amount']) / Decimal(100)
             reference_parts = reference.split("-")
-            if len(reference_parts) < 2:
-                logger.error(f"Invalid reference format: {reference}")
-                return Response({"error": "Invalid payment reference format"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get or create transaction
+            transaction = Transaction.objects.filter(
+                payment_reference=reference).first()
+
+            if transaction and transaction.success:
+                return Response({"message": "Transaction already verified."}, status=status.HTTP_200_OK)
 
             poll_id = reference_parts[1]
             poll = get_object_or_404(Poll, id=poll_id)
 
-            if "activate" in reference:
-                self._process_poll_activation(
-                    transaction, poll, amount_paid, reference)
-                return Response({"message": "Payment verified and poll activated."}, status=status.HTTP_200_OK)
-
-            elif "vote" in reference:
-                if len(reference_parts) < 3:
-                    logger.error(
-                        f"Invalid voting reference format: {reference}")
-                    return Response({"error": "Invalid voting reference format"}, status=status.HTTP_400_BAD_REQUEST)
-
+            if "vote" in reference:
                 contestant_id = reference_parts[2]
                 contestant = get_object_or_404(
                     Contestant, id=contestant_id, poll=poll)
                 self._process_vote(transaction, poll,
                                    contestant, amount_paid, reference)
-                return Response({"message": "Vote recorded."}, status=status.HTTP_201_CREATED)
+                return Response({"message": "Vote recorded successfully."}, status=status.HTTP_201_CREATED)
 
             return Response({"message": "Payment verified."}, status=status.HTTP_200_OK)
 
@@ -113,32 +134,38 @@ class VerifyPaymentView(APIView):
         poll.save()
 
     def _process_vote(self, transaction, poll, contestant, amount_paid, reference):
-        voting_fee = Decimal(poll.voting_fee)
-        vote_count = amount_paid // voting_fee
+        try:
+            voting_fee = Decimal(poll.voting_fee)
+            vote_count = int(amount_paid // voting_fee)
 
-        if vote_count < 1:
-            raise ValueError("Insufficient amount for voting.")
+            if vote_count < 1:
+                raise ValueError("Insufficient amount for voting.")
 
-        if not transaction:
-            transaction = Transaction.objects.create(
-                payment_reference=reference,
-                transaction_type=get_transaction_type(poll),
-                amount=amount_paid,
-                success=True,
+            # Update or create transaction
+            if not transaction:
+                transaction = Transaction.objects.create(
+                    payment_reference=reference,
+                    transaction_type='vote',
+                    amount=amount_paid,
+                    success=True,
+                    poll=poll,
+                )
+            else:
+                transaction.success = True
+                transaction.save()
+
+            # Create vote
+            vote = Vote.objects.create(
                 poll=poll,
+                contestant=contestant,
+                number_of_votes=vote_count,
+                transaction=transaction
             )
-        transaction.success = True
-        transaction.save()
+            return vote
 
-        vote_data = {'poll': poll.id, 'contestant': contestant.id,
-                     'number_of_votes': vote_count}
-        voter_serializer = VoteSerializer(data=vote_data)
-        if voter_serializer.is_valid():
-            voter_serializer.save()
-        else:
-            logger.error(f"VoteSerializer validation failed: {
-                         voter_serializer.errors}")
-            raise ValueError("Vote recording failed.")
+        except Exception as e:
+            logger.error(f"Error processing vote: {str(e)}")
+            raise ValueError(f"Vote processing failed: {str(e)}")
 
 
 class PaymentLinkView(APIView):
@@ -237,15 +264,18 @@ class AccountBalanceView(APIView):
             polls = Poll.objects.filter(
                 creator=request.user,
                 poll_type=Poll.VOTERS_PAY,
-                active=True  # Only count active polls
+                active=True
             )
 
             total_amount_collected = Decimal('0.0')
             total_withdrawn = Decimal('0.0')
 
-            # Calculate total amount collected
+            # Calculate total amount collected from successful transactions
             for poll in polls:
-                successful_votes = poll.votes.filter(payment_verified=True)
+                successful_votes = Vote.objects.filter(
+                    poll=poll,
+                    transaction__success=True  # Use transaction success status
+                )
                 vote_count = sum(
                     vote.number_of_votes for vote in successful_votes)
                 total_amount_collected += Decimal(

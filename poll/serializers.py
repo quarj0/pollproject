@@ -48,19 +48,23 @@ def validate_poll_type(data):
             raise serializers.ValidationError(
                 "Expected voters should be at least 20 for creator-pay polls.")
 
-        if data.get('expected_voters') > 200:
+        if data.get('expected_voters') > 350:
             raise serializers.ValidationError(
-                "Expected voters cannot exceed 200 for creator-pay polls.")
+                "Expected voters cannot exceed 350 for creator-pay polls.")
         data['setup_fee'] = calculate_setup_fee(data['expected_voters'])
     return data
 
 
 def calculate_setup_fee(expected_voters):
-    if 20 <= expected_voters <= 60:
-        return 25
-    elif 61 <= expected_voters <= 100:
+    if 20 <= expected_voters <= 30:
         return 35
-    elif 101 <= expected_voters <= 400:
+    elif 31 <= expected_voters <= 50:
+        return 40
+    elif 51 <= expected_voters <= 100:
+        return 95
+    elif 101 <= expected_voters <= 200:
+        return 150
+    elif 201 <= expected_voters <= 350:
         return 250
     return 0
 
