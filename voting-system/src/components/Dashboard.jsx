@@ -182,11 +182,7 @@ const DashBoard = () => {
                 >
                   <Link to={`/polls/${poll.id}/contestants`}>
                     <img
-                      src={
-                        poll.poll_image
-                          ? `http://localhost:8000${poll.poll_image}`
-                          : "https://via.placeholder.com/300"
-                      }
+                      src={(poll.poll_image)}
                       alt={poll.title}
                       className="w-full h-48 object-cover"
                     />

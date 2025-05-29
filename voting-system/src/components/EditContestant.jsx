@@ -54,7 +54,7 @@ const UpdateContestant = () => {
       setContestant((prev) => ({
         ...prev,
         image: files[0],
-        preview: URL.createObjectURL(files[0]),
+        preview: (files[0]),
       }));
     } else {
       setContestant((prev) => ({
@@ -144,9 +144,9 @@ const UpdateContestant = () => {
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
           />
-          {contestant.preview && (
+          {(contestant.preview || contestant.image) && (
             <img
-              src={contestant.preview}
+              src={contestant.preview || contestant.image || contestant.image?.url}
               alt="Contestant Preview"
               className="mt-2 h-32 w-32 object-cover"
             />

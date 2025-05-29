@@ -34,7 +34,7 @@ class PollCreateView(APIView):
             poll = serializer.save()
 
             ussd_code = f"*1398*{poll.id}#"
-            short_url = self.generate_bitly_url(poll.id, request)
+            short_url = self.generate_poll_url(poll.id, request)
 
             if poll.poll_type == Poll.CREATOR_PAY:
                 if poll.setup_fee:
@@ -78,30 +78,15 @@ class PollCreateView(APIView):
 
         return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
 
-    def generate_bitly_url(self, poll_id, request):
-        bitly_url = "https://api-ssl.bitly.com/v4/shorten"
-        headers = {
-            "Authorization": f"Bearer {settings.BITLY_ACCESS_TOKEN}",
-            "Content-Type": "application/json",
-        }
-
+    def generate_poll_url(self, poll_id, request):
+        """
+        Generate a direct poll URL for users to share.
+        """
         site = get_current_site(request)
-        long_url = f"http://{site.domain}{
-            reverse('poll-detail', args=[poll_id])}"
-
-        payload = {
-            "long_url": long_url,
-            "domain": "bit.ly", }
-
-        try:
-            response = requests.post(bitly_url, json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            return data.get('link', None)
-        except requests.RequestException as e:
-            logger.error(f"Error shortening URL with Bitly: {e}")
-            return None
-
+        frontend_url = getattr(settings, "FRONTEND_URL", None)
+        if frontend_url:
+            return f"{frontend_url.rstrip('/')}/poll/{poll_id}"
+        
     def create_payment_link(self, user, amount, poll_id):
         payment_data = {
             "email": user.email,

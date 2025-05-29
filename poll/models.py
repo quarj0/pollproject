@@ -26,7 +26,7 @@ class Poll(models.Model):
     creator = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="polls")
     active = models.BooleanField(default=False)
-    poll_image = CloudinaryField('image', null=True, blank=True)
+    poll_image = CloudinaryField('image', help_text="Poll image")
 
     def __str__(self):
         return f"{self.title} ({self.poll_type})"
@@ -46,8 +46,7 @@ class Contestant(models.Model):
     category = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     nominee_code = models.CharField(max_length=15, unique=True)
-    contestant_image = CloudinaryField(
-        'image', null=True, blank=True, default='')
+    image = CloudinaryField('image', help_text="Contestant image")
 
     def save(self, *args, **kwargs):
         if not self.nominee_code:

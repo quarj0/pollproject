@@ -52,7 +52,20 @@ const CreatePoll = () => {
 
     // Calculate setup fee for creator-pay polls
     if (name === "expected_voters" && formData.poll_type === "creator-pay") {
-      const fee = Number(value) * 0.5; 
+      const expectedVoters = Number(value);
+      let fee = 0;
+      
+      if (expectedVoters >= 20) {
+        // 20-100 voters: 1.5 GHS per voter
+        if (expectedVoters <= 100) {
+          fee = expectedVoters * 1.5;
+        }
+        // 101-350 voters: 0.75 GHS per voter
+        else if (expectedVoters <= 350) {
+          fee = expectedVoters * 0.8;
+        }
+      }
+      
       setSetupFee(fee);
     }
   };

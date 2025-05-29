@@ -50,23 +50,19 @@ def validate_poll_type(data):
 
         if data.get('expected_voters') > 350:
             raise serializers.ValidationError(
-                "Expected voters cannot exceed 350 for creator-pay polls.")
+                "For more than 350 voters, please use the voters-pay model.")
         data['setup_fee'] = calculate_setup_fee(data['expected_voters'])
     return data
 
 
 def calculate_setup_fee(expected_voters):
-    if 20 <= expected_voters <= 30:
-        return 35
-    elif 31 <= expected_voters <= 50:
-        return 40
-    elif 51 <= expected_voters <= 100:
-        return 100
-    elif 101 <= expected_voters <= 200:
-        return 180
-    elif 201 <= expected_voters <= 350:
-        return 250
-    return 0
+    if expected_voters < 20:
+        return 0
+    # 20-100 voters: 1.5 GHS per voter
+    if expected_voters <= 100:
+        return int(expected_voters * 1.5)
+    # 101-350 voters: 0.8 GHS per voter
+    return int(expected_voters * 0.8)
 
 
 class PollSerializer(serializers.ModelSerializer):

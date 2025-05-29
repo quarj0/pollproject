@@ -174,6 +174,7 @@ const App = () => {
             <Route path="/dashboard" element={<DashBoard />} />
             <Route path="/payment/new" element={<NewPaymentLink />} />
             <Route path="/poll/:pollId/results" element={<ResultsPage />} />
+            <Route path="/poll/:pollId" element={<ResultsPage />} />
             <Route
               path="/settings"
               element={

@@ -3,6 +3,7 @@ import axiosInstance from "../apis/api";
 import { useParams, useNavigate } from "react-router-dom";
 import Message from "./Message";
 import { FaArrowLeft } from "react-icons/fa";
+import { getImageUrl, getPreviewUrl } from '../utils/imageHelper';
 
 const UpdatePoll = () => {
   const { pollId } = useParams();
@@ -54,11 +55,19 @@ const UpdatePoll = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setPoll((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, files } = e.target;
+    if (files && files[0]) {
+      setPoll((prev) => ({
+        ...prev,
+        image: files[0],
+        preview: getPreviewUrl(files[0]),
+      }));
+    } else {
+      setPoll((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   if (loading) return <p>Loading poll...</p>;
@@ -136,6 +145,13 @@ const UpdatePoll = () => {
         </div>
         <div className="mb-4">
           <label className="block mb-2">Poll Image</label>
+          {(poll.preview || poll.poll_image) && (
+            <img
+              src={poll.preview || getImageUrl(poll.poll_image)}
+              alt="Poll Image"
+              className="mt-2 h-32 w-32 object-cover"
+            />
+          )}
           <input
             type="file"
             accept="image/jpg, image/png"
@@ -148,13 +164,6 @@ const UpdatePoll = () => {
             }
             className="w-full p-2 border border-gray-300 rounded"
           />
-          {poll.preview && (
-            <img
-              src={poll.preview}
-              alt="Poll Preview"
-              className="mt-2 h-32 w-32 object-cover"
-            />
-          )}
         </div>
 
         <div className="mb-4">

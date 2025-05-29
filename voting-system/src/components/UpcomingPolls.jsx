@@ -32,13 +32,6 @@ const UpcomingPolls = () => {
     return currentDate <= endTime;
   });
 
-  const getImageUrl = (image) => {
-    if (image?.startsWith("/")) {
-      return `http://localhost:8000${image}`;
-    }
-    return image || "https://via.placeholder.com/300";
-  };
-
   const truncateText = (text, maxLength = 100) =>
     text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 
@@ -85,7 +78,7 @@ const UpcomingPolls = () => {
             className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
           >
             <img
-              src={getImageUrl(poll.poll_image)}
+              src={poll.poll_image}
               alt={`Image for ${poll.title}`}
               className="w-full h-48 object-cover"
             />

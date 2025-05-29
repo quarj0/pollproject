@@ -2,7 +2,6 @@ from datetime import timedelta
 from pathlib import Path
 from decouple import config
 import os
-import cloudinary
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,7 +11,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY')
-BITLY_ACCESS_TOKEN = config('BITLY_ACCESS_TOKEN')
 FRONTEND_URL = config('FRONTEND_URL')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -20,23 +18,14 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,').split(',')
 
+CORS_ALLOWED_ORIGINS = ['http://localhost:8080', 'http://localhost:5137']
+
 # Always append trailing slashes to URLs
 APPEND_SLASH = True
 
 
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8080')
 
-
-CLOUDINARY_CLOUD_NAME = config("CLOUDINARY_CLOUD_NAME", default="")
-CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
-CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET", default="")
-
-cloudinary.config(
-    cloud_name=CLOUDINARY_CLOUD_NAME,
-    api_key=CLOUDINARY_API_KEY,
-    api_secret=CLOUDINARY_API_SECRET,
-    secure=True
-)
 
 # Security settings for production
 if not DEBUG:
@@ -63,7 +52,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -73,12 +64,10 @@ INSTALLED_APPS = [
     'poll',
     'payment',
     'vote',
-    'cloudinary',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # Add this after security middleware
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -125,8 +114,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '1000/day',
-        'ussd': '60/minute',  # USSD-specific rate limit
-        'payment_endpoints': '30/hour',  # Payment endpoint rate limit
+        'ussd': '60/minute', 
+        'payment_endpoints': '30/hour', 
     },
 }
 
@@ -154,6 +143,25 @@ DATABASES = {
         'PORT': config('DB_PORT'),
     }
 }
+
+# Cloudinary settings
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': config('CLOUDINARY_API_KEY'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET'),
+    'SECURE': True,
+}
+
+
+# File storage settings
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = f"https://res.cloudinary.com/{config('CLOUDINARY_CLOUD_NAME')}/image/upload/"
+
+# Static files (CSS, JavaScript, Images)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 
 # Email
@@ -195,44 +203,9 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Ensure static files are properly served
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
-
-# Media files configuration
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Cloudinary configuration (for images only)
-CLOUDINARY_URL = config('CLOUDINARY_URL', default=None)
-if CLOUDINARY_URL:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
-        'API_KEY': CLOUDINARY_API_KEY,
-        'API_SECRET': CLOUDINARY_API_SECRET,
-        'SECURE': True,
-        'MEDIA_TAG': 'media',
-        'INVALID_VIDEO_ERROR_MESSAGE': 'Please upload a valid video file.',
-        'EXCLUDE_DELETE_ORPHANED_MEDIA_PATHS': [],
-    }
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:8000",
-    "http://localhost:4000",
-]
-
 # WebSocket settings
 CORS_ALLOW_WEBSOCKETS = True
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # Channel layers configuration

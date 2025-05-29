@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../apis/api";
 import { format } from "date-fns";
-import { getImageUrl } from '../utils/imageHelper';
 
 const EditPoll = () => {
   const { pollId } = useParams();
@@ -50,7 +49,7 @@ const EditPoll = () => {
             description: pollData.description || '',
             start_time: formattedStartTime,
             end_time: formattedEndTime,
-            preview: pollData.poll_image ? getImageUrl(pollData.poll_image) : null,
+            preview: pollData.poll_image ? (pollData.poll_image) : null,
             poll_image: null,
           });
         } else {
@@ -84,7 +83,7 @@ const EditPoll = () => {
       setPoll(prev => ({
         ...prev,
         poll_image: files[0],
-        preview: URL.createObjectURL(files[0])
+        preview: (files[0])
       }));
     } else {
       setPoll(prev => ({
@@ -229,15 +228,15 @@ const EditPoll = () => {
             accept="image/*"
             className="w-full p-2 border rounded"
           />
-          {poll.preview && (
+          {(poll.preview || poll.poll_image) && (
             <div className="mt-2">
               <img 
-                src={poll.preview} 
+                src={poll.preview || (poll.poll_image)} 
                 alt="Poll Preview" 
                 className="max-w-xs rounded shadow-sm"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = '/placeholder-image.png'; // Add a placeholder image
+                  e.target.src = '/placeholder-image.png';
                 }}
               />
             </div>

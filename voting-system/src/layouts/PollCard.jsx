@@ -4,9 +4,8 @@ import { motion } from "framer-motion";
 import { FaCalendarAlt, FaUserFriends, FaVoteYea } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
 
-const PollCard = ({ item, linkTo, placeholderImage }) => {
-  // eslint-disable-next-line no-unused-vars
-  const { title, description, image, startTime, endTime, totalVotes, pollType } = item;
+const PollCard = ({ item, linkTo }) => {
+  const { title, description, image, endTime, totalVotes, pollType } = item;
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -41,7 +40,7 @@ const PollCard = ({ item, linkTo, placeholderImage }) => {
         <div className="relative h-48 overflow-hidden">
           <motion.img
             variants={imageVariants}
-            src={image ? `http://localhost:8000${image}` : placeholderImage}
+            src={(image)}
             alt={title}
             className="w-full h-full object-cover"
           />
@@ -94,14 +93,6 @@ const PollCard = ({ item, linkTo, placeholderImage }) => {
   );
 };
 
-PollCard.defaultProps = {
-  placeholderImage: "https://via.placeholder.com/300",
-  item: {
-    totalVotes: 0,
-    pollType: 'voters-pay'
-  }
-};
-
 PollCard.propTypes = {
   item: PropTypes.shape({
     title: PropTypes.string.isRequired,
@@ -112,8 +103,7 @@ PollCard.propTypes = {
     totalVotes: PropTypes.number,
     pollType: PropTypes.oneOf(['voters-pay', 'creator-pay'])
   }).isRequired,
-  linkTo: PropTypes.string.isRequired,
-  placeholderImage: PropTypes.string
+  linkTo: PropTypes.string.isRequired
 };
 
 export default PollCard;

@@ -20,7 +20,10 @@ const UpdateContestant = () => {
         const res = await axiosInstance.get(
           `polls/${pollId}/contestants/${contestantId}/`
         );
-        setContestant(res.data);
+        setContestant({
+          ...res.data,
+          preview: (res.data.image) ? res.data.image : null,
+        });
       } catch {
         setError("Failed to fetch contestant details.");
       } finally {
@@ -54,11 +57,19 @@ const UpdateContestant = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setContestant((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, files } = e.target;
+    if (files && files[0]) {
+      setContestant((prev) => ({
+        ...prev,
+        image: files[0],
+        preview: (files[0])
+      }));
+    } else {
+      setContestant((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   if (loading) return <p>Loading contestant...</p>;
@@ -98,13 +109,7 @@ const UpdateContestant = () => {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) =>
-              setContestant((prev) => ({
-                ...prev,
-                image: e.target.files[0],
-                preview: URL.createObjectURL(e.target.files[0]),
-              }))
-            }
+            onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded"
           />
           {contestant.preview && (

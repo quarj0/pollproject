@@ -13,7 +13,7 @@ const ContestantsPage = () => {
   const [selectedNominee, setSelectedNominee] = useState(null);
   const [votes, setVotes] = useState("");
   const [voterCode, setVoterCode] = useState("");
-  const [paymentUrl, setPaymentUrl] = useState("");
+
   const [pollType, setPollType] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -91,7 +91,7 @@ const ContestantsPage = () => {
       setLoading(true);
       const payload = {
         nominee_code: selectedNominee,
-        ...(pollType === "voters-pay" ? { votes } : { voter_code: voterCode }),
+        ...(pollType === "voters-pay" ? { number_of_votes: parseInt(votes, 10) } : { code: voterCode }),
       };
 
       const endpoint =
@@ -101,11 +101,13 @@ const ContestantsPage = () => {
 
       const response = await axiosInstance.post(endpoint, payload);
 
-      if (pollType === "voters-pay") {
-        setPaymentUrl(response.data.payment_url);
-      } else {
+      if (pollType === "voters-pay" && response.data.payment_url) {
+        window.location.href = response.data.payment_url;
+      } else if (pollType === "creator-pay") {
         setSuccess("Vote cast successfully.");
-        closeModal(); 
+        closeModal();
+        // Refresh the contestant list to show updated vote count
+        window.location.reload();
       }
     } catch (err) {
       setError(
@@ -117,11 +119,7 @@ const ContestantsPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (paymentUrl) {
-      window.location.href = paymentUrl;
-    }
-  }, [paymentUrl]);
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -159,11 +157,7 @@ const ContestantsPage = () => {
                       className="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 overflow-hidden"
                     >
                       <img
-                        src={
-                          contestant.image
-                            ? `http://localhost:8000${contestant.image}`
-                            : "https://via.placeholder.com/300"
-                        }
+                        src={(contestant.image || contestant.image?.url) || "https://via.placeholder.com/150"}
                         alt={contestant.name}
                         className="w-full h-48 object-cover"
                       />

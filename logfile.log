@@ -712,3 +712,81 @@ Internal Server Error: /payment/account/balance/
 [35;1mHTTP GET /payment/account/balance/ 500 [0.08, 127.0.0.1:39614][0m
 Internal Server Error: /payment/account/balance/
 [35;1mHTTP GET /payment/account/balance/ 500 [0.09, 127.0.0.1:39618][0m
+Internal Server Error: /polls/39/contestants/35/update/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 42, in inner
+    response = await get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 253, in _get_response_async
+    response = await wrapped_callback(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 468, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/current_thread_executor.py", line 40, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 522, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ContestantUpdateView.patch() got an unexpected keyword argument 'pk'
+[35;1mHTTP PATCH /polls/39/contestants/35/update/ 500 [0.03, 127.0.0.1:37506][0m
+Internal Server Error: /polls/39/contestants/35/update/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 42, in inner
+    response = await get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 253, in _get_response_async
+    response = await wrapped_callback(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 468, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/current_thread_executor.py", line 40, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 522, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ContestantUpdateView.patch() got an unexpected keyword argument 'pk'
+[35;1mHTTP PATCH /polls/39/contestants/35/update/ 500 [0.04, 127.0.0.1:37506][0m

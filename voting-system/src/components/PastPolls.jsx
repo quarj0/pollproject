@@ -77,11 +77,7 @@ const PastPolls = () => {
             className="bg-gray-100 shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
           >
             <img
-              src={
-                poll.poll_image
-                  ? `http://localhost:8000${poll.poll_image}`
-                  : "https://via.placeholder.com/300?text=No+Image+Available"
-              }
+              src={poll.poll_image}
               alt={poll.title || "Poll image"}
               className="w-full h-48 object-cover"
             />

@@ -22,6 +22,7 @@ const Settings = ({ authTokens }) => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -49,6 +50,7 @@ const Settings = ({ authTokens }) => {
   const handleDeleteAccount = async () => {
     setMessage("");
     setError("");
+    setLoading(true);
     try {
       await axiosInstance.delete("auth/user/delete/", {
         headers: {
@@ -106,9 +108,9 @@ const Settings = ({ authTokens }) => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition"
-          >
-            Send Password Reset Link
+            className={`w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+            disabled={loading}>
+            {loading ? "Sending..." : "Reset Password"}
           </button>
         </form>
 
@@ -116,9 +118,10 @@ const Settings = ({ authTokens }) => {
         <div className="mt-6">
           <button
             onClick={() => setShowConfirmDelete(true)}
-            className="w-full bg-red-500 text-white py-3 rounded-md hover:bg-red-600 transition"
+            className={`w-full bg-red-500 text-white py-3 rounded-md hover:bg-red-600 transition ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+            disabled={loading}
           >
-            Delete Account
+            {loading ? "Deleting..." : "Delete Account"}
           </button>
         </div>
 
@@ -133,13 +136,15 @@ const Settings = ({ authTokens }) => {
               <div className="flex justify-center gap-4">
                 <button
                   onClick={handleDeleteAccount}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+                  className={`bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+                  disabled={loading}
                 >
-                  Confirm Delete
+                  {loading ? "Deleting..." : "Confirm Delete"}
                 </button>
                 <button
                   onClick={() => setShowConfirmDelete(false)}
                   className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition"
+                  disabled={loading}
                 >
                   Cancel
                 </button>

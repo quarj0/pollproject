@@ -7,7 +7,7 @@ const AddContestants = () => {
   const { pollId } = useParams();
 
   const [contestants, setContestants] = useState([
-    { name: "", category: "", contestant_image: null, preview: null },
+    { name: "", category: "", image: null, preview: null },
   ]);
 
   const handleChange = (index, key, value) => {
@@ -23,7 +23,7 @@ const AddContestants = () => {
   };
 
   const handleAdd = () => {
-    setContestants([...contestants, { name: "", category: "", contestant_image: null }]);
+    setContestants([...contestants, { name: "", category: "", image: null }]);
   };
 
   const handleSubmit = async () => {
@@ -48,8 +48,8 @@ const AddContestants = () => {
         formData.append("poll", pollId);
         formData.append("name", contestant.name);
         formData.append("category", contestant.category);
-        if (contestant.contestant_image) {
-          formData.append("image", contestant.contestant_image);
+        if (contestant.image) {
+          formData.append("image", contestant.image);
         }
 
         const response = await axiosInstance.post(
@@ -112,7 +112,7 @@ const ContestantField = ({ index, contestant, handleChange, handleRemove }) => {
     const file = event.target.files[0];
     if (file) {
       handleChange(index, "image", file);
-      handleChange(index, "preview", URL.createObjectURL(file));
+      handleChange(index, "preview", (file));
     }
   };
 

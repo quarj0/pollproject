@@ -145,7 +145,7 @@ const ResultsPage = () => {
         } else {
           resultMap.set(contestant.name, {
             name: contestant.name,
-            image: contestant.image ? `http://localhost:8000${contestant.image}` : avatar,
+            image: contestant.image ? contestant.image?.url : avatar,
             vote_count: voteCount,
           });
         }

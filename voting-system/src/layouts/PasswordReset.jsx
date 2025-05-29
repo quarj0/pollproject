@@ -20,7 +20,7 @@ const PasswordResetRequestPage = () => {
     try {
       await axiosInstance.post("auth/reset/password/", { email });
       setMessage("Password reset email sent. Please check your inbox.");
-      setEmail(""); // Clear email field after successful submission
+      setEmail(""); 
     } catch (err) {
       if (err.response?.status === 404) {
         setError("Email address not found.");
