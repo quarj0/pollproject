@@ -10,31 +10,42 @@ const UpdateContestant = () => {
     image: null,
     preview: null,
   });
+  const [pollDetails, setPollDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchContestant = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axiosInstance.get(
-          `/polls/${pollId}/contestants/${contestantId}/`
-        );
+        const [pollRes, contestantRes] = await Promise.all([
+          axiosInstance.get(`/polls/${pollId}/`),
+          axiosInstance.get(`/polls/${pollId}/contestants/${contestantId}/`),
+        ]);
+
+        // Check if poll can be edited
+        const startTime = new Date(pollRes.data.start_time);
+        if (startTime <= new Date() || pollRes.data.has_votes) {
+          setError(
+            "This poll cannot be edited. It has either started or has votes."
+          );
+          return;
+        }
+
+        setPollDetails(pollRes.data);
         setContestant({
-          name: res.data.name,
-          category: res.data.category,
+          name: contestantRes.data.name,
+          category: contestantRes.data.category,
           image: null,
-          preview: res.data.image
-            ? `http://localhost:8000${res.data.image}`
-            : null,
+          preview: contestantRes.data.image || null,
         });
-      } catch {
-        setError("Failed to fetch contestant details.");
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch details.");
       } finally {
         setLoading(false);
       }
     };
-    fetchContestant();
+    fetchData();
   }, [pollId, contestantId]);
 
   const handleChange = (e) => {
@@ -56,6 +67,12 @@ const UpdateContestant = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    // Check if poll is still editable
+    if (pollDetails && (new Date(pollDetails.start_time) <= new Date() || pollDetails.has_votes)) {
+      setError("This poll cannot be edited anymore.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("name", contestant.name);
@@ -79,7 +96,18 @@ const UpdateContestant = () => {
   };
 
   if (loading) return <p>Loading contestant...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (error)
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded">
+        <div className="text-red-500 p-4 bg-red-50 rounded mb-4">{error}</div>
+        <button
+          onClick={() => navigate(`/polls/${pollId}/contestants/`)}
+          className="bg-gray-500 text-white px-4 py-2 rounded"
+        >
+          Back to Contestants
+        </button>
+      </div>
+    );
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded">

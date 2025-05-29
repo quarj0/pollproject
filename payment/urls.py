@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('account/<int:poll_id>/withdraw/', InitiateWithdrawalView.as_view(), name='withdrawal'),
 
-    path('account/balance', AccountBalanceView.as_view(), name="account-balance"),
+    path('account/balance/', AccountBalanceView.as_view(), name="account-balance"),
 
     path('webhook/', paystack_webhook, name='paystack-webhook'),
 ]

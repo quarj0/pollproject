@@ -1,7 +1,7 @@
 from django.core.files.images import get_image_dimensions
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from .models import Poll, Contestant
 
 
@@ -108,6 +108,11 @@ class UpdatePollSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
+        if not self.instance.can_be_edited():
+            raise PermissionDenied(
+                "Poll cannot be edited after start time or if votes have been cast"
+            )
+
         image = data.get('poll_image')
 
         if image:
@@ -141,21 +146,22 @@ class UpdatePollSerializer(serializers.ModelSerializer):
 
 
 class ContestantSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    contestant_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Contestant
-        fields = ['id', 'poll', 'category', 'name', 'nominee_code', 'image']
+        fields = ['id', 'poll', 'category', 'name',
+                  'nominee_code', 'contestant_image']
         read_only_fields = ['nominee_code']
 
-    def get_image(self, obj):
-        if obj.image:
-            return str(obj.image.url)
+    def get_contestant_image(self, obj):
+        if obj.contestant_image:
+            return str(obj.contestant_image.url)
         return None
 
     def validate(self, data):
-        if 'image' in data and data['image']:
-            validate_image(data['image'])
+        if 'contestant_image' in data and data['contestant_image']:
+            validate_image(data['contestant_image'])
         return data
 
     def update(self, instance, validated_data):

@@ -169,25 +169,40 @@ class PollConsumer(AsyncWebsocketConsumer):
         self.poll_id = self.scope['url_route']['kwargs']['poll_id']
         self.room_group_name = f'poll_{self.poll_id}'
 
-        await self.channel_layer.group_add(
+        # Join room group
+        try:
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            await self.accept()
+        except Exception as e:
+            raise DenyConnection(str(e))
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
-        await self.accept()
 
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'poll_update',
-                'data': text_data_json
-            }
-        )
+        try:
+            text_data_json = json.loads(text_data)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'vote_update',
+                    'data': text_data_json
+                }
+            )
+        except json.JSONDecodeError:
+            pass
 
-    async def poll_update(self, event):
+    async def vote_update(self, event):
         data = event['data']
-        # Ensure data is sent as an array if it's results data
-        if 'results' in data:
-            data['results'] = list(data['results'])
-        await self.send(text_data=json.dumps(data))
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'type': 'vote_update',
+            'data': data
+        }))

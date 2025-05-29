@@ -7,7 +7,7 @@ const AddContestants = () => {
   const { pollId } = useParams();
 
   const [contestants, setContestants] = useState([
-    { name: "", category: "", image: null, preview: null },
+    { name: "", category: "", contestant_image: null, preview: null },
   ]);
 
   const handleChange = (index, key, value) => {
@@ -23,7 +23,7 @@ const AddContestants = () => {
   };
 
   const handleAdd = () => {
-    setContestants([...contestants, { name: "", category: "", image: null }]);
+    setContestants([...contestants, { name: "", category: "", contestant_image: null }]);
   };
 
   const handleSubmit = async () => {
@@ -48,8 +48,8 @@ const AddContestants = () => {
         formData.append("poll", pollId);
         formData.append("name", contestant.name);
         formData.append("category", contestant.category);
-        if (contestant.image) {
-          formData.append("image", contestant.image);
+        if (contestant.contestant_image) {
+          formData.append("image", contestant.contestant_image);
         }
 
         const response = await axiosInstance.post(

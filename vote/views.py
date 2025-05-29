@@ -165,13 +165,13 @@ class USSDVotingView(APIView):
         cache_key = f"ussd_request_{phone_number}"
         request_count = cache.get(cache_key, 0)
 
-        if request_count >= 60:  
+        if request_count >= 60:
             return Response(
                 {"message": "Too many requests. Please try again later."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
-        cache.set(cache_key, request_count + 1, 60)  
+        cache.set(cache_key, request_count + 1, 60)
 
         try:
             service = USSDService(phone_number, text)
@@ -192,8 +192,15 @@ class VoteResultView(APIView):
         results = Contestant.objects.filter(poll=poll).annotate(
             vote_count=Sum('votes__number_of_votes')
         ).values(
-            'name', 'image', 'vote_count', 'category'
+            'id', 'name', 'vote_count', 'category'
         ).order_by('-vote_count')
+
+        # Get all contestants with their images
+        contestants = Contestant.objects.filter(poll=poll)
+        image_map = {
+            c.id: str(c.contestant_image.url) if c.contestant_image else None
+            for c in contestants
+        }
 
         # Group results by category
         categorized_results = {}
@@ -201,10 +208,54 @@ class VoteResultView(APIView):
             category = result['category']
             if category not in categorized_results:
                 categorized_results[category] = []
-            categorized_results[category].append(result)
+
+            result_with_image = {
+                'name': result['name'],
+                'vote_count': result['vote_count'] or 0,
+                'category': result['category'],
+                'image': image_map.get(result['id'])
+            }
+            categorized_results[category].append(result_with_image)
 
         return Response({
             'poll_title': poll.title,
             'total_votes': sum(r['vote_count'] or 0 for r in results),
             'categories': categorized_results
         })
+
+
+class VoteResultsView(APIView):
+    def get(self, request, poll_id):
+        try:
+            poll = get_object_or_404(Poll, id=poll_id)
+            # Get contestant info first
+            contestants = Contestant.objects.filter(
+                poll=poll).values('id', 'name')
+            contestant_dict = {c['id']: c['name'] for c in contestants}
+
+            # Get vote counts
+            votes = Vote.objects.filter(poll=poll).values(
+                'contestant_id'
+            ).annotate(
+                total_votes=Sum('number_of_votes')
+            )
+
+            # Format results
+            results = [
+                {
+                    'name': contestant_dict.get(vote['contestant_id'], 'Unknown'),
+                    'total_votes': vote['total_votes'] or 0
+                }
+                for vote in votes
+            ]
+
+            return Response({
+                "results": results
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error getting vote results: {str(e)}")
+            return Response(
+                {"error": "Failed to fetch results"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

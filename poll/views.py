@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.crypto import get_random_string
+from django.utils import timezone
 import string
 
 from vote.models import VoterCode
@@ -153,11 +154,14 @@ class PollDetailView(APIView):
             "poll": PollSerializer(poll).data,
             "contestants": contestants_data
         }, status=status.HTTP_200_OK)
+
+
 class ContestantListView(APIView):
     def get(self, request, poll_id, *args, **kwargs):
         contestants = Contestant.objects.filter(poll_id=poll_id)
         serializer = ContestantSerializer(contestants, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class ContestantDetails(APIView):
     def get(self, request, poll_id, contestant_id, *args, **kwargs):
@@ -177,7 +181,6 @@ class PollListView(APIView):
         polls = Poll.objects.all()
         serializer = PollSerializer(polls, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class DeletePollView(APIView):
@@ -220,12 +223,30 @@ class ContestantCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
 
-class ContestantUpdateView(generics.UpdateAPIView):
-    queryset = Contestant.objects.all()
-    serializer_class = ContestantSerializer
+class ContestantUpdateView(APIView):
+    def patch(self, request, poll_id, contestant_id):
+        poll = get_object_or_404(Poll, id=poll_id)
 
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        if 'name' in serializer.validated_data:
-            instance.nominee_code = instance.generate_nominee_code()
-            instance.save()
+        # Check if poll can be edited
+        if poll.start_time <= timezone.now():
+            return Response(
+                {"message": "Cannot edit contestant after poll has started"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if poll.votes.exists():
+            return Response(
+                {"message": "Cannot edit contestant after votes have been cast"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        contestant = get_object_or_404(
+            Contestant, id=contestant_id, poll_id=poll_id)
+        serializer = ContestantSerializer(
+            contestant, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

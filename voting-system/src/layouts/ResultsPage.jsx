@@ -31,7 +31,6 @@ const ResultsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("bar");
-  // eslint-disable-next-line no-unused-vars
   const [animateNumbers, setAnimateNumbers] = useState(false);
   const [pollDetails, setPollDetails] = useState(null);
 
@@ -39,15 +38,16 @@ const ResultsPage = () => {
     try {
       setLoading(true);
       const [resultsResponse, pollResponse] = await Promise.all([
-        axiosInstance.get(`/vote/results/${pollId}`),
+        axiosInstance.get(`/vote/results/${pollId}/`),
         axiosInstance.get(`/polls/${pollId}/`),
       ]);
 
-      const processedResults = processResults(resultsResponse.data);
+      // Check if we have results array in the response
+      const resultsData = resultsResponse.data.results || resultsResponse.data;
+      const processedResults = processResults(resultsData);
       setResults(processedResults);
       setPollDetails(pollResponse.data);
 
-      // Trigger number animation after data is loaded
       setTimeout(() => setAnimateNumbers(true), 100);
     } catch (error) {
       console.error("Error fetching results:", error);
@@ -88,19 +88,28 @@ const ResultsPage = () => {
   }, [pollId]);
 
   const processResults = (data) => {
+    if (!Array.isArray(data)) {
+      console.error("Expected array of results, got:", data);
+      return [];
+    }
+
     const resultMap = new Map();
     data.forEach((item) => {
-      if (resultMap.has(item.name)) {
-        const existing = resultMap.get(item.name);
-        existing.vote_count += item.vote_count || 0;
+      const contestant = item.contestant || item;
+      const voteCount = item.total_votes || item.vote_count || 0;
+
+      if (resultMap.has(contestant.name)) {
+        const existing = resultMap.get(contestant.name);
+        existing.vote_count += voteCount;
       } else {
-        resultMap.set(item.name, {
-          name: item.name,
-          image: item.image || avatar,
-          vote_count: item.vote_count || 0,
+        resultMap.set(contestant.name, {
+          name: contestant.name,
+          image: contestant.image || avatar,
+          vote_count: voteCount,
         });
       }
     });
+
     return Array.from(resultMap.values()).sort(
       (a, b) => b.vote_count - a.vote_count
     );

@@ -2,6 +2,7 @@ from django.db import models
 from authentication.models import User
 import uuid
 from cloudinary.models import CloudinaryField
+from django.utils import timezone
 
 
 class Poll(models.Model):
@@ -14,8 +15,6 @@ class Poll(models.Model):
     ]
 
     title = models.CharField(max_length=200)
-    poll_image = models.ImageField(
-        upload_to='poll_images/', blank=True, null=True)
     description = models.TextField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -27,9 +26,18 @@ class Poll(models.Model):
     creator = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="polls")
     active = models.BooleanField(default=False)
+    poll_image = CloudinaryField('image', null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} ({self.poll_type})"
+
+    def can_be_edited(self):
+        """Check if poll can still be edited"""
+        if self.start_time and self.start_time <= timezone.now():
+            return False
+
+        # Check if any votes exist
+        return not self.votes.exists()
 
 
 class Contestant(models.Model):
@@ -38,7 +46,8 @@ class Contestant(models.Model):
     category = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     nominee_code = models.CharField(max_length=15, unique=True)
-    image = CloudinaryField('image', null=True, blank=True)
+    contestant_image = CloudinaryField(
+        'image', null=True, blank=True, default='')
 
     def save(self, *args, **kwargs):
         if not self.nominee_code:
@@ -58,3 +67,6 @@ class Contestant(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.category} in {self.poll.title}"
+
+    def get_image_url(self):
+        return self.contestant_image.url if self.contestant_image else "https://via.placeholder.com/300"

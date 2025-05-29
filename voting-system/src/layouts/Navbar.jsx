@@ -37,19 +37,27 @@ export default function Navbar({ authTokens, logout }) {
     if (authTokens) {
       setLoading(true);
       setError(false);
-      axiosInstance
-        .get("payment/account/balance", {
-          headers: { Authorization: `Bearer ${authTokens.access}` },
-        })
-        .then((response) => {
-          setBalance({ available: response.data.available_balance });
-          setLoading(false);
-        })
-        .catch((error) => {
-          setError(true);
+      const fetchBalance = async () => {
+        try {
+          const response = await axiosInstance.get("/payment/account/balance/", {
+            headers: { Authorization: `Bearer ${authTokens.access}` },
+          });
+          if (response.data && typeof response.data.available_balance === "number") {
+            setBalance(response.data.available_balance.toFixed(2));
+          } else {
+            console.error("Invalid balance data:", response.data);
+            setBalance("0.00");
+          }
+        } catch (error) {
           console.error("Error fetching balance:", error);
+          setBalance("0.00");
+          // Optionally show error message to user
+          // setError('Failed to fetch balance');
+        } finally {
           setLoading(false);
-        });
+        }
+      };
+      fetchBalance();
     }
   }, [authTokens]);
 

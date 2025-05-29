@@ -84,7 +84,8 @@ class VerifyPaymentView(APIView):
                 contestant_id = reference_parts[2]
                 contestant = get_object_or_404(
                     Contestant, id=contestant_id, poll=poll)
-                self._process_vote(transaction, poll, contestant, amount_paid, reference)
+                self._process_vote(transaction, poll,
+                                   contestant, amount_paid, reference)
                 return Response({"message": "Vote recorded."}, status=status.HTTP_201_CREATED)
 
             return Response({"message": "Payment verified."}, status=status.HTTP_200_OK)
@@ -138,6 +139,7 @@ class VerifyPaymentView(APIView):
             logger.error(f"VoteSerializer validation failed: {
                          voter_serializer.errors}")
             raise ValueError("Vote recording failed.")
+
 
 class PaymentLinkView(APIView):
     """
@@ -214,10 +216,12 @@ class PaymentLinkView(APIView):
                     pending_transaction.save()
                     return Response({"payment_link": payment_url}, status=status.HTTP_200_OK)
                 else:
-                    logger.error(f"Paystack error: {response_data.get('message')}")
+                    logger.error(
+                        f"Paystack error: {response_data.get('message')}")
                     return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                logger.error(f"Failed to connect to Paystack. Status Code: {response.status_code}")
+                logger.error(
+                    f"Failed to connect to Paystack. Status Code: {response.status_code}")
                 return Response({"error": "Failed to connect to payment gateway."}, status=status.HTTP_400_BAD_REQUEST)
 
         except requests.RequestException as e:
@@ -229,28 +233,50 @@ class AccountBalanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        polls = Poll.objects.filter(
-            creator=request.user, poll_type=Poll.VOTERS_PAY)
-        total_amount_collected = Decimal('0.0')
-        total_withdrawn = Decimal('0.0')
+        try:
+            polls = Poll.objects.filter(
+                creator=request.user,
+                poll_type=Poll.VOTERS_PAY,
+                active=True  # Only count active polls
+            )
 
-        for poll in polls:
-            vote_count = sum(vote.number_of_votes for vote in poll.votes.all())
-            total_amount_collected += Decimal(poll.voting_fee) * vote_count
+            total_amount_collected = Decimal('0.0')
+            total_withdrawn = Decimal('0.0')
 
+            # Calculate total amount collected
+            for poll in polls:
+                successful_votes = poll.votes.filter(payment_verified=True)
+                vote_count = sum(
+                    vote.number_of_votes for vote in successful_votes)
+                total_amount_collected += Decimal(
+                    str(poll.voting_fee)) * vote_count
+
+            # Calculate total withdrawals
             withdrawals = Withdrawal.objects.filter(
-                poll=poll, status='successful')
-            total_withdrawn += sum(withdrawal.amount for withdrawal in withdrawals)
+                creator=request.user,
+                status='successful'
+            )
+            total_withdrawn = sum(w.amount for w in withdrawals)
 
-        available_balance = (total_amount_collected *
-                             Decimal('0.6')) - total_withdrawn
+            # Calculate available balance (60% of total collected)
+            available_balance = (total_amount_collected *
+                                 Decimal('0.6')) - total_withdrawn
 
-        data = {
-            'available_balance': float(available_balance),
-            'total_withdrawn': float(total_withdrawn),
-        }
+            data = {
+                'available_balance': float(max(Decimal('0.0'), available_balance)),
+                'total_withdrawn': float(total_withdrawn),
+                'total_collected': float(total_amount_collected),
+            }
 
-        return Response(data, status=status.HTTP_200_OK)
+            return Response(data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(
+                f"Error calculating balance for user {request.user.id}: {str(e)}")
+            return Response(
+                {"error": "Failed to calculate balance. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class PaymentHistoryView(ListAPIView):
