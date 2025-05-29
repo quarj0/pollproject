@@ -94,7 +94,7 @@ const ResultsPage = () => {
         categoryResults.forEach((result) => {
           allResults.push({
             name: result.name,
-            image: result.image || avatar,
+            image: result.image ? `http://localhost:8000${result.image}` : avatar,
             vote_count: result.vote_count || 0,
             category: result.category,
           });
@@ -115,7 +115,7 @@ const ResultsPage = () => {
         } else {
           resultMap.set(contestant.name, {
             name: contestant.name,
-            image: contestant.image || avatar,
+            image: contestant.image ? `http://localhost:8000${contestant.image}` : avatar,
             vote_count: voteCount,
           });
         }
