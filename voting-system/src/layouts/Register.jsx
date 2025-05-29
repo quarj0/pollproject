@@ -1,180 +1,196 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
+import { FaUser, FaPhone, FaEnvelope, FaLock, FaArrowRight } from "react-icons/fa";
 import axiosInstance from "../apis/api";
-import { useNavigate } from "react-router-dom";
 import votelap from "../assets/votelablogo.png";
 
 const RegisterPage = () => {
-  const [username, setUsername] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    accountNumber: "",
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const validateForm = () => {
+    if (!/^\d+$/.test(formData.accountNumber)) {
+      setError("Phone number must contain only numeric digits.");
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
-    if (!/^\d+$/.test(accountNumber)) {
-      setLoading(false);
-      setError("Phone number must contain only numeric digits.");
+    
+    if (!validateForm()) {
       return;
     }
 
+    setLoading(true);
+
     try {
       await axiosInstance.post("auth/register/", {
-        username,
-        account_number: accountNumber,
-        email,
-        password,
+        username: formData.username,
+        account_number: formData.accountNumber,
+        email: formData.email,
+        password: formData.password,
       });
 
       navigate("/login");
     } catch (error) {
-      setLoading(false);
-      if (error.response && error.response.data) {
-        const serverError =
-          error.response.data.non_field_errors?.[0] ||
-          error.response.data.detail;
+      if (error.response?.data) {
+        const serverError = error.response.data.non_field_errors?.[0] ||
+                          error.response.data.detail;
         setError(serverError || "Registration failed. Please try again.");
       } else {
         setError("An error occurred. Please try again later.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
+  const inputFields = [
+    {
+      label: "Username",
+      name: "username",
+      type: "text",
+      icon: <FaUser />,
+      placeholder: "Choose a username",
+    },
+    {
+      label: "Phone Number",
+      name: "accountNumber",
+      type: "tel",
+      icon: <FaPhone />,
+      placeholder: "Enter your phone number",
+    },
+    {
+      label: "Email",
+      name: "email",
+      type: "email",
+      icon: <FaEnvelope />,
+      placeholder: "Enter your email",
+    },
+    {
+      label: "Password",
+      name: "password",
+      type: "password",
+      icon: <FaLock />,
+      placeholder: "Choose a password",
+    },
+  ];
+
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-gradient-to-br from-teal-800 to-blue-950">
-      {/* Image Section */}
-      <div className="w-full md:w-1/2 h-full flex flex-col items-center justify-center p-8">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-teal-800 to-blue-950">
+      {/* Left Section - Branding */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 text-white"
+      >
         <img
           src={votelap}
           alt="VoteLab Logo"
-          className="max-w-sm mb-6 rounded-lg shadow-xl animate-fadeIn"
+          className="w-32 h-32 md:w-48 md:h-48 object-contain mb-8"
         />
-        <h1 className="text-4xl font-bold text-white mb-2">VoteLab</h1>
-        <p className="text-center px-4 text-white text-lg italic">
-          &quoteleft;Innovating the way you vote&quoteright;. <br/>Register now and create polls to get your audience&apos;s opinion.
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
+          Create Your Account
+        </h1>
+        <p className="text-lg md:text-xl text-center max-w-md">
+          Join VoteLab today and start creating engaging polls for your audience.
         </p>
-      </div>
+      </motion.div>
 
-      {/* Form Section */}
-      <div className="w-full md:w-1/2 bg-white p-10 shadow-lg rounded-xl animate-fadeIn">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-6 text-center">
-          Create an Account
-        </h2>
+      {/* Right Section - Registration Form */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="w-full md:w-1/2 flex justify-center items-center p-8"
+      >
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">Sign Up</h2>
 
-        {error && (
-          <p className="text-red-600 bg-red-100 border border-red-300 p-3 rounded-md text-center mb-4">
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username */}
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-gray-700 font-medium mb-2"
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 text-red-600 p-4 rounded-lg mb-6"
             >
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-teal-300 focus:outline-none"
-              placeholder="Enter your username"
-              required
-            />
-          </div>
+              {error}
+            </motion.div>
+          )}
 
-          {/* Phone Number */}
-          <div>
-            <label
-              htmlFor="accountNumber"
-              className="block text-gray-700 font-medium mb-2"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {inputFields.map((field) => (
+              <div key={field.name}>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  {field.label}
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    {field.icon}
+                  </div>
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    placeholder={field.placeholder}
+                    required
+                  />
+                </div>
+              </div>
+            ))}
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center space-x-2 ${
+                loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-teal-600 hover:bg-teal-700"
+              } transition-colors duration-200`}
             >
-              Phone Number
-            </label>
-            <input
-              id="accountNumber"
-              type="text"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-teal-300 focus:outline-none"
-              placeholder="Enter your phone number"
-              required
-            />
-          </div>
+              <span>{loading ? "Creating Account..." : "Create Account"}</span>
+              {!loading && <FaArrowRight className="ml-2" />}
+            </motion.button>
 
-          {/* Email */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-teal-300 focus:outline-none"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-teal-300 focus:outline-none"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition ${
-              loading
-                ? "bg-orange-500"
-                : "bg-teal-600 hover:bg-teal-700 hover:scale-105"
-            }`}
-            disabled={loading}
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </form>
-
-        {/* Footer */}
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{" "}
-          <a
-            href="/login"
-            className="text-teal-600 hover:underline font-medium"
-          >
-            Login here
-          </a>
-        </p>
-      </div>
+            <p className="text-center text-gray-600 mt-6">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
+              >
+                Sign in here
+              </Link>
+            </p>
+          </form>
+        </div>
+      </motion.div>
     </div>
   );
 };
