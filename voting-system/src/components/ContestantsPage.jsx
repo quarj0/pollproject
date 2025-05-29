@@ -36,9 +36,10 @@ const ContestantsPage = () => {
         const response = await axiosInstance.get(
           `polls/${pollId}/contestants/`
         );
-        setContestants(response.data.contestants);
+        setContestants(response.data.contestants || response.data || []);
       } catch {
         setError("Error fetching contestants.");
+        setContestants([]);
       }
     };
 
@@ -104,7 +105,7 @@ const ContestantsPage = () => {
         setPaymentUrl(response.data.payment_url);
       } else {
         setSuccess("Vote cast successfully.");
-        closeModal(); // Reset the form for creator-pay
+        closeModal(); 
       }
     } catch (err) {
       setError(

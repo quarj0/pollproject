@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../apis/api";
-
 const PollManagement = () => {
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPolls = async () => {
@@ -38,8 +39,8 @@ const PollManagement = () => {
     window.location.href = `/edit/poll/${pollId}`;
   };
 
-  const handleEditContestant = (pollId) => {
-    window.location.href = `/edit/contestant/${pollId}`;
+  const handleEditContestant = (pollId, contestantId) => {
+    navigate(`/polls/${pollId}/contestants/${contestantId}/edit`);
   };
 
   return (
@@ -76,50 +77,64 @@ const PollManagement = () => {
             </thead>
             <tbody>
               {polls.map((poll, index) => (
-                <tr
-                  key={poll.id}
-                  className={`${
-                    index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                  } hover:bg-gray-100`}
-                >
-                  <td className="p-3">{poll.title}</td>
-                  <td className="p-3">
-                    {new Date(poll.start_time).toLocaleString()}
-                  </td>
-                  <td className="p-3">
-                    {new Date(poll.end_time).toLocaleString()}
-                  </td>
-                  <td className="p-3">{poll.poll_type}</td>
-
-                  <td className="p-3 flex justify-center space-x-2">
-                    <button
-                      onClick={() => handleCreateContestant(poll.id)}
-                      className="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600"
-                    >
-                      Add Contestant
-                    </button>
-                    <button
-                      onClick={() => handleEditPoll(poll.id)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    >
-                      Edit Poll
-                    </button>
-                    <button
-                      onClick={() => handleEditContestant(poll.id)}
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                    >
-                      Edit Contestant
-                    </button>
-                    <button
-                      onClick={() => handleDelete(poll.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                <React.Fragment key={poll.id}>
+                  <tr
+                    className={`${
+                      index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                    } hover:bg-gray-100`}
+                  >
+                    <td className="p-3">{poll.title}</td>
+                    <td className="p-3">
+                      {new Date(poll.start_time).toLocaleString()}
+                    </td>
+        <td className="p-3">
+          {new Date(poll.end_time).toLocaleString()}
+        </td>
+        <td className="p-3">{poll.poll_type}</td>
+        <td className="p-3 flex flex-col items-center space-y-2">
+          <button
+            onClick={() => handleCreateContestant(poll.id)}
+            className="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600"
+          >
+            Add Contestant
+          </button>
+          <button
+            onClick={() => handleEditPoll(poll.id)}
+            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+          >
+            Edit Poll
+          </button>
+          <button
+            onClick={() => handleDelete(poll.id)}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
+      {/* Render contestants for this poll */}
+      {poll.contestants && poll.contestants.length > 0 && (
+        <tr>
+          <td colSpan={5} className="bg-gray-100">
+            <div className="flex flex-wrap gap-2">
+              {poll.contestants.map((contestant) => (
+                <div key={contestant.id} className="flex items-center space-x-2 border p-2 rounded">
+                  <span>{contestant.name}</span>
+                  <button
+                    onClick={() => handleEditContestant(poll.id, contestant.id)}
+                    className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                  >
+                    Edit
+                  </button>
+                </div>
               ))}
-            </tbody>
+            </div>
+          </td>
+        </tr>
+      )}
+    </React.Fragment>
+  ))}
+</tbody>
           </table>
         </div>
       )}

@@ -28,6 +28,7 @@ import UpdatePoll from "./components/UpdatePoll";
 import UpdateContestant from "./components/UpdateContestant";
 import PaymentCompletion from "./layouts/PaymentVerification";
 import AddContestant from "./components/ContestantField";
+import EditContestant from "./components/EditContestant";
 import NotFoundPage from "./layouts/NotFound";
 
 const App = () => {
@@ -131,6 +132,11 @@ const App = () => {
             <Route
               path="/polls/:pollId/contestants"
               element={<ContestantsPage />}
+            />
+
+            <Route
+              path="/polls/:pollId/contestants/:contestantId/edit"
+              element={<EditContestant />}
             />
 
             <Route path="/manage-polls" element={<PollManagement />} />

@@ -65,15 +65,12 @@ useEffect(() => {
     }
   };
 
-  ws.onerror = (e) => {
-    console.error("WebSocket error:", e);
-    setError("WebSocket connection error. Please refresh the page.");
-  };
+  // ws.onerror = (e) => {
+  //   console.error("WebSocket error:", e);
+  //   setError("WebSocket connection error. Please refresh the page.");
+  // };
 
-  ws.onclose = () => {
-    console.log("WebSocket connection closed.");
-    setError("WebSocket connection closed. Please refresh the page.");
-  };
+
 
   return () => {
     ws.close();

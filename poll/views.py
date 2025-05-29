@@ -153,21 +153,23 @@ class PollDetailView(APIView):
             "poll": PollSerializer(poll).data,
             "contestants": contestants_data
         }, status=status.HTTP_200_OK)
-
+class ContestantListView(APIView):
+    def get(self, request, poll_id, *args, **kwargs):
+        contestants = Contestant.objects.filter(poll_id=poll_id)
+        serializer = ContestantSerializer(contestants, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ContestantDetails(APIView):
-    def get(self, request, poll_id, *args, **kwargs):
+    def get(self, request, poll_id, contestant_id, *args, **kwargs):
         """
-        Fetch all contestants for the given poll ID
+        Fetch a single contestant by poll_id and contestant_id
         """
-        contestants = Contestant.objects.filter(
-            poll_id=poll_id).values('name', 'category', 'nominee_code', 'image')
-
-        if not contestants.exists():
-            return Response({
-                "error": "No contestants found for this poll."}, status=status.HTTP_404_NOT_FOUND)
-
-        return Response({"contestants": list(contestants)}, status=status.HTTP_200_OK)
+        contestant = Contestant.objects.filter(
+            poll_id=poll_id, id=contestant_id).first()
+        if not contestant:
+            return Response({"error": "Contestant not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContestantSerializer(contestant)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PollListView(APIView):
@@ -176,15 +178,6 @@ class PollListView(APIView):
         serializer = PollSerializer(polls, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-class ContestantListView(APIView):
-    def get(self, request, *args, **kwargs):
-        """    
-        Get all contestants from all polls
-        """
-        contestants = Contestant.objects.all()
-        serializer = ContestantSerializer(contestants, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class DeletePollView(APIView):

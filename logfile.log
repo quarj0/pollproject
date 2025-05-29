@@ -2341,3 +2341,86 @@ Traceback (most recent call last):
     raise RuntimeError(
 RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to 127.0.0.1:8000/vote/voter-pay/14/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
 "POST /vote/voter-pay/14 HTTP/1.1" 500 73317
+Internal Server Error: /polls/36/delete/
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/fields/related_descriptors.py", line 239, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/fields/mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'poll'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/exception.py", line 42, in inner
+    response = await get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 518, in thread_handler
+    raise exc_info[1]
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/core/handlers/base.py", line 253, in _get_response_async
+    response = await wrapped_callback(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 468, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/asgiref/sync.py", line 522, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/poll/views.py", line 188, in delete
+    poll.delete()
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/base.py", line 1272, in delete
+    return collector.delete()
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/deletion.py", line 455, in delete
+    with transaction.atomic(using=self.using, savepoint=False):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/transaction.py", line 307, in __exit__
+    connection.set_autocommit(True)
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/backends/base/base.py", line 491, in set_autocommit
+    self.run_and_clear_commit_hooks()
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/backends/base/base.py", line 769, in run_and_clear_commit_hooks
+    func()
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/djangochannelsrestframework/observer/model_observer.py", line 139, in post_change_receiver
+    self.send_messages(
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/djangochannelsrestframework/observer/model_observer.py", line 157, in send_messages
+    message = self.serialize(instance, action, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/djangochannelsrestframework/observer/model_observer.py", line 179, in serialize
+    message_body = self._serializer(self, instance, action, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/poll/consumers.py", line 31, in vote_activity_serializer
+    poll = instance.poll
+           ^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/fields/related_descriptors.py", line 257, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/fields/related_descriptors.py", line 220, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/quarjo/pollproject/env/lib/python3.12/site-packages/django/db/models/query.py", line 649, in get
+    raise self.model.DoesNotExist(
+poll.models.Poll.DoesNotExist: Poll matching query does not exist.
+[35;1mHTTP DELETE /polls/36/delete/ 500 [0.09, 127.0.0.1:36292][0m
