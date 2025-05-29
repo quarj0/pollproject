@@ -1,11 +1,12 @@
 from django.test import TestCase
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.test import APITestCase
 from datetime import timedelta
 from .models import Vote, VoterCode
 from poll.models import Poll, Contestant
-from .ussd_service import USSDService, USSDState
+from .ussd_service import USSDService, USSDState, USSDSession
 
 User = get_user_model()
 
@@ -50,36 +51,66 @@ class USSDServiceTestCase(TestCase):
             code='TEST123'
         )
 
+        # Clear cache before each test
+        cache.clear()
+
+    def tearDown(self):
+        cache.clear()
+
     def test_ussd_initial_state(self):
         service = USSDService('+233240000000', '')
         result = service.process()
         self.assertIn('Welcome to VoteLab', result['message'])
         self.assertTrue(result['message'].startswith('CON'))
+        self.assertTrue('Test Poll' in result['message'])
 
     def test_ussd_poll_selection(self):
-        service = USSDService('+233240000000', '1')
+        phone = '+233240000000'
+        # First initialize session and show menu
+        service = USSDService(phone, '')
+        service.process()
+
+        # Then select poll
+        service = USSDService(phone, '1')
         result = service.process()
         self.assertIn('Select category', result['message'])
         self.assertTrue(result['message'].startswith('CON'))
+        self.assertTrue(self.category in result['message'])
 
     def test_ussd_category_selection(self):
-        # First select poll
-        service = USSDService('+233240000000', '1')
+        phone = '+233240000000'
+        # Initialize menu
+        service = USSDService(phone, '')
         service.process()
 
-        # Then select category
-        service = USSDService('+233240000000', '1')
+        # Select poll
+        service = USSDService(phone, '1')
+        service.process()
+
+        # Select category
+        service = USSDService(phone, '1')
         result = service.process()
         self.assertIn('Select contestant', result['message'])
         self.assertTrue(result['message'].startswith('CON'))
+        self.assertTrue('Contestant 1' in result['message'])
+        self.assertTrue('Contestant 2' in result['message'])
 
     def test_ussd_contestant_selection_voter_pay(self):
-        # Navigate through the USSD menu
-        service = USSDService('+233240000000', '1')  # Select poll
+        phone = '+233240000000'
+        # Initialize menu
+        service = USSDService(phone, '')
         service.process()
-        service = USSDService('+233240000000', '1')  # Select category
+
+        # Select poll
+        service = USSDService(phone, '1')
         service.process()
-        service = USSDService('+233240000000', '1')  # Select contestant
+
+        # Select category
+        service = USSDService(phone, '1')
+        service.process()
+
+        # Select contestant
+        service = USSDService(phone, '1')
         result = service.process()
         self.assertIn('Enter number of votes', result['message'])
         self.assertTrue(result['message'].startswith('CON'))
@@ -91,10 +122,16 @@ class USSDServiceTestCase(TestCase):
         self.assertIn('Invalid input', result['message'])
 
     def test_ussd_session_timeout(self):
-        service = USSDService('+233240000000', '')
-        service.session.data['state'] = USSDState.POLL_SELECTED
-        # Manually expire the session
-        service.session.clear()
+        phone = '+233240000000'
+        # Initialize session
+        service = USSDService(phone, '')
+        service.process()
+
+        # Clear session to simulate timeout
+        cache.clear()
+
+        # Try to use expired session
+        service = USSDService(phone, '1')
         result = service.process()
         self.assertTrue(result['message'].startswith('END'))
         self.assertIn('Session expired', result['message'])

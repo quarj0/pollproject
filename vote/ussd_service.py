@@ -32,30 +32,30 @@ class USSDSession:
     def _load_session(self):
         session_data = cache.get(self.session_key)
         if session_data:
-            self.data = json.loads(session_data)
+            try:
+                self.data = json.loads(session_data)
+            except json.JSONDecodeError:
+                self.data = None
         else:
-            self.data = {
-                "state": USSDState.INITIAL,
-                "poll_id": None,
-                "category_index": None,
-                "contestant_id": None,
-                "votes_count": None,
-                "voter_code": None
-            }
+            self.data = None
 
     def save(self):
-        cache.set(self.session_key, json.dumps(self.data),
-                  timeout=300)  # 5 minutes timeout
+        if self.data:
+            cache.set(self.session_key, json.dumps(self.data),
+                      timeout=300)  # 5 minutes timeout
 
     def clear(self):
         cache.delete(self.session_key)
+        self.data = None
 
     @property
     def state(self) -> str:
-        return self.data.get("state", USSDState.INITIAL)
+        return self.data.get("state", USSDState.INITIAL) if self.data else USSDState.INITIAL
 
     @state.setter
     def state(self, value: str):
+        if not self.data:
+            self.data = {}
         self.data["state"] = value
         self.save()
 
@@ -63,7 +63,7 @@ class USSDSession:
 class USSDService:
     def __init__(self, phone_number: str, user_input: str):
         self.phone_number = self.normalize_phone_number(phone_number)
-        self.user_input = user_input.strip()
+        self.user_input = user_input.strip() if user_input else ""
         self.session = USSDSession(self.phone_number)
 
     @staticmethod
@@ -142,134 +142,187 @@ class USSDService:
             logger.error(f"Payment initiation error: {str(e)}")
             return False, "Payment service unavailable", None
 
+    def _handle_initial_state(self) -> Dict[str, Any]:
+        # If there's no user input, show welcome message with poll list
+        if not self.user_input:
+            polls = self._get_active_polls()
+            if not polls:
+                return {"message": "CON Welcome to VoteLab!\n\nNo active polls available."}
+
+            # Store polls in session for reference
+            self.session.data["available_polls"] = [poll.id for poll in polls]
+            self.session.state = USSDState.INITIAL
+            self.session.save()
+
+            options = "\n".join(
+                f"{i+1}. {poll.title}" for i, poll in enumerate(polls))
+            return {"message": f"CON Welcome to VoteLab!\n\nSelect a poll:\n{options}"}
+
+        try:
+            polls = self._get_active_polls()
+            selection = int(self.user_input) - 1
+            if not (0 <= selection < len(polls)):
+                return {"message": "END Invalid input. Please try again with a valid option."}
+
+            poll = polls[selection]
+            self.session.data["poll_id"] = poll.id
+            self.session.state = USSDState.POLL_SELECTED
+            self.session.save()
+
+            categories = self._get_poll_categories(poll.id)
+            if not categories:
+                self.session.clear()
+                return {"message": "END No categories available for this poll."}
+
+            options = "\n".join(f"{i+1}. {cat}" for i,
+                                cat in enumerate(categories))
+            return {"message": f"CON Select category:\n{options}"}
+        except (ValueError, IndexError):
+            return {"message": "END Invalid input. Please try again with a valid number."}
+
+    def _handle_poll_selected(self) -> Dict[str, Any]:
+        if not self.session.data.get("poll_id"):
+            self.session.clear()
+            return {"message": "END Session expired. Please start over."}
+
+        try:
+            poll_id = self.session.data["poll_id"]
+            categories = self._get_poll_categories(poll_id)
+            selection = int(self.user_input) - 1
+
+            if not (0 <= selection < len(categories)):
+                return {"message": "END Invalid category selection."}
+
+            category = categories[selection]
+            contestants = self._get_category_contestants(poll_id, category)
+            if not contestants:
+                self.session.clear()
+                return {"message": "END No contestants available in this category."}
+
+            self.session.data["category"] = category
+            self.session.state = USSDState.CATEGORY_SELECTED
+            self.session.save()
+
+            options = "\n".join(f"{i+1}. {cont.name}" for i,
+                                cont in enumerate(contestants))
+            return {"message": f"CON Select contestant:\n{options}"}
+        except (ValueError, IndexError):
+            return {"message": "END Invalid input. Please try again."}
+
+    def _handle_category_selected(self) -> Dict[str, Any]:
+        if not self.session.data.get("poll_id") or not self.session.data.get("category"):
+            self.session.clear()
+            return {"message": "END Session expired. Please start over."}
+
+        try:
+            poll_id = self.session.data["poll_id"]
+            category = self.session.data["category"]
+            contestants = self._get_category_contestants(poll_id, category)
+            selection = int(self.user_input) - 1
+
+            if not (0 <= selection < len(contestants)):
+                return {"message": "END Invalid contestant selection."}
+
+            contestant = contestants[selection]
+            self.session.data["contestant_id"] = contestant.id
+            self.session.state = USSDState.CONTESTANT_SELECTED
+            self.session.save()
+
+            return {"message": "CON Enter number of votes (1-99):"}
+        except (ValueError, IndexError):
+            return {"message": "END Invalid input. Please try again."}
+
+    def _handle_contestant_selected(self) -> Dict[str, Any]:
+        """Handle the state after a contestant has been selected"""
+        if not self.session.data.get("poll_id") or not self.session.data.get("contestant_id"):
+            self.session.clear()
+            return {"message": "END Session expired. Please start over."}
+
+        try:
+            votes = int(self.user_input)
+            if not 1 <= votes <= 99:
+                return {"message": "END Please enter a number between 1 and 99."}
+
+            # Store vote count and move to payment state
+            self.session.data["votes_count"] = votes
+            self.session.state = USSDState.PAYMENT_PENDING
+            self.session.save()
+
+            # Initialize payment
+            poll_id = self.session.data["poll_id"]
+            contestant_id = self.session.data["contestant_id"]
+            success, error_msg, payment_url = self._initiate_payment(
+                poll_id, contestant_id, votes)
+
+            if success:
+                self.session.state = USSDState.VOTE_COMPLETE
+                self.session.save()
+                return {"message": f"END Thank you! Complete your payment at:\n{payment_url}"}
+            return {"message": f"END Payment failed: {error_msg}"}
+        except ValueError:
+            return {"message": "CON Invalid input. Please enter a number between 1 and 99:"}
+
+    def _handle_payment_pending(self) -> Dict[str, Any]:
+        try:
+            votes = int(self.user_input)
+            if not 1 <= votes <= 99:
+                return {"message": "END Please enter a number between 1 and 99."}
+
+            poll_id = self.session.data["poll_id"]
+            contestant_id = self.session.data["contestant_id"]
+            self.session.data["votes_count"] = votes
+
+            success, error_msg, payment_url = self._initiate_payment(
+                poll_id, contestant_id, votes)
+            if success:
+                self.session.state = USSDState.VOTE_COMPLETE
+                self.session.save()
+                return {"message": f"END Thank you! Complete your payment at:\n{payment_url}"}
+            return {"message": f"END Payment failed: {error_msg}"}
+        except ValueError:
+            return {"message": "END Please enter a valid number."}
+
     def process(self) -> Dict[str, Any]:
         try:
-            if self.session.state == USSDState.INITIAL:
+            # Handle invalid input first
+            if self.user_input and not self.user_input.isdigit() and not self.session.data:
+                return {"message": "END Invalid input. Please try again with a valid number."}
+
+            # Handle first time access or expired session
+            if not self.session.data:
+                if self.user_input:
+                    return {"message": "END Session expired. Please start over."}
+                # First time access
+                self.session.data = {
+                    "state": USSDState.INITIAL
+                }
+                self.session.save()
                 return self._handle_initial_state()
-            elif self.session.state == USSDState.POLL_SELECTED:
+
+            # Handle state transitions
+            current_state = self.session.state
+
+            if current_state == USSDState.INITIAL:
+                return self._handle_initial_state()
+            elif current_state == USSDState.POLL_SELECTED:
                 return self._handle_poll_selected()
-            elif self.session.state == USSDState.CATEGORY_SELECTED:
+            elif current_state == USSDState.CATEGORY_SELECTED:
                 return self._handle_category_selected()
-            elif self.session.state == USSDState.CONTESTANT_SELECTED:
+            elif current_state == USSDState.CONTESTANT_SELECTED:
+                if not self.session.data.get("contestant_id"):
+                    self.session.clear()
+                    return {"message": "END Session expired. Please start over."}
+                # Ask for number of votes if not transitioning to payment
+                if not self.user_input:
+                    return {"message": "CON Enter number of votes (1-99):"}
                 return self._handle_contestant_selected()
+            elif current_state == USSDState.PAYMENT_PENDING:
+                return self._handle_payment_pending()
             else:
                 self.session.clear()
-                return {"message": "END Session expired. Please start over."}
+                return {"message": "END Session expired. Please try again."}
 
         except Exception as e:
             logger.error(f"USSD processing error: {str(e)}")
             self.session.clear()
             return {"message": "END An error occurred. Please try again."}
-
-    def _handle_initial_state(self) -> Dict[str, Any]:
-        if not self.user_input:
-            polls = self._get_active_polls()
-            if not polls:
-                return {"message": "END No active polls available."}
-
-            options = "\n".join(
-                f"{i+1}. {poll.title}" for i, poll in enumerate(polls))
-            return {"message": f"CON Welcome to VoteLab!\nSelect a poll:\n{options}"}
-
-        try:
-            polls = self._get_active_polls()
-            selection = int(self.user_input) - 1
-            if 0 <= selection < len(polls):
-                self.session.data["poll_id"] = polls[selection].id
-                self.session.state = USSDState.POLL_SELECTED
-                categories = self._get_poll_categories(polls[selection].id)
-                options = "\n".join(f"{i+1}. {cat}" for i,
-                                    cat in enumerate(categories))
-                return {"message": f"CON Select category:\n{options}"}
-            return {"message": "END Invalid poll selection."}
-        except (ValueError, IndexError):
-            return {"message": "END Invalid input. Please try again."}
-
-    def _handle_poll_selected(self) -> Dict[str, Any]:
-        try:
-            poll_id = self.session.data["poll_id"]
-            categories = self._get_poll_categories(poll_id)
-            selection = int(self.user_input) - 1
-
-            if 0 <= selection < len(categories):
-                self.session.data["category_index"] = selection
-                self.session.state = USSDState.CATEGORY_SELECTED
-                contestants = self._get_category_contestants(
-                    poll_id, categories[selection])
-                options = "\n".join(
-                    f"{i+1}. {c.name}" for i, c in enumerate(contestants))
-                return {"message": f"CON Select contestant:\n{options}"}
-            return {"message": "END Invalid category selection."}
-        except (ValueError, IndexError):
-            return {"message": "END Invalid input. Please try again."}
-
-    def _handle_category_selected(self) -> Dict[str, Any]:
-        try:
-            poll_id = self.session.data["poll_id"]
-            categories = self._get_poll_categories(poll_id)
-            category = categories[self.session.data["category_index"]]
-            contestants = self._get_category_contestants(poll_id, category)
-            selection = int(self.user_input) - 1
-
-            if 0 <= selection < len(contestants):
-                contestant = contestants[selection]
-                self.session.data["contestant_id"] = contestant.id
-                self.session.state = USSDState.CONTESTANT_SELECTED
-
-                poll = Poll.objects.get(id=poll_id)
-                if poll.poll_type == Poll.VOTERS_PAY:
-                    return {"message": f"CON Enter number of votes for {contestant.name}:"}
-                else:
-                    return {"message": f"CON Enter voter code for {contestant.name}:"}
-            return {"message": "END Invalid contestant selection."}
-        except (ValueError, IndexError):
-            return {"message": "END Invalid input. Please try again."}
-
-    def _handle_contestant_selected(self) -> Dict[str, Any]:
-        try:
-            poll = Poll.objects.get(id=self.session.data["poll_id"])
-            contestant = Contestant.objects.get(
-                id=self.session.data["contestant_id"])
-
-            if poll.poll_type == Poll.VOTERS_PAY:
-                try:
-                    votes_count = int(self.user_input)
-                    if votes_count < 1:
-                        return {"message": "END Please enter a valid number of votes."}
-
-                    success, error, payment_url = self._initiate_payment(
-                        poll.id, contestant.id, votes_count)
-
-                    if success:
-                        self.session.clear()
-                        return {
-                            "message": "END Payment initiated. Complete your payment with the link sent.",
-                            "payment_url": payment_url
-                        }
-                    return {"message": f"END {error}"}
-                except ValueError:
-                    return {"message": "END Please enter a valid number."}
-
-            else:  # Creator-Pay
-                voter_code = self.user_input
-                is_valid, error = self._validate_voter_code(
-                    poll.id, voter_code)
-
-                if is_valid:
-                    Vote.objects.create(
-                        poll=poll,
-                        contestant=contestant,
-                        number_of_votes=1
-                    )
-                    VoterCode.objects.filter(
-                        poll=poll,
-                        code=voter_code
-                    ).update(used=True)
-
-                    self.session.clear()
-                    return {"message": "END Vote recorded successfully!"}
-                return {"message": f"END {error}"}
-
-        except Exception as e:
-            logger.error(f"Vote processing error: {str(e)}")
-            return {"message": "END An error occurred while processing your vote."}

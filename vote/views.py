@@ -129,7 +129,7 @@ class VoterPayVoteView(APIView):
             "Content-Type": "application/json"
         }
         data = {
-            "email": "customer@email.com",
+            "email": "customer@castsure.com",
             "amount": int(amount * 100),
             "reference": reference
         }
@@ -156,11 +156,33 @@ class USSDVotingView(APIView):
         text = request.data.get("user_input", "").strip()
 
         if not phone_number:
-            return JsonResponse({"message": "END Phone number is required."}, status=400)
+            return Response(
+                {"message": "Phone number is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        service = USSDService(phone_number, text)
-        result = service.process()
-        return JsonResponse(result, status=200)
+        # Handle rate limiting
+        cache_key = f"ussd_request_{phone_number}"
+        request_count = cache.get(cache_key, 0)
+
+        if request_count >= 60:  
+            return Response(
+                {"message": "Too many requests. Please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        cache.set(cache_key, request_count + 1, 60)  
+
+        try:
+            service = USSDService(phone_number, text)
+            result = service.process()
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"USSD processing error: {str(e)}")
+            return Response(
+                {"message": "An error occurred processing your request."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class VoteResultView(APIView):
@@ -170,8 +192,8 @@ class VoteResultView(APIView):
         results = Contestant.objects.filter(poll=poll).annotate(
             vote_count=Sum('votes__number_of_votes')
         ).values(
-            'name', 'image', 'vote_count', 'category'  # Added category for better grouping
-        ).order_by('-vote_count')  # Sort by votes in descending order
+            'name', 'image', 'vote_count', 'category'
+        ).order_by('-vote_count')
 
         # Group results by category
         categorized_results = {}
