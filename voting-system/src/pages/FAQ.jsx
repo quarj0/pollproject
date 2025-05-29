@@ -2,11 +2,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
 
-const FAQ = () => {
+const FAQs= () => {
   const faqs = [
     {
-      question: "What is VoteLab?",
-      answer: "VoteLab is a secure online voting platform that allows organizations to create and manage polls, elections, and surveys. Our platform ensures the integrity and confidentiality of every vote while providing a user-friendly experience."
+      question: "What is Cast Sure?",
+      answer: "Cast Sure is a secure online voting platform that allows organizations to create and manage polls, elections, and surveys. Our platform ensures the integrity and confidentiality of every vote while providing a user-friendly experience."
     },
     {
       question: "How secure is the voting system?",
@@ -91,4 +91,4 @@ const FAQ = () => {
   );
 };
 
-export default FAQ;
+export default FAQs;

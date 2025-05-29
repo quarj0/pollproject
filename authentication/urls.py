@@ -3,6 +3,7 @@ from .views import (RegisterView, LoginView, UserUpdateView,
                     LogoutView, PasswordResetRequestView,
                     PasswordResetConfirmView, DeleteUserView,
                     UserView)
+from .contact_api import ContactAPIView
 
 
 urlpatterns = [
@@ -10,8 +11,8 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('user/', UserView.as_view(), name='user'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    
-     path('update/', UserUpdateView.as_view(), name='update-user'),   
+
+    path('update/', UserUpdateView.as_view(), name='update-user'),
 
     path('reset/password/', PasswordResetRequestView.as_view(),
          name='reset-password-request'),
@@ -20,4 +21,5 @@ urlpatterns = [
          PasswordResetConfirmView.as_view(), name='reset-password-confirm'),
 
     path('user/delete/', DeleteUserView.as_view(), name='delete-user'),
+    path('contact/', ContactAPIView.as_view(), name='contact'),
 ]

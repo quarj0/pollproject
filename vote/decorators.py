@@ -1,6 +1,7 @@
 from django.core.cache import cache
 from rest_framework.decorators import throttle_classes
 from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.response import Response
 from functools import wraps
 import json
 
@@ -17,7 +18,7 @@ def cache_poll_data(timeout=300):  # 5 minutes cache
             cached_data = cache.get(cache_key)
 
             if cached_data is not None:
-                return json.loads(cached_data)
+                return Response(json.loads(cached_data))
 
             response = view_func(view_instance, request, *args, **kwargs)
             cache.set(cache_key, json.dumps(response.data), timeout)
