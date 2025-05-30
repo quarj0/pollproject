@@ -30,11 +30,9 @@ const PastPolls = () => {
     fetchPolls();
   }, []);
 
-  const currentDateTime = useMemo(() => new Date(), []);
-
   const pastPolls = useMemo(
-    () => polls.filter((poll) => new Date(poll.end_time) < currentDateTime),
-    [polls, currentDateTime]
+    () => polls.filter((poll) => !poll.active),
+    [polls]
   );
 
   if (loading) {

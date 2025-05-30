@@ -86,7 +86,7 @@ class PollCreateView(APIView):
         frontend_url = getattr(settings, "FRONTEND_URL", None)
         if frontend_url:
             return f"{frontend_url.rstrip('/')}/poll/{poll_id}"
-        
+
     def create_payment_link(self, user, amount, poll_id):
         payment_data = {
             "email": user.email,
@@ -164,7 +164,10 @@ class ContestantDetails(APIView):
 class PollListView(APIView):
     def get(self, request, *args, **kwargs):
         polls = Poll.objects.all()
-        serializer = PollSerializer(polls, many=True)
+        # Auto-expire polls whose end_time has passed
+        for poll in polls:
+            poll.auto_expire()
+        serializer = PollSerializer(Poll.objects.all(), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

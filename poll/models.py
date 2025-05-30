@@ -39,6 +39,18 @@ class Poll(models.Model):
         # Check if any votes exist
         return not self.votes.exists()
 
+    def is_expired(self):
+        return timezone.now() >= self.end_time
+
+    def auto_expire(self):
+        if not self.is_expired():
+            return False
+        if self.active:
+            self.active = False
+            self.save(update_fields=["active"])
+            return True
+        return False
+
 
 class Contestant(models.Model):
     poll = models.ForeignKey(

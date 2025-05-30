@@ -149,8 +149,11 @@ class UpdatePollSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     "You cannot update a poll that has already ended.")
 
+        poll_image = validated_data.pop('poll_image', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+        if poll_image:
+            instance.poll_image = poll_image
         instance.save()
         return instance
 

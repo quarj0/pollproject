@@ -15,19 +15,8 @@ const DashBoard = () => {
       try {
         setLoading(true);
         const response = await axiosInstance.get("polls/list/");
-
-        const currentDateTime = new Date();
-        const filteredUpcomingPolls = response.data.filter((poll) => {
-          const endTime = new Date(poll.end_time).getTime();
-          return currentDateTime <= endTime;
-        });
-
-        const filteredPastPolls = response.data.filter(
-          (poll) => new Date(poll.start_time) <= currentDateTime
-        );
-
-        setUpcomingPolls(filteredUpcomingPolls);
-        setPastPolls(filteredPastPolls);
+        setUpcomingPolls(response.data.filter((poll) => poll.active));
+        setPastPolls(response.data.filter((poll) => !poll.active));
       } catch (error) {
         console.error("Error fetching polls:", error);
       } finally {

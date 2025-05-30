@@ -20,12 +20,18 @@ const EditPoll = () => {
   const [modifiedFields, setModifiedFields] = useState(new Set());
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchPoll = async () => {
+      if (!pollId) return;
+      
       try {
         setLoading(true);
         setError(null);
         const response = await axiosInstance.get(`/polls/${pollId}/`);
         
+        if (!isMounted) return;
+
         if (!response?.data) {
           throw new Error("No data received from server");
         }
@@ -44,30 +50,40 @@ const EditPoll = () => {
           const formattedStartTime = format(startDate, "yyyy-MM-dd'T'HH:mm");
           const formattedEndTime = format(endDate, "yyyy-MM-dd'T'HH:mm");
 
-          setPoll({
-            title: pollData.title || '',
-            description: pollData.description || '',
-            start_time: formattedStartTime,
-            end_time: formattedEndTime,
-            preview: pollData.poll_image ? (pollData.poll_image) : null,
-            poll_image: null,
-          });
+          if (isMounted) {
+            setPoll({
+              title: pollData.title || '',
+              description: pollData.description || '',
+              start_time: formattedStartTime,
+              end_time: formattedEndTime,
+              preview: pollData.poll_image ? pollData.poll_image : null,
+              poll_image: null,
+            });
+          }
         } else {
           throw new Error("Invalid date format received from server");
         }
       } catch (err) {
-        console.error("Poll fetch error:", err);
-        setError(
-          err.response?.data?.detail || 
-          err.response?.data?.message || 
-          "Failed to load poll data. Please check your connection and try again."
-        );
+        if (isMounted) {
+          console.error("Poll fetch error:", err);
+          setError(
+            err.response?.data?.detail ||
+            err.response?.data?.message || 
+            "Failed to load poll data. Please check your connection and try again."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchPoll();
+
+    return () => {
+      isMounted = false;
+    };
   }, [pollId, retryCount]);
 
   // Add retry function
@@ -96,6 +112,7 @@ const EditPoll = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
     
     try {
       const formData = new FormData();
@@ -127,11 +144,21 @@ const EditPoll = () => {
     } catch (err) {
       const errorMessages = [];
       if (err.response?.data) {
-        Object.entries(err.response.data).forEach(([field, errors]) => {
-          errorMessages.push(`${field}: ${errors.join(', ')}`);
-        });
+        if (typeof err.response.data === 'object') {
+          Object.entries(err.response.data).forEach(([field, errors]) => {
+            if (Array.isArray(errors)) {
+              errorMessages.push(`${field}: ${errors.join(', ')}`);
+            } else {
+              errorMessages.push(`${field}: ${errors}`);
+            }
+          });
+        } else {
+          errorMessages.push(err.response.data);
+        }
       }
       setError(errorMessages.length > 0 ? errorMessages.join('\n') : "Failed to update poll");
+    } finally {
+      setLoading(false);
     }
   };
 
