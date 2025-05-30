@@ -38,6 +38,7 @@ import Terms from "./pages/Terms";
 import Services from "./pages/Services";
 import Breadcrumb from "./components/Breadcrumb";
 import EditPoll from "./components/EditPoll";
+import ContestantManagement from "./components/ContestantManagement";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -135,35 +136,16 @@ const App = () => {
         <div>
           <Routes>
             <Route path="/" element={<HomePage />} />
-
             <Route path="/events" element={<UpcomingPolls />} />
-
-            <Route
-              path="/payment/verify/:reference"
-              element={<PaymentCompletion />}
-            />
-            <Route
-              path="/polls/:pollId/contestants"
-              element={<ContestantsPage />}
-            />
-
-            <Route
-              path="/polls/:pollId/contestants/:contestantId/edit"
-              element={<EditContestant />}
-            />
-
-            <Route path="/manage-polls" element={<PollManagement />} />
-            <Route
-              path="/create/:pollId/contestants"
-              element={<AddContestant />}
-            />
-            <Route path="/edit/poll/:pollId" element={<EditPoll />} />
-            <Route
-              path="/edit/contestant/:contestantId"
-              element={<UpdateContestant />}
-            />
-
             <Route path="/past/events" element={<PastPolls />} />
+            <Route path="/payment/verify/:reference" element={<PaymentCompletion />} />
+            <Route path="/polls/:pollId/contestants" element={<ContestantsPage />} />
+            <Route path="/polls/:pollId/manage-contestants" element={<ContestantManagement />} />
+            <Route path="/polls/:pollId/contestants/:contestantId/update" element={<EditContestant />} />
+            <Route path="/manage-polls" element={<PollManagement />} />
+            <Route path="/create/:pollId/contestants" element={<AddContestant />} />
+            <Route path="/edit/poll/:pollId" element={<EditPoll />} />
+            <Route path="/edit/contestant/:contestantId" element={<UpdateContestant />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route
               path="/login"
@@ -175,7 +157,6 @@ const App = () => {
                 )
               }
             />
-
             <Route path="/dashboard" element={<DashBoard />} />
             <Route path="/payment/new" element={<NewPaymentLink />} />
             <Route path="/poll/:pollId/results" element={<ResultsPage />} />
@@ -188,19 +169,7 @@ const App = () => {
                 </PrivateRoute>
               }
             />
-
-            {/* Footer Routes */}
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/services" element={<Services />} />
-
-            <Route
-              path="/password/reset"
-              element={<PasswordResetRequestPage />}
-            />
+            <Route path="/password/reset" element={<PasswordResetRequestPage />} />
             <Route
               path="/auth/reset/password/:uidb64/:token"
               element={<PasswordResetConfirmPage />}
@@ -221,12 +190,16 @@ const App = () => {
                 </PrivateRoute>
               }
             />
+
+            {/* Footer Routes */}
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/services" element={<Services />} />
+            
+            {/* Catch all route for 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>

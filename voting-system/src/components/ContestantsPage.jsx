@@ -119,7 +119,7 @@ const ContestantsPage = () => {
         }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.error || "An error occurred while processing your vote.");
+      setError(err.response?.data?.detail || "An error has occurred. Check your internet connection and try again.");
     } finally {
       setLoading(false);
     }

@@ -5,31 +5,28 @@ import { HiChevronRight } from 'react-icons/hi';
 const routes = [
   { path: '/', name: 'Home' },
   { path: '/dashboard', name: 'Dashboard' },
-  { path: '/events', name: 'Events' },
+  { path: '/events', name: 'Upcoming Events' },
+  { path: '/past/events', name: 'Past Events' },
   { path: '/payment/verify/:reference', name: 'Payment Verification' },
   { path: '/polls/:pollId/contestants', name: 'Contestants' },
+  { path: '/polls/:pollId/contestants/:contestantId/edit', name: 'Edit Contestant' },
   { path: '/manage-polls', name: 'Manage Polls' },
   { path: '/create/:pollId/contestants', name: 'Add Contestant' },
   { path: '/edit/poll/:pollId', name: 'Edit Poll' },
   { path: '/edit/contestant/:contestantId', name: 'Update Contestant' },
-  { path: '/past/events', name: 'Past Events' },
   { path: '/register', name: 'Register' },
   { path: '/login', name: 'Login' },
   { path: '/payment/new', name: 'New Payment' },
   { 
     path: '/poll/:pollId', 
-    name: 'Poll',
+    name: 'Poll Details',
     breadcrumb: (params) => `Poll ${params.pollId}`
   },
   { 
     path: '/poll/:pollId/results', 
     name: 'Results',
-    parent: '/poll/:pollId'
-  },
-  { 
-    path: '/polls/:pollId', 
-    name: 'Poll',
-    breadcrumb: (params) => `Poll ${params.pollId}`
+    parent: '/poll/:pollId',
+    breadcrumb: (params) => `Poll ${params.pollId} Results`
   },
   { path: '/settings', name: 'Settings' },
   { path: '/about', name: 'About' },
@@ -39,7 +36,9 @@ const routes = [
   { path: '/terms', name: 'Terms' },
   { path: '/services', name: 'Services' },
   { path: '/profile', name: 'Profile' },
-  { path: '/create-poll', name: 'Create Poll' }
+  { path: '/create-poll', name: 'Create Poll' },
+  { path: '/password/reset', name: 'Reset Password' },
+  { path: '/auth/reset/password/:uidb64/:token', name: 'Reset Password Confirmation' }
 ];
 
 const Breadcrumb = () => {
@@ -48,12 +47,21 @@ const Breadcrumb = () => {
   const findMatchingRoute = (pathname) => {
     // Sort routes by specificity (longer paths first)
     const sortedRoutes = [...routes].sort((a, b) => 
-      b.path.split('/').length - a.path.split('/').length
+      b.path.split('/').length - a.path.split('/').length ||
+      b.path.length - a.path.length
     );
 
     // Find the first matching route
     for (const route of sortedRoutes) {
-      const match = matchPath({ path: route.path, end: true }, pathname);
+      const match = matchPath(
+        { 
+          path: route.path, 
+          end: true,
+          // Allow partial matches for parent routes
+          exact: !route.parent 
+        }, 
+        pathname
+      );
       if (match) {
         return { ...route, params: match.params };
       }
@@ -63,29 +71,34 @@ const Breadcrumb = () => {
 
   const getBreadcrumbItems = () => {
     const items = [];
-    const paths = location.pathname.split('/').filter(Boolean);
     let currentPath = '';
+    const pathSegments = location.pathname.split('/').filter(Boolean);
 
-    // Always add home
-    items.push({ name: 'Home', path: '/' });
+    // Always add home for non-home pages
+    if (location.pathname !== '/') {
+      items.push({ name: 'Home', path: '/' });
+    }
 
     // Build the breadcrumb chain
-    paths.forEach((part) => {
-      currentPath += `/${part}`;
+    pathSegments.forEach((segment, index) => {
+      currentPath += `/${segment}`;
       const route = findMatchingRoute(currentPath);
 
       if (route) {
-        // If this is a child route and has a parent defined
+        // Handle parent routes if defined
         if (route.parent) {
-          const parentRoute = findMatchingRoute(
-            route.parent.replace(/:([^/]+)/g, (_, param) => route.params[param])
+          const parentPath = route.parent.replace(
+            /:([^/]+)/g, 
+            (_, param) => route.params[param]
           );
-          if (parentRoute && items[items.length - 1]?.path !== parentRoute.path) {
+          const parentRoute = findMatchingRoute(parentPath);
+          
+          if (parentRoute && !items.find(item => item.path === parentPath)) {
             items.push({
               name: parentRoute.breadcrumb ? 
                 parentRoute.breadcrumb(parentRoute.params) : 
                 parentRoute.name,
-              path: currentPath.replace(/\/[^/]+$/, '')
+              path: parentPath
             });
           }
         }
@@ -97,12 +110,17 @@ const Breadcrumb = () => {
           path: currentPath
         });
       } else {
-        // Fallback: use formatted segment name
-        const name = part
-          .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        items.push({ name, path: currentPath });
+        // Only add fallback if we haven't found a matching route
+        const previousPath = pathSegments.slice(0, index).join('/');
+        const previousRoute = findMatchingRoute(`/${previousPath}`);
+        
+        if (!previousRoute || index === pathSegments.length - 1) {
+          const name = segment
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          items.push({ name, path: currentPath });
+        }
       }
     });
 
@@ -124,7 +142,13 @@ const Breadcrumb = () => {
             {index > 0 && <HiChevronRight className="w-5 h-5 text-gray-400" />}
             <Link
               to={item.path}
-              className={`${index > 0 ? 'ml-1 md:ml-2' : ''} text-sm font-medium text-gray-700 hover:text-blue-600`}
+              className={`${
+                index > 0 ? 'ml-1 md:ml-2' : ''
+              } text-sm font-medium ${
+                item.path === location.pathname 
+                  ? 'text-blue-600' 
+                  : 'text-gray-700 hover:text-blue-600'
+              }`}
             >
               {item.name}
             </Link>
