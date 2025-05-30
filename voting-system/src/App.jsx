@@ -39,6 +39,7 @@ import Services from "./pages/Services";
 import Breadcrumb from "./components/Breadcrumb";
 import EditPoll from "./components/EditPoll";
 import ContestantManagement from "./components/ContestantManagement";
+import VoteDemo from "./components/demo/VoteDemo";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -126,85 +127,86 @@ const App = () => {
           {/* Conditionally render Navbar */}
           {authTokens && (
             <Navbar
-            authTokens={authTokens}
-            logout={logout}
-            isAuthenticated={!!authTokens}
-            user={user}
-          />
-        )}
-        <Breadcrumb />
-        <div>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/events" element={<UpcomingPolls />} />
-            <Route path="/past/events" element={<PastPolls />} />
-            <Route path="/payment/verify/:reference" element={<PaymentCompletion />} />
-            <Route path="/polls/:pollId/contestants" element={<ContestantsPage />} />
-            <Route path="/polls/:pollId/manage-contestants" element={<ContestantManagement />} />
-            <Route path="/polls/:pollId/contestants/:contestantId/update" element={<EditContestant />} />
-            <Route path="/manage-polls" element={<PollManagement />} />
-            <Route path="/create/:pollId/contestants" element={<AddContestant />} />
-            <Route path="/edit/poll/:pollId" element={<EditPoll />} />
-            <Route path="/edit/contestant/:contestantId" element={<UpdateContestant />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route
-              path="/login"
-              element={
-                authTokens ? (
-                  <Navigate to="/dashboard" />
-                ) : (
-                  <Login login={login} />
-                )
-              }
+              authTokens={authTokens}
+              logout={logout}
+              isAuthenticated={!!authTokens}
+              user={user}
             />
-            <Route path="/dashboard" element={<DashBoard />} />
-            <Route path="/payment/new" element={<NewPaymentLink />} />
-            <Route path="/poll/:pollId/results" element={<ResultsPage />} />
-            <Route path="/poll/:pollId" element={<ResultsPage />} />
-            <Route
-              path="/settings"
-              element={
-                <PrivateRoute>
-                  <Settings authTokens={authTokens} />
-                </PrivateRoute>
-              }
-            />
-            <Route path="/password/reset" element={<PasswordResetRequestPage />} />
-            <Route
-              path="/auth/reset/password/:uidb64/:token"
-              element={<PasswordResetConfirmPage />}
-            />
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Profile user={user} authTokens={authTokens} />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/create-poll"
-              element={
-                <PrivateRoute>
-                  <CreatePoll authTokens={authTokens} />
-                </PrivateRoute>
-              }
-            />
+          )}
+          <Breadcrumb />
+          <div>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/demo" element={<VoteDemo />} />
+              <Route path="/events" element={<UpcomingPolls />} />
+              <Route path="/past/events" element={<PastPolls />} />
+              <Route path="/payment/verify/:reference" element={<PaymentCompletion />} />
+              <Route path="/polls/:pollId/contestants" element={<ContestantsPage />} />
+              <Route path="/polls/:pollId/manage-contestants" element={<ContestantManagement />} />
+              <Route path="/polls/:pollId/contestants/:contestantId/update" element={<EditContestant />} />
+              <Route path="/manage-polls" element={<PollManagement />} />
+              <Route path="/create/:pollId/contestants" element={<AddContestant />} />
+              <Route path="/edit/poll/:pollId" element={<EditPoll />} />
+              <Route path="/edit/contestant/:contestantId" element={<UpdateContestant />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/login"
+                element={
+                  authTokens ? (
+                    <Navigate to="/dashboard" />
+                  ) : (
+                    <Login login={login} />
+                  )
+                }
+              />
+              <Route path="/dashboard" element={<DashBoard />} />
+              <Route path="/payment/new" element={<NewPaymentLink />} />
+              <Route path="/poll/:pollId/results" element={<ResultsPage />} />
+              <Route path="/poll/:pollId" element={<ResultsPage />} />
+              <Route
+                path="/settings"
+                element={
+                  <PrivateRoute>
+                    <Settings authTokens={authTokens} />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="/password/reset" element={<PasswordResetRequestPage />} />
+              <Route
+                path="/auth/reset/password/:uidb64/:token"
+                element={<PasswordResetConfirmPage />}
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Profile user={user} authTokens={authTokens} />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/create-poll"
+                element={
+                  <PrivateRoute>
+                    <CreatePoll authTokens={authTokens} />
+                  </PrivateRoute>
+                }
+              />
 
-            {/* Footer Routes */}
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/services" element={<Services />} />
-            
-            {/* Catch all route for 404 */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+              {/* Footer Routes */}
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/services" element={<Services />} />
+              
+              {/* Catch all route for 404 */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
       </Router>
     </HelmetProvider>
   );

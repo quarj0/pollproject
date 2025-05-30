@@ -1,13 +1,48 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { FaCheck, FaUsers, FaClock, FaChartBar } from 'react-icons/fa';
 
 const VoteDemo = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [demoVotes, setDemoVotes] = useState({
+    'python': 42,
+    'javascript': 38,
+    'java': 35,
+    'csharp': 28
+  });
+
+  const candidates = [
+    {
+      id: 'python',
+      name: 'Python',
+      image: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/267_Python_logo-512.png',
+      category: 'Backend'
+    },
+    {
+      id: 'javascript',
+      name: 'JavaScript',
+      image: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/187_Js_logo_logos-512.png',
+      category: 'Full Stack'
+    },
+    {
+      id: 'java',
+      name: 'Java',
+      image: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/181_Java_logo_logos-512.png',
+      category: 'Backend'
+    },
+    {
+      id: 'csharp',
+      name: 'C#',
+      image: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/181_Java_logo_logos-512.png',
+      category: 'Backend'
+    }
+  ];
 
   const steps = [
     {
       title: 'Poll Creation',
+      icon: <FaUsers className="w-6 h-6" />,
       description: 'Create a new poll in seconds',
       content: (
         <div className="space-y-4">
@@ -16,7 +51,7 @@ const VoteDemo = () => {
               type="text"
               placeholder="Poll Title"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              value="Best Programming Language 2025"
+              value="Best Programming Language 2024"
               readOnly
             />
             <textarea
@@ -25,159 +60,196 @@ const VoteDemo = () => {
               value="Vote for your favorite programming language!"
               readOnly
             />
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="p-2 border rounded-lg">
+                <div className="font-medium">Start Time</div>
+                <div className="text-sm text-gray-600">March 20, 2024</div>
+              </div>
+              <div className="p-2 border rounded-lg">
+                <div className="font-medium">End Time</div>
+                <div className="text-sm text-gray-600">March 27, 2024</div>
+              </div>
+            </div>
           </div>
         </div>
       )
     },
     {
-      title: 'Add Candidates',
-      description: 'Add contestants to your poll',
+      title: 'Contestant Management',
+      icon: <FaUsers className="w-6 h-6" />,
+      description: 'Add and manage contestants',
       content: (
-        <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <img src="https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/267_Python_logo-512.png" alt="Python" className="w-16 h-16 mx-auto mb-2" />
-            <h3 className="text-center font-semibold">Python</h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+            {candidates.map((candidate) => (
+              <div key={candidate.id} className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <img src={candidate.image} alt={candidate.name} className="w-16 h-16 mx-auto mb-2" />
+                <h3 className="text-center font-semibold">{candidate.name}</h3>
+                <p className="text-center text-sm text-gray-600">{candidate.category}</p>
+              </div>
+            ))}
           </div>
-          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <img src="https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/187_Js_logo_logos-512.png" alt="JavaScript" className="w-16 h-16 mx-auto mb-2" />
-            <h3 className="text-center font-semibold">JavaScript</h3>
+          <div className="flex justify-center mt-4">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+              Add Contestant
+            </button>
           </div>
         </div>
       )
     },
     {
-      title: 'Voting Process',
-      description: 'Simple and secure voting interface',
+      title: 'Voting Interface',
+      icon: <FaClock className="w-6 h-6" />,
+      description: 'Simple and secure voting',
       content: (
-        <div className="max-w-lg mx-auto space-y-4">
-          {['Python', 'JavaScript'].map((candidate) => (
-            <motion.button
-              key={candidate}
-              onClick={() => setSelectedCandidate(candidate)}
-              className={`w-full p-4 rounded-lg border transition-all ${
-                selectedCandidate === candidate 
-                  ? 'border-primary-500 bg-primary-50 shadow-md' 
-                  : 'border-gray-200 hover:border-primary-300'
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+            {candidates.map((candidate) => (
+              <motion.div
+                key={candidate.id}
+                className={`p-4 border rounded-lg cursor-pointer ${
+                  selectedCandidate === candidate.id ? 'border-blue-500 shadow-lg' : 'hover:shadow-md'
+                }`}
+                onClick={() => setSelectedCandidate(candidate.id)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <img src={candidate.image} alt={candidate.name} className="w-16 h-16 mx-auto mb-2" />
+                <h3 className="text-center font-semibold">{candidate.name}</h3>
+                <p className="text-center text-sm text-gray-600">{candidate.category}</p>
+                {selectedCandidate === candidate.id && (
+                  <div className="absolute top-2 right-2">
+                    <FaCheck className="text-blue-500" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+          <div className="flex justify-center mt-4">
+            <button 
+              className={`px-6 py-2 rounded-lg ${
+                selectedCandidate 
+                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
               }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              disabled={!selectedCandidate}
+              onClick={() => {
+                if (selectedCandidate) {
+                  setDemoVotes(prev => ({
+                    ...prev,
+                    [selectedCandidate]: prev[selectedCandidate] + 1
+                  }));
+                  setCurrentStep(3);
+                }
+              }}
             >
-              <h3 className="font-medium">{candidate}</h3>
-            </motion.button>
-          ))}
+              Submit Vote
+            </button>
+          </div>
         </div>
       )
     },
     {
-      title: 'Real-time Results',
-      description: 'Watch results update instantly',
+      title: 'Results',
+      icon: <FaChartBar className="w-6 h-6" />,
+      description: 'Real-time results tracking',
       content: (
-        <div className="max-w-lg mx-auto space-y-4">
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="font-medium">Python</span>
-                <span>65%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <motion.div 
-                  className="bg-primary-600 h-2.5 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: '65%' }}
-                  transition={{ duration: 1 }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="font-medium">JavaScript</span>
-                <span>35%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <motion.div 
-                  className="bg-accent-500 h-2.5 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: '35%' }}
-                  transition={{ duration: 1 }}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="space-y-4 max-w-lg mx-auto">
+          <h3 className="text-xl font-bold text-center mb-6">Current Results</h3>
+          {Object.entries(demoVotes)
+            .sort(([,a], [,b]) => b - a)
+            .map(([candidateId, votes]) => {
+              const candidate = candidates.find(c => c.id === candidateId);
+              const percentage = (votes / Object.values(demoVotes).reduce((a, b) => a + b, 0)) * 100;
+              
+              return (
+                <div key={candidateId} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <img src={candidate.image} alt={candidate.name} className="w-8 h-8" />
+                      <span className="font-medium">{candidate.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">{votes} votes</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <motion.div
+                      className="bg-blue-500 h-2.5 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
         </div>
       )
     }
   ];
 
   return (
-    <div className="py-16 bg-gradient-to-br from-white to-gray-50">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">See How It Works</h2>
-        
-        {/* Steps Navigation */}
-        <div className="flex justify-center mb-12">
-          <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-sm p-8">
+          {/* Progress Steps */}
+          <div className="flex justify-between mb-8">
             {steps.map((step, index) => (
-              <motion.button
+              <div
                 key={index}
-                onClick={() => setCurrentStep(index)}
-                className={`flex items-center ${
-                  index === currentStep 
-                    ? 'text-primary-600' 
-                    : 'text-gray-400'
+                className={`flex flex-col items-center ${
+                  index <= currentStep ? 'text-blue-500' : 'text-gray-400'
                 }`}
-                whileHover={{ scale: 1.05 }}
               >
-                <span className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-sm
-                  ${index === currentStep 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-gray-200'
-                  }
-                `}>
-                  {index + 1}
-                </span>
-                <span className="ml-2 hidden sm:inline">{step.title}</span>
-              </motion.button>
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+                    index <= currentStep ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                  }`}
+                >
+                  {step.icon}
+                </div>
+                <div className="text-sm font-medium">{step.title}</div>
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* Step Content */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto"
-        >
-          <h3 className="text-2xl font-semibold text-center mb-2">
-            {steps[currentStep].title}
-          </h3>
-          <p className="text-gray-600 text-center mb-8">
-            {steps[currentStep].description}
-          </p>
-          <div className="bg-white rounded-xl shadow-soft-xl p-6 mb-8">
+          {/* Step Content */}
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <h2 className="text-2xl font-bold mb-2">{steps[currentStep].title}</h2>
+            <p className="text-gray-600 mb-6">{steps[currentStep].description}</p>
             {steps[currentStep].content}
-          </div>
-          
-          {/* Navigation Buttons */}
-          <div className="flex justify-center space-x-4">
+          </motion.div>
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-8">
             <button
               onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
+              className={`px-4 py-2 rounded-lg ${
+                currentStep === 0
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-500 text-white hover:bg-gray-600'
+              }`}
               disabled={currentStep === 0}
-              className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               onClick={() => setCurrentStep(prev => Math.min(steps.length - 1, prev + 1))}
+              className={`px-4 py-2 rounded-lg ${
+                currentStep === steps.length - 1
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
               disabled={currentStep === steps.length - 1}
-              className="px-6 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
