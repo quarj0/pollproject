@@ -77,13 +77,13 @@ const PollCard = ({ item, linkTo }) => {
         </div>
         
         <div className="px-5 py-4 bg-gray-50 flex justify-between items-center">
-          <div className="flex items-center text-primary-600">
+          <div className="flex items-center text-secondary-600">
             <FaUserFriends className="mr-2" />
             <span className="font-medium">Join Now</span>
           </div>
           <motion.div
             whileHover={{ x: 5 }}
-            className="text-primary-600"
+            className="text-secondary-600"
           >
             →
           </motion.div>

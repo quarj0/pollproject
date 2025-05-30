@@ -95,8 +95,18 @@ class PollSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data['creator'] = self.context['request'].user
-        return Poll.objects.create(**validated_data)
+        request = self.context['request']
+        validated_data['creator'] = request.user
+
+        # Handle image fields if present
+        poll_image = validated_data.pop('poll_image', None)
+        poll = Poll.objects.create(**validated_data)
+
+        if poll_image:
+            poll.poll_image = poll_image
+            poll.save()
+
+        return poll
 
 
 class UpdatePollSerializer(serializers.ModelSerializer):
@@ -171,3 +181,13 @@ class ContestantSerializer(serializers.ModelSerializer):
             instance.nominee_code = instance.generate_nominee_code()
         instance.save()
         return instance
+
+    def create(self, validated_data):
+        contestant_image = validated_data.pop('contestant_image', None)
+        contestant = Contestant.objects.create(**validated_data)
+
+        if contestant_image:
+            contestant.contestant_image = contestant_image
+            contestant.save()
+
+        return contestant

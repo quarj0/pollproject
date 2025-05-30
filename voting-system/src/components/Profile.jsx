@@ -104,7 +104,7 @@ const Profile = ({ authTokens }) => {
         {/* Profile Header */}
         <div className="text-center mb-12">
           <div className="w-32 h-32 bg-primary-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <FaUser className="w-16 h-16 text-primary-600" />
+            <FaUser className="w-16 h-16 text-secondary-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">{user?.username}</h1>
           {error && <p className="text-red-500 mt-2">{error}</p>}
@@ -122,7 +122,7 @@ const Profile = ({ authTokens }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsUpdateModalOpen(true)}
-              className="px-4 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors flex items-center"
+              className="px-4 py-2 bg-primary-50 text-secondary-600 rounded-lg hover:bg-primary-100 transition-colors flex items-center"
             >
               <FaEdit className="mr-2" />
               Edit Profile
@@ -164,7 +164,7 @@ const Profile = ({ authTokens }) => {
                 setPollId(user.poll_id);
                 setIsWithdrawModalOpen(true);
               }}
-              className="px-4 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors flex items-center"
+              className="px-4 py-2 bg-primary-50 text-secondary-600 rounded-lg hover:bg-primary-100 transition-colors flex items-center"
             >
               <FaWallet className="mr-2" />
               Withdraw

@@ -79,7 +79,7 @@ const FAQs= () => {
               Still have questions?{" "}
               <a
                 href="mailto:support@votelab.com"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-secondary-600 hover:text-secondary-700 font-medium"
               >
                 Contact our support team
               </a>

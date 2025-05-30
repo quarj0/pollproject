@@ -46,7 +46,7 @@ class Contestant(models.Model):
     category = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     nominee_code = models.CharField(max_length=15, unique=True)
-    image = CloudinaryField('image', help_text="Contestant image")
+    contestant_image = CloudinaryField('image', help_text="Contestant image")
 
     def save(self, *args, **kwargs):
         if not self.nominee_code:

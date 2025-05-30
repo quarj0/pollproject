@@ -14,7 +14,7 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
     whileHover={{ y: -5 }}
   >
     <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-      <Icon className="w-6 h-6 text-primary-600" />
+      <Icon className="w-6 h-6 text-secondary-600" />
     </div>
     <h3 className="text-xl font-semibold mb-2">{title}</h3>
     <p className="text-gray-600">{description}</p>
@@ -33,6 +33,8 @@ const Homepage = () => {
   const [filteredPolls, setFilteredPolls] = useState([]); 
   const [searchTerm, setSearchTerm] = useState("");
   const [isVisible, setIsVisible] = useState(false);
+
+  // SEO Metadata
 
   useEffect(() => {
     setIsVisible(true);
@@ -95,7 +97,7 @@ const Homepage = () => {
               <div className="mb-12 lg:mb-0">
                 <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-6">
                   Create and Manage <br />
-                  <span className="text-primary-600">Professional Polls</span> <br />
+                  <span className="text-secondary-600">Professional Polls</span> <br />
                   with Ease
                 </h1>
                 <p className="text-gray-600 text-lg mb-8 max-w-lg">
@@ -110,7 +112,7 @@ const Homepage = () => {
                   </Link>
                   <Link
                     to="#demo"
-                    className="inline-flex px-8 py-4 text-base font-medium text-primary-600 hover:text-primary-700 border border-primary-600 rounded-lg transition-colors duration-200"
+                    className="inline-flex px-8 py-4 text-base font-medium text-secondary-600 hover:text-secondary-700 border border-primary-600 rounded-lg transition-colors duration-200"
                   >
                     Watch Demo
                   </Link>
@@ -235,7 +237,7 @@ const Homepage = () => {
             </div>
             <Link
               to="/events"
-              className="inline-flex items-center px-6 py-3 bg-white text-primary-600 rounded-lg shadow-soft-xl hover:shadow-soft-2xl transition-shadow"
+              className="inline-flex items-center px-6 py-3 bg-white text-secondary-600 rounded-lg shadow-soft-xl hover:shadow-soft-2xl transition-shadow"
             >
               View All Events
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,7 +269,7 @@ const Homepage = () => {
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-20 bg-gradient-to-br from-primary-600 to-primary-800 text-white">
+      <section className="py-20 bg-gradient-to-br from-secondary-600 to-secondary-800 text-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
             <motion.div 
@@ -286,7 +288,7 @@ const Homepage = () => {
               <motion.div whileHover={{ scale: 1.05 }}>
                 <Link
                   to="/register"
-                  className="inline-flex items-center px-8 py-4 bg-white text-primary-600 rounded-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
+                  className="inline-flex items-center px-8 py-4 bg-white text-secondary-600 rounded-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
                 >
                   Get Started Free
                   <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

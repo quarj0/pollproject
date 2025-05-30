@@ -189,7 +189,7 @@ const CreatePoll = () => {
                   <div className="flex text-sm text-gray-600">
                     <label
                       htmlFor="image-upload"
-                      className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500"
+                      className="relative cursor-pointer rounded-md font-medium text-secondary-600 hover:text-secondary-500"
                     >
                       <span>Upload an image</span>
                       <input
@@ -412,7 +412,7 @@ const CreatePoll = () => {
             {responseData.ussd_code && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="font-medium">USSD Code</p>
-                <p className="text-lg text-primary-600">
+                <p className="text-lg text-secondary-600">
                   {responseData.ussd_code}
                 </p>
               </div>

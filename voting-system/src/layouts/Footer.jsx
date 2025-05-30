@@ -11,13 +11,13 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="py-10 bg-gradient-to-br from-gray-800 to-blue-950 text-white">
+    <footer className="py-10 bg-gradient-to-br from-gray-900 to-secondary-900 text-white">
       <div className="container mx-auto px-6">
         {/* Top Section */}
         <div className="flex flex-col md:flex-row md:justify-between text-center md:text-left space-y-10 md:space-y-0">
           {/* Quick Links */}
           <div>
-            <h5 className="text-lg font-semibold mb-4">Quick Links</h5>
+            <h5 className="text-lg font-semibold mb-4 font-montserrat">Quick Links</h5>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -56,7 +56,7 @@ const Footer = () => {
 
           {/* Other Links */}
           <div>
-            <h5 className="text-lg font-semibold mb-4">Other Links</h5>
+            <h5 className="text-lg font-semibold mb-4 font-montserrat">Legal</h5>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -85,7 +85,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/support"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-secondary-400 transition-colors font-lato"
                 >
                   Support
                 </Link>
@@ -95,14 +95,14 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div className="block justify-center md:justify-start">
-            <h5 className="text-lg font-semibold mb-4">Contact Us</h5>
-            <p className="text-gray-400 mb-4">
-              <FaMapMarkerAlt className="text-xl text-red-500 mx-1" />
+            <h5 className="text-lg font-semibold mb-4 font-montserrat">Contact Us</h5>
+            <p className="text-gray-300 mb-4 flex items-center gap-2 font-lato">
+              <FaMapMarkerAlt className="text-xl text-secondary-400" />
               Ejisu, Kumasi-Accra Road Ghana
             </p>
-            <p className="text-gray-400 mb-4">
-              <FaEnvelope className="text-xl text-white mx-1" />
-              guidemelearn.info@gmail.com
+            <p className="text-gray-300 mb-4 flex items-center gap-2 font-lato">
+              <FaEnvelope className="text-xl text-secondary-400" />
+              support@castsure.com
             </p>
             <p className="text-gray-400 mb-4">
               <FaPhone className="text-xl mx-1" /> (233) 559-537-405
@@ -115,26 +115,28 @@ const Footer = () => {
 
           {/* Social Media */}
           <div>
-            <h5 className="text-lg font-semibold mb-4">Follow Us</h5>
+            <h5 className="text-lg font-semibold mb-4 font-montserrat">Connect With Us</h5>
             <div className="flex justify-center md:justify-start space-x-4">
               <a
-                href="https://instagram.com/quarjowusu/"
+                href="https://instagram.com/castsure/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-secondary-400 transition-colors"
+                aria-label="Follow us on Instagram"
               >
-                <FaInstagram className="text-2xl text-pink-500" />
+                <FaInstagram className="text-2xl hover:scale-110 transition-transform" />
               </a>
               <a
-                href="https://x.com/quarjowusu/"
+                href="https://twitter.com/castsure/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-secondary-400 transition-colors"
+                aria-label="Follow us on Twitter"
               >
-                <FaTwitter className="text-2xl text-blue-400" />
+                <FaTwitter className="text-2xl hover:scale-110 transition-transform" />
               </a>
               <a
-                href="https://linkedin.com/in/quarjo"
+                href="https://linkedin.com/company/castsure"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -146,8 +148,13 @@ const Footer = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Voting System. All rights reserved.
+        <div className="mt-10 border-t border-gray-800 pt-6 text-center">
+          <p className="text-sm text-gray-400 font-lato">
+            &copy; {new Date().getFullYear()} Cast Sure. All rights reserved.
+          </p>
+          <p className="text-xs text-gray-500 mt-2 font-lato">
+            Secure Digital Voting & Poll Management Platform
+          </p>
         </div>
       </div>
     </footer>

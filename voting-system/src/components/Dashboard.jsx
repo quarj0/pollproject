@@ -79,7 +79,7 @@ const DashBoard = () => {
           >
             <Link
               to="/create-poll"
-              className="inline-flex items-center px-6 py-3 bg-white text-primary-600 rounded-lg font-medium hover:shadow-lg transition-shadow"
+              className="inline-flex items-center px-6 py-3 bg-white text-secondary-600 rounded-lg font-medium hover:shadow-lg transition-shadow"
             >
               <FaPlus className="mr-2" />
               Create New Poll
@@ -113,7 +113,7 @@ const DashBoard = () => {
               transition={{ duration: 0.2 }}
             >
               <h3 className="text-lg font-semibold mb-2">Active Polls</h3>
-              <p className="text-3xl font-bold text-primary-600">
+              <p className="text-3xl font-bold text-secondary-600">
                 {upcomingPolls.length}
               </p>
             </motion.div>
@@ -123,7 +123,7 @@ const DashBoard = () => {
               transition={{ duration: 0.2 }}
             >
               <h3 className="text-lg font-semibold mb-2">Past Polls</h3>
-              <p className="text-3xl font-bold text-primary-600">
+              <p className="text-3xl font-bold text-secondary-600">
                 {pastPolls.length}
               </p>
             </motion.div>
@@ -133,7 +133,7 @@ const DashBoard = () => {
               transition={{ duration: 0.2 }}
             >
               <h3 className="text-lg font-semibold mb-2">Total Polls</h3>
-              <p className="text-3xl font-bold text-primary-600">
+              <p className="text-3xl font-bold text-secondary-600">
                 {upcomingPolls.length + pastPolls.length}
               </p>
             </motion.div>
@@ -146,12 +146,12 @@ const DashBoard = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold flex items-center">
-              <FaCalendarAlt className="mr-2 text-primary-600" />
+              <FaCalendarAlt className="mr-2 text-secondary-600" />
               Upcoming Events
             </h2>
             <Link
               to="/events"
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="text-secondary-600 hover:text-secondary-700 font-medium"
             >
               View All
             </Link>
@@ -224,12 +224,12 @@ const DashBoard = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold flex items-center">
-              <FaArchive className="mr-2 text-primary-600" />
+              <FaArchive className="mr-2 text-secondary-600" />
               Past Events
             </h2>
             <Link
               to="/past/events"
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="text-secondary-600 hover:text-secondary-700 font-medium"
             >
               View All
             </Link>

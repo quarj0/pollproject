@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axiosInstance from "../apis/api";
-import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import Footer from "../layouts/Footer"; 
 
 const PastPolls = () => {
   const [polls, setPolls] = useState([]);
@@ -66,47 +66,44 @@ const PastPolls = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-        Past Polls
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {pastPolls.map((poll) => (
-          <div
-            key={poll.id}
-            className="bg-gray-100 shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
-          >
-            <img
-              src={poll.poll_image}
-              alt={poll.title || "Poll image"}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-800 truncate">
-                {poll.title}
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Ended: {new Date(poll.end_time).toLocaleString()}
-              </p>
-              <p className="mt-2 text-gray-700 line-clamp-3">
-                {poll.description || "No description available."}
-              </p>
-              <button
-                className="mt-4 w-full bg-gray-500 text-white py-2 px-4 rounded-md text-sm font-medium cursor-not-allowed"
-                disabled
-              >
-                Event Ended
-              </button>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="space-y-8 max-w-6xl mx-auto p-6 flex-grow">
+        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center font-montserrat">
+          Past Polls
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {pastPolls.map((poll) => (
+            <div
+              key={poll.id}
+              className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100"
+            >
+              <img
+                src={poll.poll_image}
+                alt={poll.title || "Poll image"}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-800 truncate font-montserrat">
+                  {poll.title}
+                </h3>
+                <p className="text-sm text-gray-500 mt-2 font-lato">
+                  Ended: {new Date(poll.end_time).toLocaleString()}
+                </p>
+                <p className="mt-3 text-gray-600 line-clamp-3 font-lato">
+                  {poll.description || "No description available."}
+                </p>
+                <Link
+                  to={`/poll/${poll.id}/results`}
+                  className="mt-4 w-full bg-primary-600 text-white py-3 px-4 rounded-md text-sm font-medium hover:bg-primary-700 transition-colors inline-block text-center font-montserrat"
+                >
+                  View Results
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      <Link
-        to="/dashboard"
-        className="inline-flex items-center text-gray-500 hover:text-gray-700"
-      >
-        <FaArrowAltCircleLeft className="mr-2" /> Back
-      </Link>
+      <Footer />
     </div>
   );
 };

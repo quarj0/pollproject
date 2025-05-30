@@ -42,7 +42,7 @@ const LoginPage = ({ login }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-teal-800 to-blue-950">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-primary-700 to-secondary-800">
       {/* Left Section - Branding */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -55,8 +55,8 @@ const LoginPage = ({ login }) => {
           alt="VoteLab Logo"
           className="w-32 h-32 md:w-48 md:h-48 object-contain mb-8"
         />
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome Back!</h1>
-        <p className="text-lg md:text-xl text-center max-w-md">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 font-montserrat">Welcome Back!</h1>
+        <p className="text-lg md:text-xl text-center max-w-md font-lato">
           Login to manage your polls and see what your audience thinks.
         </p>
       </motion.div>
@@ -69,13 +69,13 @@ const LoginPage = ({ login }) => {
         className="w-full md:w-1/2 flex justify-center items-center p-8"
       >
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6">Sign In</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-6 font-montserrat">Sign In</h2>
           
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 text-red-600 p-4 rounded-lg mb-6"
+              className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 font-lato"
             >
               {error}
             </motion.div>
@@ -83,7 +83,7 @@ const LoginPage = ({ login }) => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
+              <label className="block text-gray-700 text-sm font-medium mb-2 font-montserrat">
                 Email
               </label>
               <div className="relative">
@@ -92,7 +92,7 @@ const LoginPage = ({ login }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-lato"
                   placeholder="Enter your email"
                   required
                 />
@@ -109,7 +109,7 @@ const LoginPage = ({ login }) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-lato"
                   placeholder="Enter your password"
                   required
                 />
@@ -121,10 +121,10 @@ const LoginPage = ({ login }) => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center space-x-2 ${
+              className={`w-full py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center space-x-2 font-montserrat ${
                 loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-teal-600 hover:bg-teal-700"
+                : "bg-primary-600 hover:bg-primary-700"
               } transition-colors duration-200`}
             >
               <span>{loading ? "Signing in..." : "Sign In"}</span>
@@ -134,13 +134,13 @@ const LoginPage = ({ login }) => {
             <div className="flex flex-col sm:flex-row justify-between items-center mt-6 space-y-4 sm:space-y-0">
               <Link
                 to="/password/reset"
-                className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors"
+                className="text-secondary-600 hover:text-secondary-700 text-sm font-medium transition-colors font-montserrat"
               >
                 Forgot your password?
               </Link>
               <Link
                 to="/register"
-                className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors"
+                className="text-secondary-600 hover:text-secondary-700 text-sm font-medium transition-colors font-montserrat"
               >
                 Don&apos;t have an account? Sign up
               </Link>

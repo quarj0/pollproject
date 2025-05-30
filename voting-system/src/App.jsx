@@ -6,9 +6,10 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { HelmetProvider } from 'react-helmet-async';
 import Navbar from "./layouts/Navbar";
 import Login from "./layouts/Login";
-import HomePage from "./components/Homepage";
+import HomePage from "./components/SEOHomepage";
 import Profile from "./components/Profile";
 import RegisterPage from "./layouts/Register";
 import PasswordResetConfirmPage from "./layouts/PasswordResetConfirm";
@@ -43,6 +44,9 @@ const App = () => {
     const storedTokens = localStorage.getItem("access");
     return storedTokens ? { access: storedTokens } : null;
   });
+
+  // Provide default metadata
+  const helmetContext = {};
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -115,11 +119,12 @@ const App = () => {
   };
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-100">
-        {/* Conditionally render Navbar */}
-        {authTokens && (
-          <Navbar
+    <HelmetProvider context={helmetContext}>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          {/* Conditionally render Navbar */}
+          {authTokens && (
+            <Navbar
             authTokens={authTokens}
             logout={logout}
             isAuthenticated={!!authTokens}
@@ -227,7 +232,8 @@ const App = () => {
         </div>
         <Footer />
       </div>
-    </Router>
+      </Router>
+    </HelmetProvider>
   );
 };
 

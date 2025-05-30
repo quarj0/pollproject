@@ -110,7 +110,7 @@ const Contact = () => {
                   
                   <div className="space-y-4">
                     <div className="flex items-start space-x-4">
-                      <FaMapMarkerAlt className="text-primary-600 mt-1" />
+                      <FaMapMarkerAlt className="text-secondary-600 mt-1" />
                       <div>
                         <h3 className="font-medium text-gray-900">Address</h3>
                         <p className="text-gray-600">Ejisu, Kumasi-Accra Road Ghana</p>
@@ -118,7 +118,7 @@ const Contact = () => {
                     </div>
                     
                     <div className="flex items-start space-x-4">
-                      <FaPhone className="text-primary-600 mt-1" />
+                      <FaPhone className="text-secondary-600 mt-1" />
                       <div>
                         <h3 className="font-medium text-gray-900">Phone</h3>
                         <p className="text-gray-600">(233) 559-537-405</p>
@@ -127,7 +127,7 @@ const Contact = () => {
                     </div>
                     
                     <div className="flex items-start space-x-4">
-                      <FaEnvelope className="text-primary-600 mt-1" />
+                      <FaEnvelope className="text-secondary-600 mt-1" />
                       <div>
                         <h3 className="font-medium text-gray-900">Email</h3>
                         <p className="text-gray-600">guidemelearn.info@gmail.com</p>

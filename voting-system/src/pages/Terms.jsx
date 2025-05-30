@@ -79,7 +79,7 @@ const Terms = () => {
                 If you have any questions about these Terms, please contact us at:{" "}
                 <a
                   href="mailto:legal@votelab.com"
-                  className="text-primary-600 hover:text-primary-700"
+                  className="text-secondary-600 hover:text-secondary-700"
                 >
                   legal@votelab.com
                 </a>

@@ -67,8 +67,8 @@ export default function Navbar({ authTokens, logout }) {
         <Link
           to={to}
           className={`${
-            active ? "bg-gray-50" : ""
-          } px-4 py-2 text-sm text-gray-700 flex items-center space-x-2 hover:bg-gray-50 transition duration-150`}
+            active ? "bg-primary-50" : ""
+          } px-4 py-2 text-sm text-gray-700 flex items-center space-x-2 hover:bg-primary-50 transition duration-150 font-montserrat`}
         >
           {icon}
           <span>{label}</span>
@@ -94,7 +94,7 @@ export default function Navbar({ authTokens, logout }) {
                 <div className="flex items-center sm:hidden">
                   <Disclosure.Button
                     aria-label="Open mobile menu"
-                    className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-teal-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors duration-200"
+                    className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-primary-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
                   >
                     <span className="sr-only">
                       {open ? 'Close main menu' : 'Open main menu'}
@@ -110,7 +110,7 @@ export default function Navbar({ authTokens, logout }) {
                 {/* Logo and Navigation Links */}
                 <div className="flex flex-1 items-center justify-center sm:justify-start">
                   <div className="flex shrink-0 items-center">
-                    <Link to="/dashboard" className="focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 rounded-lg">
+                    <Link to="/dashboard" className="focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-lg">
                       <img src={logo} alt="VoteLab Logo" className="h-8 w-auto sm:h-10" />
                     </Link>
                   </div>
@@ -122,9 +122,9 @@ export default function Navbar({ authTokens, logout }) {
                           to={item.href}
                           className={`${
                             item.current
-                              ? "bg-teal-800 text-white"
-                              : "text-gray-700 hover:bg-teal-700 hover:text-white"
-                          } rounded-md px-3 py-2 text-sm font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2`}
+                              ? "bg-primary-600 text-white"
+                              : "text-gray-700 hover:bg-primary-500 hover:text-white"
+                          } rounded-md px-3 py-2 text-sm font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-montserrat`}
                         >
                           {item.name}
                         </Link>
@@ -137,11 +137,11 @@ export default function Navbar({ authTokens, logout }) {
                 <div className="flex items-center space-x-4">
                   <div className="hidden sm:block">
                     {loading ? (
-                      <div className="text-sm text-gray-600 animate-pulse">Loading balance...</div>
+                      <div className="text-sm text-gray-600 animate-pulse font-lato">Loading balance...</div>
                     ) : error ? (
-                      <div className="text-sm text-red-500 animate-pulse">Error loading balance</div>
+                      <div className="text-sm text-red-500 animate-pulse font-lato">Error loading balance</div>
                     ) : (
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-gray-700 font-montserrat">
                         Balance: GHS {balance.available}
                       </span>
                     )}
@@ -152,9 +152,9 @@ export default function Navbar({ authTokens, logout }) {
                     <Menu as="div" className="relative ml-3">
                       {({ open }) => (
                         <>
-                          <Menu.Button className="flex rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition duration-200">
+                          <Menu.Button className="flex rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition duration-200">
                             <span className="sr-only">Open user menu</span>
-                            <FaUserCircle className="h-8 w-8 text-gray-600 hover:text-teal-700 transition-colors" />
+                            <FaUserCircle className="h-8 w-8 text-gray-600 hover:text-secondary-600 transition-colors" />
                           </Menu.Button>
                           <Transition
                             as={Fragment}
@@ -165,7 +165,7 @@ export default function Navbar({ authTokens, logout }) {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                           >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none font-montserrat">
                               <MenuItem
                                 to="/profile"
                                 icon={<FaUser className="h-4 w-4" />}
