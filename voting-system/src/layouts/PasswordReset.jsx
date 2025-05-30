@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { FaEnvelope, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import axiosInstance from "../apis/api";
-import votelap from "../assets/votelablogo.png";
 
 const PasswordResetRequestPage = () => {
   const [email, setEmail] = useState("");
@@ -44,11 +43,11 @@ const PasswordResetRequestPage = () => {
       >
         {/* Logo and Branding */}
         <div className="text-center mb-8">
-          <img
+          {/* <img
             src={votelap}
             alt="VoteLab Logo"
             className="w-24 h-24 mx-auto mb-4"
-          />
+          /> */}
           <h2 className="text-3xl font-bold text-white mb-2">
             Reset Your Password
           </h2>

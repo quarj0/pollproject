@@ -10,12 +10,10 @@ const PrivacyPolicy = () => {
     >
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
-          <h1 className="text-4xl font-bold mb-8 text-gray-900">Privacy Policy</h1>
+          <h1 className="text-4xl font-bold text-center mb-8 text-gray-900">Privacy Policy</h1>
           
           <div className="prose lg:prose-xl">
-            <p className="text-gray-600 mb-8">
-              Last updated: May 29, 2025
-            </p>
+          
 
             <section className="mb-8">
               <div className="flex items-center mb-4">
@@ -72,12 +70,12 @@ const PrivacyPolicy = () => {
               <p className="text-gray-600">
                 If you have any questions about this Privacy Policy, please contact us at:{" "}
                 <a
-                  href="mailto:privacy@votelab.com"
+                  href="mailto:support@castsure.vote"
                   className="text-secondary-600 hover:text-secondary-700"
                 >
-                  privacy@votelab.com
+                  support@castsure.vote
                 </a>
-              </p>
+              </p>  
             </section>
           </div>
         </div>

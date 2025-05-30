@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import axiosInstance from "../apis/api";
-import logo from "../assets/votelab.png";
+import logo from "../assets/castsure-logo.jpeg";
 
 export default function Navbar({ authTokens, logout }) {
   const [balance, setBalance] = useState({ available: 0 });
@@ -22,7 +22,7 @@ export default function Navbar({ authTokens, logout }) {
 
   const navigation = [
     {
-      name: "Home",
+      name: "Dashboard",
       href: "/dashboard",
       current: location.pathname === "/dashboard",
     },
@@ -111,7 +111,7 @@ export default function Navbar({ authTokens, logout }) {
                 <div className="flex flex-1 items-center justify-center sm:justify-start">
                   <div className="flex shrink-0 items-center">
                     <Link to="/dashboard" className="focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-lg">
-                      <img src={logo} alt="VoteLab Logo" className="h-8 w-auto sm:h-10" />
+                      <img src={logo} alt="Cast Sure Logo" className="h-8 w-auto sm:h-10" />
                     </Link>
                   </div>
                   <div className="hidden sm:ml-8 sm:block">

@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaLock, FaShieldAlt, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import axiosInstance from "../apis/api";
-import votelap from "../assets/votelablogo.png";
 
 const PasswordResetConfirmPage = () => {
   const { uidb64, token } = useParams();
@@ -66,11 +65,11 @@ const PasswordResetConfirmPage = () => {
       >
         {/* Logo and Branding */}
         <div className="text-center mb-8">
-          <img
+          {/* <img
             src={votelap}
             alt="VoteLab Logo"
             className="w-24 h-24 mx-auto mb-4"
-          />
+          /> */}
           <h2 className="text-3xl font-bold text-white mb-2">
             Create New Password
           </h2>

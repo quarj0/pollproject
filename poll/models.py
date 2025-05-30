@@ -58,7 +58,7 @@ class Contestant(models.Model):
     category = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     nominee_code = models.CharField(max_length=15, unique=True)
-    contestant_image = CloudinaryField('image', help_text="Contestant image")
+    contestant_image = CloudinaryField('image', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.nominee_code:
@@ -80,4 +80,4 @@ class Contestant(models.Model):
         return f"{self.name} - {self.category} in {self.poll.title}"
 
     def get_image_url(self):
-        return self.contestant_image.url if self.contestant_image else "https://via.placeholder.com/300"
+        return self.contestant_image.url if self.contestant_image else ""

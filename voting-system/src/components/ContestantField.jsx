@@ -49,7 +49,7 @@ const AddContestants = () => {
         formData.append("name", contestant.name);
         formData.append("category", contestant.category);
         if (contestant.image) {
-          formData.append("image", contestant.image);
+          formData.append("contestant_image", contestant.image);
         }
 
         const response = await axiosInstance.post(

@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 from decouple import config
 import os
+import cloudinary
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,9 +17,11 @@ FRONTEND_URL = config('FRONTEND_URL')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,').split(',')
+# ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,').split(',')
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8080', 'http://localhost:5137']
+ALLOWED_HOSTS = ['*']
+
+CORS_ALLOWED_ORIGINS = ['http://localhost:8080', 'http://localhost:5137',]
 
 # Always append trailing slashes to URLs
 APPEND_SLASH = True
@@ -143,6 +146,14 @@ DATABASES = {
         'PORT': config('DB_PORT'),
     }
 }
+
+
+cloudinary.config(
+    cloud_name=config('CLOUDINARY_CLOUD_NAME'),
+    api_key=config('CLOUDINARY_API_KEY'),
+    api_secret=config('CLOUDINARY_API_SECRET'),
+    secure=True
+)
 
 # Cloudinary settings
 CLOUDINARY_STORAGE = {

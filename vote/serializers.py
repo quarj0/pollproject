@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from poll.models import Poll, Contestant
 from .models import Vote, VoterCode
+from payment.models import Transaction
 
 
 class VoteSerializer(serializers.ModelSerializer):
@@ -10,11 +11,13 @@ class VoteSerializer(serializers.ModelSerializer):
     contestant = serializers.PrimaryKeyRelatedField(
         queryset=Contestant.objects.all(), required=True)
     number_of_votes = serializers.IntegerField(required=False, default=1)
+    transaction = serializers.PrimaryKeyRelatedField(
+        queryset=Transaction.objects.all(), required=False)
 
     class Meta:
         model = Vote
-        fields = ['id', 'poll', 'contestant', 'number_of_votes', 'created_at']
-        read_only_fields = ['created_at']
+        fields = ['id', 'poll', 'contestant', 'number_of_votes', 'transaction', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
     def validate(self, data):
         poll = data.get('poll')

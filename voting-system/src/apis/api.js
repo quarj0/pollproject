@@ -9,7 +9,7 @@ const axiosInstance = axios.create({
   baseURL: api_url,
   timeout: 5000,
   headers: {
-    "Content-Type": "multipart/form-data",
+    "Content-Type": "application/json",
     accept: "application/json",
   },
 });
@@ -19,6 +19,9 @@ axiosInstance.interceptors.request.use(
     const access = localStorage.getItem("access");
     if (access) {
       config.headers.Authorization = `Bearer ${access}`;
+    }
+    if (config.data instanceof FormData) {
+      config.headers["Content-Type"] = "multipart/form-data";
     }
     return config;
   },

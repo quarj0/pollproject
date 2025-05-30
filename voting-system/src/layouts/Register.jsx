@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUser, FaPhone, FaEnvelope, FaLock, FaArrowRight } from "react-icons/fa";
 import axiosInstance from "../apis/api";
-import votelap from "../assets/votelablogo.png";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -108,11 +107,11 @@ const RegisterPage = () => {
         transition={{ duration: 0.5 }}
         className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 text-white"
       >
-        <img
+        {/* <img
           src={votelap}
           alt="VoteLab Logo"
           className="w-32 h-32 md:w-48 md:h-48 object-contain mb-8"
-        />
+        /> */}
         <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
           Create Your Account
         </h1>

@@ -66,26 +66,29 @@ def calculate_setup_fee(expected_voters):
 
 
 class PollSerializer(serializers.ModelSerializer):
-    poll_image = serializers.SerializerMethodField()
+    poll_image = serializers.ImageField(required=False, allow_null=True)
+    poll_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Poll
         fields = [
-            'id', 'title', 'poll_image', 'description', 'start_time', 'end_time',
+            'id', 'title', 'poll_image', 'poll_image_url', 'description', 'start_time', 'end_time',
             'poll_type', 'expected_voters', 'voting_fee', 'active', 'setup_fee'
         ]
 
-    def get_poll_image(self, obj):
+    def get_poll_image_url(self, obj):
         if obj.poll_image:
-            return str(obj.poll_image.url)
+            return obj.poll_image.url
         return None
+
+    def validate_poll_image(self, value):
+        """Validate the poll image"""
+        if value:
+            validate_image(value)
+        return value
 
     def validate(self, data):
         start_time = data.get('start_time')
-        image = data.get('poll_image')
-
-        if image:
-            validate_image(image)
 
         if start_time and start_time < timezone.now():
             raise serializers.ValidationError(
@@ -98,18 +101,26 @@ class PollSerializer(serializers.ModelSerializer):
         request = self.context['request']
         validated_data['creator'] = request.user
 
-        # Handle image fields if present
-        poll_image = validated_data.pop('poll_image', None)
+       
         poll = Poll.objects.create(**validated_data)
-
-        if poll_image:
-            poll.poll_image = poll_image
-            poll.save()
-
         return poll
+
+    def to_representation(self, instance):
+        """Customize the output representation"""
+        data = super().to_representation(instance)
+
+        # Convert CloudinaryField to URL string for output
+        if instance.poll_image:
+            data['poll_image'] = str(instance.poll_image.url)
+        else:
+            data['poll_image'] = None
+
+        return data
 
 
 class UpdatePollSerializer(serializers.ModelSerializer):
+    poll_image = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = Poll
         fields = [
@@ -117,16 +128,17 @@ class UpdatePollSerializer(serializers.ModelSerializer):
             'poll_type', 'expected_voters', 'voting_fee', 'active', 'setup_fee'
         ]
 
+    def validate_poll_image(self, value):
+        """Validate the poll image"""
+        if value:
+            validate_image(value)
+        return value
+
     def validate(self, data):
         if not self.instance.can_be_edited():
             raise PermissionDenied(
                 "Poll cannot be edited after start time or if votes have been cast"
             )
-
-        image = data.get('poll_image')
-
-        if image:
-            validate_image(image)
 
         # Prevent reducing end_time for active polls
         if self.instance and self.instance.active and 'end_time' in data and data['end_time'] < self.instance.end_time:
@@ -149,32 +161,47 @@ class UpdatePollSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     "You cannot update a poll that has already ended.")
 
-        poll_image = validated_data.pop('poll_image', None)
+        # Django will handle the image field automatically
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        if poll_image:
-            instance.poll_image = poll_image
         instance.save()
         return instance
 
+    def to_representation(self, instance):
+        """Customize the output representation"""
+        data = super().to_representation(instance)
+
+        # Convert CloudinaryField to URL string for output
+        if instance.poll_image:
+            data['poll_image'] = str(instance.poll_image.url)
+        else:
+            data['poll_image'] = None
+
+        return data
+
 
 class ContestantSerializer(serializers.ModelSerializer):
-    contestant_image = serializers.SerializerMethodField()
+    contestant_image = serializers.ImageField(required=False, allow_null=True)
+    contestant_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Contestant
         fields = ['id', 'poll', 'category', 'name',
-                  'nominee_code', 'contestant_image']
+                  'nominee_code', 'contestant_image', 'contestant_image_url']
         read_only_fields = ['nominee_code']
 
-    def get_contestant_image(self, obj):
+    def get_contestant_image_url(self, obj):
         if obj.contestant_image:
-            return str(obj.contestant_image.url)
+            return obj.contestant_image.url
         return None
 
+    def validate_contestant_image(self, value):
+        """Validate the contestant image"""
+        if value:
+            validate_image(value)
+        return value
+
     def validate(self, data):
-        if 'contestant_image' in data and data['contestant_image']:
-            validate_image(data['contestant_image'])
         return data
 
     def update(self, instance, validated_data):
@@ -186,11 +213,14 @@ class ContestantSerializer(serializers.ModelSerializer):
         return instance
 
     def create(self, validated_data):
-        contestant_image = validated_data.pop('contestant_image', None)
         contestant = Contestant.objects.create(**validated_data)
-
-        if contestant_image:
-            contestant.contestant_image = contestant_image
-            contestant.save()
-
         return contestant
+
+    def to_representation(self, instance):
+        """Customize the output representation"""
+        data = super().to_representation(instance)
+        if instance.contestant_image:
+            data['contestant_image'] = str(instance.contestant_image.url)
+        else:
+            data['contestant_image'] = None
+        return data

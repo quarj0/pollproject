@@ -28,7 +28,7 @@ const CreatePoll = () => {
     poll_type: "",
     expected_voters: "",
     voting_fee: "",
-    image: null,
+    poll_image: null, 
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -60,7 +60,7 @@ const CreatePoll = () => {
         if (expectedVoters <= 100) {
           fee = expectedVoters * 1.5;
         }
-        // 101-350 voters: 0.75 GHS per voter
+        // 101-350 voters: 0.8 GHS per voter
         else if (expectedVoters <= 350) {
           fee = expectedVoters * 0.8;
         }
@@ -116,8 +116,10 @@ const CreatePoll = () => {
     if (!validateStep(currentStep)) return;
 
     const submissionData = new FormData();
+    
+    // Append each field to FormData
     Object.keys(formData).forEach((key) => {
-      if (formData[key]) {
+      if (formData[key] !== null && formData[key] !== "") {
         submissionData.append(key, formData[key]);
       }
     });
@@ -125,18 +127,26 @@ const CreatePoll = () => {
     setLoading(true);
     try {
       const res = await axiosInstance.post("polls/create/", submissionData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      
       });
       setResponseData(res.data);
     } catch (err) {
+      console.error("API Error:", err.response?.data);
       const apiErrors = err.response?.data || {};
-      setErrors((prev) => ({
-        ...prev,
-        ...Object.keys(apiErrors).reduce((acc, field) => {
-          acc[field] = apiErrors[field];
-          return acc;
-        }, {}),
-      }));
+      
+      const newErrors = {};
+      
+      if (typeof apiErrors === 'object') {
+        Object.keys(apiErrors).forEach((field) => {
+          if (Array.isArray(apiErrors[field])) {
+            newErrors[field] = apiErrors[field][0]; 
+          } else {
+            newErrors[field] = apiErrors[field];
+          }
+        });
+      }
+      
+      setErrors(newErrors);
     } finally {
       setLoading(false);
     }
@@ -180,40 +190,47 @@ const CreatePoll = () => {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Poll Image
-              </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                <div className="space-y-1 text-center">
-                  <FaImage className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <label
-                      htmlFor="image-upload"
-                      className="relative cursor-pointer rounded-md font-medium text-secondary-600 hover:text-secondary-500"
-                    >
-                      <span>Upload an image</span>
-                      <input
-                        id="image-upload"
-                        name="image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleInputChange}
-                        className="sr-only"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-              {formData.image && (
-                <div className="mt-4">
-                  <img
-                    src={URL.createObjectURL(formData.image)}
-                    alt="Preview"
-                    className="h-32 w-32 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-            </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Poll Image
+  </label>
+  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+    <div className="space-y-1 text-center">
+      <FaImage className="mx-auto h-12 w-12 text-gray-400" />
+      <div className="flex text-sm text-gray-600">
+        <label
+          htmlFor="poll-image-upload"
+          className="relative cursor-pointer rounded-md font-medium text-secondary-600 hover:text-secondary-500"
+        >
+          <span>Upload an image</span>
+          <input
+            id="poll-image-upload"
+            name="poll_image" // Changed from "image" to "poll_image"
+            type="file"
+            accept="image/jpeg,image/png" // More specific to match backend validation
+            onChange={handleInputChange}
+            className="sr-only"
+          />
+        </label>
+      </div>
+      <p className="text-xs text-gray-500">PNG, JPG up to 3MB</p>
+    </div>
+  </div>
+  {formData.poll_image && ( 
+    <div className="mt-4">
+      <img
+        src={URL.createObjectURL(formData.poll_image)}
+        alt="Preview"
+        className="h-32 w-32 object-cover rounded-lg"
+      />
+      <p className="text-sm text-gray-600 mt-1">
+        Selected: {formData.poll_image.name}
+      </p>
+    </div>
+  )}
+  {errors.poll_image && ( 
+    <p className="mt-1 text-sm text-red-600">{errors.poll_image}</p>
+  )}
+</div>
           </div>
         );
       case 1:

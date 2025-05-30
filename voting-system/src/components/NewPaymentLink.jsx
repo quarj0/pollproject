@@ -33,7 +33,7 @@ const PaymentLinkGenerator = () => {
 
     setLoading(true);
     setError("");
-    setPaymentLink(""); // Clear previous link
+    setPaymentLink("");
 
     try {
       const response = await axiosInstance.get(
@@ -79,7 +79,7 @@ const PaymentLinkGenerator = () => {
       </select>
       {paymentLink ? (
         <div className="bg-green-100 p-4 rounded-md shadow-inner">
-          <p className="text-green-700 font-medium mb-2">
+          <p className="text-accent-700 font-medium mb-2">
             Payment link successfully generated:
           </p>
           <a

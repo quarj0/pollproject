@@ -4,7 +4,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaEnvelope, FaLock, FaArrowRight } from "react-icons/fa";
 import axiosInstance from "../apis/api";
-import votelap from "../assets/votelablogo.png";
 
 const LoginPage = ({ login }) => {
   const [email, setEmail] = useState("");
@@ -50,11 +49,11 @@ const LoginPage = ({ login }) => {
         transition={{ duration: 0.5 }}
         className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 text-white"
       >
-        <img
+        {/* <img
           src={votelap}
           alt="VoteLab Logo"
           className="w-32 h-32 md:w-48 md:h-48 object-contain mb-8"
-        />
+        /> */}
         <h1 className="text-4xl md:text-5xl font-bold mb-4 font-montserrat">Welcome Back!</h1>
         <p className="text-lg md:text-xl text-center max-w-md font-lato">
           Login to manage your polls and see what your audience thinks.

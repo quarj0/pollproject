@@ -13,9 +13,7 @@ const Terms = () => {
           <h1 className="text-4xl font-bold mb-8 text-gray-900">Terms of Service</h1>
           
           <div className="prose lg:prose-xl">
-            <p className="text-gray-600 mb-8">
-              Last updated: May 29, 2025
-            </p>
+           
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4 text-gray-800">1. Acceptance of Terms</h2>
@@ -67,7 +65,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4 text-gray-800">5. Limitations</h2>
               <p className="text-gray-600">
-                In no event shall VoteLab or its suppliers be liable for any damages (including,
+                In no event shall Castsure or its suppliers be liable for any damages (including,
                 without limitation, damages for loss of data or profit, or due to business
                 interruption) arising out of the use or inability to use our services.
               </p>
@@ -78,10 +76,10 @@ const Terms = () => {
               <p className="text-gray-600">
                 If you have any questions about these Terms, please contact us at:{" "}
                 <a
-                  href="mailto:legal@votelab.com"
+                  href="mailto:support@castsure.vote"
                   className="text-secondary-600 hover:text-secondary-700"
                 >
-                  legal@votelab.com
+                  legal@castsure.vote
                 </a>
               </p>
             </section>

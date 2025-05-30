@@ -32,45 +32,91 @@ const ResultsPage = () => {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("bar");
   const [pollDetails, setPollDetails] = useState(null);
+  const [wsStatus, setWsStatus] = useState('connecting');
+  const [isPollActive, setIsPollActive] = useState(false);
 
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
-      const [resultsResponse, pollResponse] = await Promise.all([
-        axiosInstance.get(`/vote/results/${pollId}/`),
-        axiosInstance.get(`/polls/${pollId}/`),
-      ]);
+      // First try to get the results
+      const resultsResponse = await axiosInstance.get(`/vote/results/${pollId}/`);
+      console.log('Results response:', resultsResponse.data);
 
-      // Check if we have results array in the response
+      // Process results data
       const resultsData = resultsResponse.data.results || resultsResponse.data;
       const processedResults = processResults(resultsData);
       setResults(processedResults);
-      setPollDetails(pollResponse.data);
+
+      let newPollDetails = null;
+      // Set poll details from results data if available
+      if (resultsResponse.data.poll_title) {
+        newPollDetails = {
+          title: resultsResponse.data.poll_title,
+          description: "This poll has ended. Showing final results.",
+          is_active: false
+        };
+      }
+
+      try {
+        // Then try to get poll details
+        const pollResponse = await axiosInstance.get(`/polls/${pollId}/`);
+        console.log('Poll response:', pollResponse.data);
+        newPollDetails = pollResponse.data;
+
+        // Check if poll is still active
+        const now = new Date();
+        const endTime = new Date(pollResponse.data.end_time);
+        const startTime = new Date(pollResponse.data.start_time);
+        setIsPollActive(now >= startTime && now <= endTime);
+      } catch (pollError) {
+        console.error('Error fetching poll details:', pollError);
+        console.log('Poll error response:', pollError.response?.data);
+        if (pollError.response?.data?.detail === "Poll is not active") {
+          setIsPollActive(false);
+        }
+      }
+
+      // Update poll details once at the end
+      if (newPollDetails) {
+        setPollDetails(newPollDetails);
+      }
+
     } catch (error) {
       console.error("Error fetching results:", error);
+      console.log('Error response data:', error.response?.data);
       setError(
         error.response?.data?.message ||
-          "Failed to fetch results. Please try again."
+        error.response?.data?.detail ||
+        "Failed to fetch results. Please try again."
       );
     } finally {
       setLoading(false);
     }
   }, [pollId]);
 
+  // Initial fetch only - no polling
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
 
-  // WebSocket setup for real-time results with reconnection
+  // WebSocket connection for active polls only
   useEffect(() => {
+    if (!isPollActive) {
+      console.log('Poll is not active, skipping WebSocket connection');
+      return;
+    }
+
     let ws = null;
     let reconnectTimeout = null;
 
     const connectWebSocket = () => {
+      if (wsStatus === 'connected') return;
+      setWsStatus('connecting');
       ws = new WebSocket(`ws://localhost:8000/ws/poll/${pollId}/`);
 
       ws.onopen = () => {
         console.log('WebSocket connected');
+        setWsStatus('connected');
         if (reconnectTimeout) {
           clearTimeout(reconnectTimeout);
           reconnectTimeout = null;
@@ -78,53 +124,73 @@ const ResultsPage = () => {
       };
 
       ws.onmessage = (event) => {
+        console.log("Raw WebSocket message:", event.data);
         try {
           const data = JSON.parse(event.data);
-          if (data.poll_results) {
-            setResults(processResults(data.poll_results));
-          } else {
-            setResults(processResults(data));
+          console.log("Parsed WebSocket data:", data);
+          if (data.type === 'error') {
+            setError(data.message || "WebSocket error occurred");
+            setWsStatus('error');
+            return;
           }
+          const resultsData = data.poll_results?.votes || data.poll_results || [];
+          setResults(processResults(resultsData));
         } catch (e) {
           console.error("Error processing WebSocket message:", e);
+          setError("Failed to process live results");
+          setWsStatus('error');
         }
       };
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected. Reconnecting...');
-        // Attempt to reconnect after 3 seconds
-        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+        console.log('WebSocket disconnected');
+        setWsStatus('disconnected');
+        // Only try to reconnect if the poll is still active
+        if (isPollActive) {
+          console.log('Attempting to reconnect...');
+          reconnectTimeout = setTimeout(connectWebSocket, 5000);
+        }
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        setWsStatus('error');
         ws.close();
       };
     };
 
-    connectWebSocket();
-
+    const timer = setTimeout(connectWebSocket, 500);
     return () => {
-      if (ws) {
-        ws.close();
-      }
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
+      clearTimeout(timer);
+      if (ws) ws.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
-  }, [pollId]);
+  }, [pollId, wsStatus, isPollActive]);
 
   const processResults = (data) => {
     if (!data) return [];
+
+    // Helper function to process image URL
+    const getImageUrl = (imageData) => {
+      if (!imageData) return avatar;
+      if (typeof imageData === 'string') {
+        // If it's already a full URL (like Cloudinary URL)
+        return imageData.startsWith('http') ? imageData : `http://localhost:8000${imageData}`;
+      }
+      // If it's an object with url property (like Cloudinary response)
+      if (imageData.url) return imageData.url;
+      return avatar;
+    };
 
     // If data has categories structure
     if (data.categories) {
       const allResults = [];
       Object.values(data.categories).forEach((categoryResults) => {
         categoryResults.forEach((result) => {
+          const imageUrl = result.image || result.contestant_image || result.image_url;
           allResults.push({
             name: result.name,
-            image: result.image ? `http://localhost:8000${result.image}` : avatar,
+            image: getImageUrl(imageUrl),
             vote_count: result.vote_count || 0,
             category: result.category,
           });
@@ -139,13 +205,15 @@ const ResultsPage = () => {
       data.forEach((item) => {
         const contestant = item.contestant || item;
         const voteCount = item.total_votes || item.vote_count || 0;
+        const imageUrl = contestant.image || contestant.contestant_image || contestant.image_url;
+        
         if (resultMap.has(contestant.name)) {
           const existing = resultMap.get(contestant.name);
           existing.vote_count += voteCount;
         } else {
           resultMap.set(contestant.name, {
             name: contestant.name,
-            image: contestant.contestant_image ? contestant.contestant_image?.url : avatar,
+            image: getImageUrl(imageUrl),
             vote_count: voteCount,
           });
         }
@@ -158,9 +226,10 @@ const ResultsPage = () => {
       const allResults = [];
       Object.entries(data.categories).forEach(([category, results]) => {
         results.forEach((result) => {
+          const imageUrl = result.image || result.contestant_image || result.image_url;
           allResults.push({
             name: result.name,
-            image: result.contestant_image || avatar,
+            image: getImageUrl(imageUrl),
             vote_count: result.vote_count || 0,
             category,
           });

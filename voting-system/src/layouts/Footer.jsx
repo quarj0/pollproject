@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="py-10 bg-gradient-to-br from-gray-900 to-secondary-900 text-white">
+    <footer className="py-10 bg-gradient-to-br from-gray-800 to-gray-950 text-white">
       <div className="container mx-auto px-6">
         {/* Top Section */}
         <div className="flex flex-col md:flex-row md:justify-between text-center md:text-left space-y-10 md:space-y-0">
