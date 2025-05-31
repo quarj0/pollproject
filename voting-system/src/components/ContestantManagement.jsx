@@ -20,7 +20,7 @@ const ContestantManagement = () => {
         setPoll(pollRes.data.poll);
         setContestants(contestantsRes.data);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch data");
+        setError(err.response?.data?.message || err.response?.data?.detail || "Failed to fetch data");
       } finally {
         setLoading(false);
       }

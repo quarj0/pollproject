@@ -90,8 +90,8 @@ const UpdateContestant = () => {
         }
       );
       navigate(`/polls/${pollId}/contestants/`);
-    } catch {
-      setError("Failed to update the contestant.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update the contestant.");
     }
   };
 

@@ -132,7 +132,8 @@ const EditPoll = () => {
 
       // Don't submit if no fields were modified
       if (modifiedFields.size === 0) {
-        navigate('/dashboard');
+        // navigate to back to the manage polls page
+        navigate('/manage-polls');
         return;
       }
 
@@ -140,7 +141,7 @@ const EditPoll = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      navigate('/dashboard');
+      navigate('/manage-polls');
     } catch (err) {
       const errorMessages = [];
       if (err.response?.data) {
@@ -185,10 +186,10 @@ const EditPoll = () => {
           Retry
         </button>
         <button 
-          onClick={() => navigate('/dashboard')} 
+          onClick={() => navigate('/manage-polls')} 
           className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
         >
-          Back to Dashboard
+          Back to Manage Polls
         </button>
       </div>
     </div>
@@ -276,7 +277,7 @@ const EditPoll = () => {
           </button>
           <button 
             type="button" 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/manage-polls')}
             className="bg-gray-500 text-white px-6 py-2 rounded"
           >
             Cancel
