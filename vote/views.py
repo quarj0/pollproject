@@ -142,15 +142,27 @@ class VoterPayVoteView(APIView):
             "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
             "Content-Type": "application/json"
         }
+
+        # Get the current site URL from the request
+        protocol = 'https' if self.request.is_secure() else 'http'
+        current_site = f"{protocol}://{self.request.get_host()}"
+        
         data = {
             "email": "customer@castsure.com",
             "amount": int(amount * 100),
-            "reference": reference
+            "reference": reference,
+            "callback_url": f"{current_site}/payment/verify/{reference}",
+            "metadata": {
+                "reference": reference,
+                "type": "vote"
+            }
         }
 
         response = requests.post(url, json=data, headers=headers)
         if response.status_code == 200:
-            return response.json().get('data', {}).get('authorization_url')
+            response_data = response.json()
+            if response_data.get("status"):
+                return response_data["data"]["authorization_url"]
         return None
 
     def get_contestant(self, poll, nominee_code, contestant_id):
@@ -331,11 +343,15 @@ class USSDVoteView(APIView):
                 "Content-Type": "application/json"
             }
 
+            # Get the current site URL from the request
+            protocol = 'https' if self.request.is_secure() else 'http'
+            current_site = f"{protocol}://{self.request.get_host()}"
+
             data = {
                 "email": f"ussd_{phone_number.replace('+', '')}@votelab.com",
                 "amount": int(amount * 100),  # Convert to kobo
                 "reference": reference,
-                "callback_url": f"{settings.FRONTEND_URL}/payment/callback",
+                "callback_url": f"{current_site}/payment/verify/{reference}",
                 "metadata": {
                     "poll_id": poll.id,
                     "contestant_id": contestant.id,

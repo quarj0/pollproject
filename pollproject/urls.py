@@ -8,10 +8,12 @@ from django.contrib import admin
 
 def root_redirect_handler(request):
     reference = request.GET.get('reference')
+    protocol = 'https' if request.is_secure() else 'http'
+    current_site = f"{protocol}://{request.get_host()}"
 
     if not reference:
-        return redirect(f"{settings.FRONTEND_URL}/payment/verification-error")
-    return redirect(f"{settings.FRONTEND_URL}/payment/verify/{reference}")
+        return redirect(f"{current_site}/payment/verification-error")
+    return redirect(f"{current_site}/payment/verify/{reference}")
 
 
 urlpatterns = [

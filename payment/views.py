@@ -12,7 +12,7 @@ from urllib3.util.retry import Retry
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -38,6 +38,12 @@ class VerifyPaymentView(APIView):
     """
     Verify payment with Paystack and activate poll or record votes if successful.
     """
+
+    def _get_frontend_url(self, request):
+        """Get the frontend URL based on environment"""
+        if settings.DEBUG:
+            return 'http://localhost:5173'  # Development frontend URL
+        return f"{'https' if request.is_secure() else 'http'}://{request.get_host()}"  # Production URL
 
     def _process_poll_activation(self, transaction, poll, amount_paid, reference):
         """Process poll activation after successful payment"""
@@ -65,7 +71,30 @@ class VerifyPaymentView(APIView):
     def get(self, request, reference):
         url = f"https://api.paystack.co/transaction/verify/{reference}"
         headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
-        return_url = request.GET.get('return_url', f"{settings.FRONTEND_URL}/dashboard")
+        
+        # Get the frontend URL
+        frontend_url = self._get_frontend_url(request)
+        
+        # Check if this is an API request or direct browser request
+        is_api_request = 'application/json' in request.headers.get('Accept', '')
+
+        # Extract poll_id from reference before verification
+        try:
+            reference_parts = reference.split("-")
+            poll_id = reference_parts[1]
+            poll = get_object_or_404(Poll, id=poll_id)
+            return_url = f"{frontend_url}/poll/{poll.id}/results"
+        except (IndexError, Poll.DoesNotExist):
+            error_url = f"{frontend_url}/payment/verification-error"
+            if is_api_request:
+                return Response({
+                    "error": "Invalid reference or poll not found",
+                    "redirect_url": error_url
+                }, status=status.HTTP_400_BAD_REQUEST)
+            return redirect(error_url)
+
+        if is_api_request:
+            return_url = request.GET.get('return_url', return_url)
 
         try:
             # Verify with Paystack first
@@ -74,61 +103,73 @@ class VerifyPaymentView(APIView):
 
             if not response_data.get('status'):
                 logger.error(f"Paystack verification failed: {response_data}")
-                return Response({
-                    "error": "Payment verification failed",
-                    "redirect_url": return_url
-                }, status=status.HTTP_400_BAD_REQUEST)
+                if is_api_request:
+                    return Response({
+                        "error": "Payment verification failed",
+                        "redirect_url": return_url
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                return redirect(f"{frontend_url}/payment/verification-error")
 
             # Get the transaction data
             amount_paid = Decimal(response_data['data']['amount']) / Decimal(100)
-            reference_parts = reference.split("-")
 
             # Get or create transaction
             transaction = Transaction.objects.filter(payment_reference=reference).first()
 
             if transaction and transaction.success:
-                return Response({
-                    "message": "Transaction already verified.",
-                    "redirect_url": return_url
-                }, status=status.HTTP_200_OK)
-
-            poll_id = reference_parts[1]
-            poll = get_object_or_404(Poll, id=poll_id)
+                if is_api_request:
+                    return Response({
+                        "message": "Transaction already verified.",
+                        "redirect_url": return_url
+                    }, status=status.HTTP_200_OK)
+                return redirect(return_url)
 
             if "activate" in reference:
                 # Handle poll activation
                 transaction = self._process_poll_activation(transaction, poll, amount_paid, reference)
-                return Response({
-                    "message": "Poll activated successfully.",
-                    "redirect_url": return_url
-                }, status=status.HTTP_200_OK)
+                if is_api_request:
+                    return Response({
+                        "message": "Poll activated successfully.",
+                        "redirect_url": return_url
+                    }, status=status.HTTP_200_OK)
+                return redirect(return_url)
+                
             elif "vote" in reference:
                 # Handle vote processing
                 contestant_id = reference_parts[2]
                 contestant = get_object_or_404(Contestant, id=contestant_id, poll=poll)
                 vote = self._process_vote(transaction, poll, contestant, amount_paid, reference)
-                return Response({
-                    "message": "Vote recorded successfully.",
-                    "redirect_url": return_url
-                }, status=status.HTTP_201_CREATED)
+                if is_api_request:
+                    return Response({
+                        "message": "Vote recorded successfully.",
+                        "redirect_url": return_url
+                    }, status=status.HTTP_201_CREATED)
+                return redirect(return_url)
 
-            return Response({
-                "message": "Payment verified.",
-                "redirect_url": return_url
-            }, status=status.HTTP_200_OK)
+            if is_api_request:
+                return Response({
+                    "message": "Payment verified.",
+                    "redirect_url": return_url
+                }, status=status.HTTP_200_OK)
+            return redirect(return_url)
 
         except requests.exceptions.RequestException as e:
             logger.error(f"HTTP request error: {e}")
-            return Response({
-                "error": "Verification service unavailable.",
-                "redirect_url": return_url
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            if is_api_request:
+                return Response({
+                    "error": "Verification service unavailable.",
+                    "redirect_url": return_url
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return redirect(f"{frontend_url}/payment/verification-error")
+            
         except Exception as e:
             logger.error(f"Exception during verification: {e}")
-            return Response({
-                "error": "An error occurred during verification",
-                "redirect_url": return_url
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            if is_api_request:
+                return Response({
+                    "error": "An error occurred during verification",
+                    "redirect_url": return_url
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return redirect(f"{frontend_url}/payment/verification-error")
 
     def _process_vote(self, transaction, poll, contestant, amount_paid, reference):
         try:
@@ -175,7 +216,11 @@ class PaymentLinkView(APIView):
         transaction_type = get_transaction_type(poll)
         amount = Decimal(poll.setup_fee if poll.poll_type ==
                          Poll.CREATOR_PAY else poll.voting_fee)
-        return_url = request.GET.get('return_url', f"{settings.FRONTEND_URL}/dashboard")
+        
+        # Get the current site URL from the request
+        protocol = 'https' if request.is_secure() else 'http'
+        current_site = f"{protocol}://{request.get_host()}"
+        return_url = request.GET.get('return_url', f"{current_site}/poll/{poll_id}/results")
 
         # Check if a successful payment transaction already exists
         existing_transaction = Transaction.objects.filter(
@@ -211,7 +256,7 @@ class PaymentLinkView(APIView):
             "email": request.user.email,
             "amount": int(amount * 100),
             "reference": reference,
-            "callback_url": f"{settings.FRONTEND_URL}/payment/verify/{reference}?return_url={return_url}",
+            "callback_url": f"{current_site}/payment/verify/{reference}?return_url={return_url}",
             "metadata": {
                 "return_url": return_url,
                 "poll_id": poll_id,

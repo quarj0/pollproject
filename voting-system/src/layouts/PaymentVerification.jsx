@@ -21,76 +21,69 @@ const PaymentCompletion = () => {
       }
 
       try {
-        const response = await axiosInstance.get(
-          `/payment/verify/${reference}/`
-        );
+        console.log("Verifying payment...", { reference, attempt: retryCount + 1 });
         
-        // Check if we have a successful response with a message and redirect_url
-        if (response.status === 200 && response.data.message) {
+        // Add a small delay before first verification attempt to allow Paystack to process
+        if (retryCount === 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        const response = await axiosInstance.get(`/payment/verify/${reference}/`);
+        console.log("Verification response:", response.data);
+        
+        if (response.status === 200) {
           setStatus("Success!");
-          setMessage(response.data.message);
+          setMessage(response.data.message || "Payment verified successfully.");
           
           // Clear payment details from session storage
           sessionStorage.removeItem('paymentDetails');
           
           // Get redirect URL from response or default to dashboard
           const redirectUrl = response.data.redirect_url || '/dashboard';
+          console.log("Redirecting to:", redirectUrl);
           
-          // Redirect to the appropriate page
+          // Set loading to false before redirect
+          setLoading(false);
+          
+          // Redirect after a short delay
           setTimeout(() => {
             window.location.href = redirectUrl;
           }, 2000);
         } else {
-          // If verification fails and we haven't reached max retries
-          if (retryCount < maxRetries) {
-            setRetryCount(prev => prev + 1);
-            // Wait 2 seconds before retrying
-            setTimeout(() => {
-              verifyPayment();
-            }, 2000);
-          } else {
-            setStatus("Error");
-            setMessage("Payment verification failed after multiple attempts.");
-          }
+          throw new Error("Verification response not successful");
         }
       } catch (err) {
+        console.error("Verification error:", err);
+        
+        // If we get a 404 or 400, it means the payment is not yet processed
+        // We should retry in this case
         if (retryCount < maxRetries) {
+          console.log("Retrying verification...");
           setRetryCount(prev => prev + 1);
-          // Wait 2 seconds before retrying
           setTimeout(() => {
             verifyPayment();
           }, 2000);
         } else {
           setStatus("Error");
           setMessage(
-            err.response?.data?.message || "Payment verification failed."
+            err.response?.data?.message || 
+            err.response?.data?.error || 
+            "Payment verification failed. Please contact support if payment was deducted."
           );
-        }
-      } finally {
-        if (retryCount >= maxRetries) {
           setLoading(false);
         }
       }
     };
 
     verifyPayment();
-  }, [reference, navigate, retryCount]);
+  }, [reference]);
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-center">
-          <p className="text-lg text-blue-600 animate-pulse mb-2">
-            Verifying payment, please wait...
-          </p>
-          {retryCount > 0 && (
-            <p className="text-sm text-gray-600">
-              Attempt {retryCount} of {maxRetries}
-            </p>
-          )}
-        </div>
-      </div>
-    );
+  const handleRetry = () => {
+    setLoading(true);
+    setRetryCount(0);
+    setStatus("Verifying...");
+    setMessage("");
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -107,23 +100,21 @@ const PaymentCompletion = () => {
           {status}
         </h1>
         <p className="mt-4 text-center text-gray-600">{message}</p>
-        {status === "Success!" && (
-          <button
-            className="w-full mt-6 px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-md transition"
-            onClick={() => navigate('/dashboard')}
-          >
-            Go to Dashboard
-          </button>
+        
+        {loading && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Attempt {retryCount + 1} of {maxRetries}
+            </p>
+            <div className="mt-2 w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
         )}
+        
         {status === "Error" && (
           <div className="space-y-4 mt-6">
             <button
               className="w-full px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-md transition"
-              onClick={() => {
-                setLoading(true);
-                setRetryCount(0);
-                setStatus("Verifying...");
-              }}
+              onClick={handleRetry}
             >
               Try Again
             </button>
