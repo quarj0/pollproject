@@ -194,8 +194,8 @@ const ContestantsPage = () => {
               <iframe 
                 src="https://publisher.linkvertise.com/cdn/ads/LV-728x90/index.html" 
                 frameBorder="0" 
-                height="90" 
-                width="728"
+                height="250" 
+                width="300"
                 title="Advertisement"
               />
               <a 
