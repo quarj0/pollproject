@@ -238,3 +238,27 @@ class ContestantUpdateView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeleteContestantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, poll_id, contestant_id):
+        poll = get_object_or_404(Poll, id=poll_id)
+        
+        # Check if poll can be edited
+        if poll.start_time <= timezone.now():
+            return Response(
+                {"message": "Cannot delete contestant after poll has started"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if poll.votes.exists():
+            return Response(
+                {"message": "Cannot delete contestant after votes have been cast"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        contestant = get_object_or_404(Contestant, id=contestant_id, poll_id=poll_id)
+        contestant.delete()
+        return Response({"message": "Contestant deleted successfully"}, status=status.HTTP_200_OK)
