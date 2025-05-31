@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaCalendarAlt, FaUserFriends, FaVoteYea } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
+import CountdownTimer from "../components/CountdownTimer";
 
 const PollCard = ({ item, linkTo }) => {
-  const { title, description, image, endTime, totalVotes, pollType } = item;
+  const { title, description, image, startTime, endTime, pollType, totalVotes } = item;
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -40,7 +41,7 @@ const PollCard = ({ item, linkTo }) => {
         <div className="relative h-48 overflow-hidden">
           <motion.img
             variants={imageVariants}
-            src={(image)}
+            src={image}
             alt={title}
             className="w-full h-full object-cover"
           />
@@ -62,16 +63,20 @@ const PollCard = ({ item, linkTo }) => {
             {description}
           </p>
           
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center">
-              <FaCalendarAlt className="mr-2" />
-              <span>
-                {endTime && formatDistanceToNow(new Date(endTime), { addSuffix: true })}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <FaVoteYea className="mr-2" />
-              <span>{totalVotes || 0} votes</span>
+          <div className="border-t border-gray-100 pt-4">
+            <CountdownTimer startTime={startTime} endTime={endTime} />
+            
+            <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+              <div className="flex items-center">
+                <FaCalendarAlt className="mr-2" />
+                <span>
+                  {new Date(startTime).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <FaVoteYea className="mr-2" />
+                <span>{totalVotes || 0} votes</span>
+              </div>
             </div>
           </div>
         </div>
@@ -96,14 +101,14 @@ const PollCard = ({ item, linkTo }) => {
 PollCard.propTypes = {
   item: PropTypes.shape({
     title: PropTypes.string.isRequired,
-    description: PropTypes.string,
-    image: PropTypes.string,
-    startTime: PropTypes.string,
-    endTime: PropTypes.string,
-    totalVotes: PropTypes.number,
-    pollType: PropTypes.oneOf(['voters-pay', 'creator-pay'])
+    description: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
+    startTime: PropTypes.string.isRequired,
+    endTime: PropTypes.string.isRequired,
+    pollType: PropTypes.string,
+    totalVotes: PropTypes.number
   }).isRequired,
-  linkTo: PropTypes.string.isRequired
+  linkTo: PropTypes.string.isRequired,
 };
 
 export default PollCard;

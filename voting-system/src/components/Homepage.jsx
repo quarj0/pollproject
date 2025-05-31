@@ -213,8 +213,12 @@ const Homepage = () => {
                       title: poll.title,
                       description: poll.description,
                       image: poll.poll_image,
+                      startTime: poll.start_time,
+                      endTime: poll.end_time,
+                      pollType: poll.poll_type,
+                      totalVotes: poll.total_votes
                     }}
-                    linkTo={`/polls/${poll.id}/details`}
+                    linkTo={`/polls/${poll.id}/contestants`}
                   />
                 ))}
               </div>
@@ -236,10 +240,10 @@ const Homepage = () => {
               <p className="text-gray-600">Discover and participate in our latest polls</p>
             </div>
             <Link
-              to="/events"
+              to="/upcoming/events"
               className="inline-flex items-center px-6 py-3 bg-white text-secondary-600 rounded-lg shadow-soft-xl hover:shadow-soft-2xl transition-shadow"
             >
-              View All Events
+              View Upcoming Events
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
@@ -259,6 +263,10 @@ const Homepage = () => {
                     title: poll.title,
                     description: poll.description,
                     image: poll.poll_image,
+                    startTime: poll.start_time,
+                    endTime: poll.end_time,
+                    pollType: poll.poll_type,
+                    totalVotes: poll.total_votes
                   }}
                   linkTo={`/polls/${poll.id}/contestants`}
                 />
@@ -326,7 +334,7 @@ const Homepage = () => {
               to="/past/events"
               className="inline-flex items-center px-6 py-3 bg-gray-50 text-gray-700 rounded-lg shadow-soft-xl hover:shadow-soft-2xl transition-shadow"
             >
-              View Archive
+              View Past Events
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
@@ -347,7 +355,7 @@ const Homepage = () => {
                     description: poll.description,
                     image: poll.poll_image,
                   }}
-                  linkTo={`/polls/${poll.id}/details`}
+                  linkTo={`/polls/${poll.id}/results`}
                 />
               </motion.div>
             ))}

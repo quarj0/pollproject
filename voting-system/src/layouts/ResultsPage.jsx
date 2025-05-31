@@ -513,11 +513,11 @@ const ResultsPage = () => {
       >
         <div className="container mx-auto">
           <Link
-            to="/dashboard"
+            to={`/polls/${pollId}/contestants`}
             className="inline-flex items-center text-white/80 hover:text-white mb-6 transition-colors"
           >
             <FaArrowLeft className="mr-2" />
-            Back to Dashboard
+            Back to Contestants
           </Link>
           <h1 className="text-3xl font-bold">
             {pollDetails?.title || "Poll Results"}

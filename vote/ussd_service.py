@@ -82,24 +82,37 @@ class USSDService:
     def normalize_phone_number(phone: str) -> str:
         """Normalize phone number to E164 format"""
         try:
+            logger.debug(f"Normalizing phone number: {phone}")
             # Assuming Ghana as default region
             parsed = phonenumbers.parse(phone, "GH")
             if phonenumbers.is_valid_number(parsed):
-                return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
-        except phonenumbers.NumberParseException:
-            pass
+                normalized = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+                logger.debug(f"Normalized phone number: {normalized}")
+                return normalized
+            else:
+                logger.debug("Invalid phone number")
+        except phonenumbers.NumberParseException as e:
+            logger.debug(f"Phone number parsing error: {str(e)}")
         return phone
 
     def _get_poll(self) -> Optional[Poll]:
         """Get the current poll"""
         try:
-            return Poll.objects.get(
+            logger.debug(f"Getting poll with ID: {self.poll_id}")
+            logger.debug(f"Current time: {timezone.now()}")
+            poll = Poll.objects.get(
                 id=self.poll_id,
                 active=True,
                 start_time__lte=timezone.now(),
                 end_time__gt=timezone.now()
             )
+            logger.debug(f"Found poll: {poll.title} (active: {poll.active}, start: {poll.start_time}, end: {poll.end_time})")
+            return poll
         except Poll.DoesNotExist:
+            logger.debug("Poll not found or not active")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting poll: {str(e)}", exc_info=True)
             return None
 
     def _get_poll_categories(self, poll: Poll) -> list:
@@ -379,22 +392,32 @@ class USSDService:
         """Main processing method"""
         try:
             current_state = self.session.state
+            logger.debug(f"Current state: {current_state}")
+            logger.debug(f"User input: {self.user_input}")
+            logger.debug(f"Poll ID: {self.poll_id}")
+            logger.debug(f"Phone number: {self.phone_number}")
 
             if current_state == USSDState.INITIAL:
+                logger.debug("Handling initial state")
                 return self._handle_initial_state()
             elif current_state == USSDState.POLL_INFO:
+                logger.debug("Handling poll info state")
                 return self._handle_poll_info()
             elif current_state == USSDState.CATEGORY_SELECTED:
+                logger.debug("Handling category selected state")
                 return self._handle_category_selected()
             elif current_state == USSDState.CONTESTANT_SELECTED:
+                logger.debug("Handling contestant selected state")
                 return self._handle_contestant_selected()
             elif current_state == USSDState.VOTER_CODE_INPUT:
+                logger.debug("Handling voter code input state")
                 return self._handle_voter_code_input()
             else:
+                logger.debug("Invalid state, clearing session")
                 self.session.clear()
                 return {"message": "END Session expired. Please try again."}
 
         except Exception as e:
-            logger.error(f"USSD processing error: {str(e)}")
+            logger.error(f"USSD processing error: {str(e)}", exc_info=True)
             self.session.clear()
             return {"message": "END An error occurred. Please try again later."}

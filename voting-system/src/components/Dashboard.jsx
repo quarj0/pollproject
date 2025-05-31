@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import axiosInstance from "../apis/api";
 import { FaSearch, FaPlus, FaCalendarAlt, FaArchive } from "react-icons/fa";
+import ContestantsPage from "./ContestantsPage";
+import CountdownTimer from "./CountdownTimer";
 
 const DashBoard = () => {
   const [upcomingPolls, setUpcomingPolls] = useState([]);
@@ -139,7 +141,7 @@ const DashBoard = () => {
               Upcoming Events
             </h2>
             <Link
-              to="/events"
+              to="/upcoming/events"
               className="text-secondary-600 hover:text-secondary-700 font-medium"
             >
               View All
@@ -171,7 +173,7 @@ const DashBoard = () => {
                 >
                   <Link to={`/polls/${poll.id}/contestants`}>
                     <img
-                      src={(poll.poll_image)}
+                      src={poll.poll_image}
                       alt={poll.title}
                       className="w-full h-48 object-cover"
                     />
@@ -182,10 +184,13 @@ const DashBoard = () => {
                       <p className="text-gray-600 text-sm mb-2 line-clamp-2">
                         {poll.description}
                       </p>
-                      <div className="flex items-center text-sm text-gray-500">
+                      <div className="flex items-center justify-between">
+                        <CountdownTimer startTime={poll.start_time} endTime={poll.end_time} />
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500 mt-2">
                         <FaCalendarAlt className="mr-2" />
-                        <span>
-                          {new Date(poll.end_time).toLocaleDateString()}
+                        <span className="text-xs">
+                          {new Date(poll.start_time).toLocaleDateString()}
                         </span>
                       </div>
                     </div>

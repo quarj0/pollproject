@@ -138,7 +138,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/demo" element={<VoteDemo />} />
-              <Route path="/events" element={<UpcomingPolls />} />
+              <Route path="/upcoming/events" element={<UpcomingPolls />} />
               <Route path="/past/events" element={<PastPolls />} />
               <Route path="/payment/verify/:reference" element={<PaymentCompletion />} />
               <Route path="/polls/:pollId/contestants" element={<ContestantsPage />} />
