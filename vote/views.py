@@ -49,12 +49,13 @@ class CreatorPayVoteView(APIView):
             amount=setup_fee,
             payment_reference=reference,
             transaction_type='poll_activation',
+            user=request.user,
             success=False
         )
 
         return Response({
             "amount": int(setup_fee * 100),  # Paystack expects kobo
-            "email": request.user.email if hasattr(request.user, 'email') else "customer@castsure.com",
+            "email": getattr(request.user, "email", "customer@castsure.com"),
             "reference": reference
         }, status=status.HTTP_200_OK)
 
@@ -120,7 +121,7 @@ class VoterPayVoteView(APIView):
 
         return Response({
             "amount": int(amount_to_pay * 100),  
-            "email": request.user.email or "customer@castsure.com", 
+            "email": getattr(request.user, "email", "customer@castsure.com"), 
             "reference": unique_reference
         }, status=status.HTTP_200_OK)
 

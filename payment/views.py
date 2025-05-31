@@ -231,7 +231,7 @@ class PaymentLinkView(APIView):
             )
 
         payment_data = {
-            "email": request.user.email,
+            "email": getattr(request.user, "email", "customer@castsure.com"),
             "amount": int(amount * 100),
             "reference": reference,
             "callback_url": callback_url,
@@ -411,8 +411,7 @@ class InitiateWithdrawalView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        reference = f"{
-            poll_id}-{request.user.id}-{Withdrawal.objects.count() + 1}"
+        reference = f"{poll_id}-{request.user.id}-{Withdrawal.objects.count() + 1}"
 
         withdrawal = Withdrawal.objects.create(
             poll=poll,
@@ -423,71 +422,71 @@ class InitiateWithdrawalView(APIView):
             status="pending",
         )
 
+        # FLUTTERWAVE WITHDRAWAL LOGIC
+        FLUTTERWAVE_SECRET_KEY = settings.FLUTTERWAVE_SECRET_KEY
         headers = {
-            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+            "Authorization": f"Bearer {FLUTTERWAVE_SECRET_KEY}",
             "Content-Type": "application/json",
         }
-        data = {
-            "type": "mobile_money",
-            "name": request.user.username,
+        # Step 1: Create transfer recipient (if needed)
+        recipient_data = {
+            "account_bank": "MTN",  # or the correct bank code for mobile money
             "account_number": request.user.account_number,
-            "bank_code": "MTN",
             "currency": "GHS",
+            "beneficiary_name": request.user.username,
         }
-
         try:
-            response = requests.post(
-                "https://api.paystack.co/transferrecipient", json=data, headers=headers
+            recipient_response = requests.post(
+                "https://api.flutterwave.com/v3/beneficiaries",
+                json=recipient_data,
+                headers=headers,
+                timeout=10
             )
-            response_data = response.json()
+            recipient_json = recipient_response.json()
+            if not recipient_json.get("status") == "success":
+                withdrawal.status = "failed"
+                withdrawal.save()
+                logger.error(f"Flutterwave recipient error: {recipient_json}")
+                return Response({"error": "Failed to create transfer recipient."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            recipient_id = recipient_json["data"]["id"]
+        except Exception as e:
+            withdrawal.status = "failed"
+            withdrawal.save()
+            logger.error(f"Exception during Flutterwave recipient creation: {e}")
+            return Response({"error": "An error occurred while creating the recipient."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if response.status_code == 200 and response_data.get("status") == "true":
-                recipient_code = response_data["data"]["recipient_code"]
-
-                transfer_data = {
-                    "source": "balance",
-                    "amount": int(requested_amount * 100),
-                    "recipient": recipient_code,
-                    "reason": f"Withdrawal for poll {poll_id}",
-                }
-
-                transfer_response = requests.post(
-                    "https://api.paystack.co/transfer", json=transfer_data, headers=headers
-                )
-                transfer_response_data = transfer_response.json()
-
-                if (
-                    transfer_response.status_code == 200
-                    and transfer_response_data.get("status") == "true"
-                ):
-                    withdrawal.status = "successful"
-                    withdrawal.save()
-                    return Response({"status": "Withdrawal initiated successfully."})
-                else:
-                    withdrawal.status = "failed"
-                    withdrawal.save()
-                    logger.error(f"Failed to initiate transfer: {
-                                 transfer_response_data}")
-                    return Response(
-                        {"error": "Failed to initiate transfer. Please try again later."},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
+        # Step 2: Initiate transfer
+        transfer_data = {
+            "account_bank": "MTN",  # or the correct bank code
+            "account_number": request.user.account_number,
+            "amount": float(requested_amount),
+            "currency": "GHS",
+            "beneficiary_name": request.user.username,
+            "reference": reference,
+            "narration": f"Withdrawal for poll {poll_id}",
+        }
+        try:
+            transfer_response = requests.post(
+                "https://api.flutterwave.com/v3/transfers",
+                json=transfer_data,
+                headers=headers,
+                timeout=10
+            )
+            transfer_json = transfer_response.json()
+            if transfer_json.get("status") == "success":
+                withdrawal.status = "successful"
+                withdrawal.save()
+                return Response({"status": "Withdrawal initiated successfully."})
             else:
                 withdrawal.status = "failed"
                 withdrawal.save()
-                logger.error(f"Failed to initiate withdrawal: {response_data}")
-                return Response(
-                    {"error": "Failed to initiate withdrawal. Please try again later."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-        except requests.RequestException as e:
+                logger.error(f"Flutterwave transfer error: {transfer_json}")
+                return Response({"error": "Failed to initiate transfer. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
             withdrawal.status = "failed"
             withdrawal.save()
-            logger.error(f"Exception during Paystack request: {e}")
-            return Response(
-                {"error": "An error occurred while processing the withdrawal. Please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            logger.error(f"Exception during Flutterwave transfer: {e}")
+            return Response({"error": "An error occurred while processing the withdrawal. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @csrf_exempt

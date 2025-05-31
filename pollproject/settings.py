@@ -21,7 +21,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://localhost:5173', 'https://castsure.vote']
+CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://localhost:5173', 'https://castsure.vercel.app']
 
 # Always append trailing slashes to URLs
 APPEND_SLASH = True
@@ -30,7 +30,7 @@ APPEND_SLASH = True
 if DEBUG:
     FRONTEND_URL == config('FRONTEND_URL', default='http://localhost:5173')
 else:
-    FRONTEND_URL == 'https://castsure.vote'
+    FRONTEND_URL == 'https://castsure.vercel.app'
 
 
 # Security settings for production
