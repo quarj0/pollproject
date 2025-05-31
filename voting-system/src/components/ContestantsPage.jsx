@@ -63,7 +63,7 @@ const ContestantsPage = () => {
         
       } catch (error) {
         console.error("Error fetching data:", error);
-        setError("Error fetching poll details.");
+        setError(error.response?.data?.message || error.response?.data?.detail || "Error fetching poll details.");
       } finally {
         setLoading(false);
       }
@@ -150,7 +150,7 @@ const ContestantsPage = () => {
         }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.error || "An error occurred while processing your vote.");
+      setError(err.response?.data?.detail || err.response?.data?.error || err.response?.data?.message || "An error occurred while processing your vote.");
     } finally {
       setLoading(false);
     }

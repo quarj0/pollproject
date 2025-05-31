@@ -56,7 +56,6 @@ const AddContestants = () => {
           `polls/${pollId}/contestants/create/`,
           formData
         );
-        console.log("Contestant added:", response.data);
       }
 
       alert("All contestants added successfully!");
