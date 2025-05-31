@@ -13,9 +13,9 @@ const PaymentCompletion = () => {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      if (!reference) {
+      if (!reference || reference === 'undefined') {
         setStatus("Error");
-        setMessage("Payment reference is missing.");
+        setMessage("Invalid payment reference. Please try the payment again.");
         setLoading(false);
         return;
       }
@@ -35,19 +35,22 @@ const PaymentCompletion = () => {
           setStatus("Success!");
           setMessage(response.data.message || "Payment verified successfully.");
           
+          // Get stored payment details
+          const paymentDetails = JSON.parse(sessionStorage.getItem('paymentDetails') || '{}');
+          
           // Clear payment details from session storage
           sessionStorage.removeItem('paymentDetails');
           
-          // Get redirect URL from response or default to dashboard
-          const redirectUrl = response.data.redirect_url || '/dashboard';
+          // Get redirect URL from response, stored details, or default to dashboard
+          const redirectUrl = response.data.redirect_url || paymentDetails.returnUrl || '/dashboard';
           console.log("Redirecting to:", redirectUrl);
           
           // Set loading to false before redirect
           setLoading(false);
           
-          // Redirect after a short delay
+          // Use navigate instead of window.location for React Router navigation
           setTimeout(() => {
-            window.location.href = redirectUrl;
+            navigate(redirectUrl);
           }, 2000);
         } else {
           throw new Error("Verification response not successful");
@@ -76,7 +79,7 @@ const PaymentCompletion = () => {
     };
 
     verifyPayment();
-  }, [reference]);
+  }, [reference, navigate]);
 
   const handleRetry = () => {
     setLoading(true);

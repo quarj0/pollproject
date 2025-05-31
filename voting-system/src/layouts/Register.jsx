@@ -99,7 +99,7 @@ const RegisterPage = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-teal-800 to-blue-950">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-blue-700 to-blue-900">
       {/* Left Section - Branding */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -107,11 +107,7 @@ const RegisterPage = () => {
         transition={{ duration: 0.5 }}
         className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 text-white"
       >
-        {/* <img
-          src={votelap}
-          alt="VoteLab Logo"
-          className="w-32 h-32 md:w-48 md:h-48 object-contain mb-8"
-        /> */}
+       
         <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
           Create Your Account
         </h1>
@@ -155,7 +151,7 @@ const RegisterPage = () => {
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder={field.placeholder}
                     required
                   />
@@ -171,7 +167,7 @@ const RegisterPage = () => {
               className={`w-full py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center space-x-2 ${
                 loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-teal-600 hover:bg-teal-700"
+                : "bg-blue-600 hover:bg-blue-700"
               } transition-colors duration-200`}
             >
               <span>{loading ? "Creating Account..." : "Create Account"}</span>
@@ -182,7 +178,7 @@ const RegisterPage = () => {
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
                 Sign in here
               </Link>

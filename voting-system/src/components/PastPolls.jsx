@@ -62,7 +62,7 @@ const PastPolls = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -72,7 +72,7 @@ const PastPolls = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-red-500 text-xl mb-4">{error}</h1>
-          <Link to="/" className="text-teal-600 hover:text-teal-800">
+          <Link to="/" className="text-blue-600 hover:text-blue-800">
             Back Home
           </Link>
         </div>
@@ -93,12 +93,12 @@ const PastPolls = () => {
               placeholder="Search polls..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Types</option>
               <option value="creator-pay">Creator Pay</option>
@@ -109,7 +109,7 @@ const PastPolls = () => {
           {filteredPolls.length === 0 ? (
             <div className="text-center py-12">
               <h2 className="text-xl text-gray-600">No past polls found.</h2>
-              <Link to="/dashboard" className="text-teal-600 hover:text-teal-800 mt-4 inline-block">
+              <Link to="/dashboard" className="text-blue-600 hover:text-blue-800 mt-4 inline-block">
                 Back to Dashboard
               </Link>
             </div>
@@ -131,7 +131,7 @@ const PastPolls = () => {
                           e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgQXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
                         }}
                       />
-                      <div className="absolute top-0 right-0 m-2 px-2 py-1 bg-teal-500 text-white text-sm rounded">
+                      <div className="absolute top-0 right-0 m-2 px-2 py-1 bg-blue-500 text-white text-sm rounded">
                         {poll.poll_type === "creator-pay" ? "Creator Pay" : "Voters Pay"}
                       </div>
                     </div>
@@ -162,7 +162,7 @@ const PastPolls = () => {
                     <div className="flex justify-between items-center mt-4">
                       <Link
                         to={`/poll/${poll.id}/results`}
-                        className="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                       >
                         <FaTrophy className="mr-2" />
                         View Results

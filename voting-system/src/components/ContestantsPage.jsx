@@ -126,27 +126,31 @@ const ContestantsPage = () => {
 
       const response = await axiosInstance.post(endpoint, payload);
 
-      if (pollType === "voters-pay" && response.data.payment_url) {
+      if (pollType === "voters-pay") {
+        if (!response.data.payment_url) {
+          throw new Error("Payment URL not received from server");
+        }
+
         // Store payment info in sessionStorage for verification
         sessionStorage.setItem('paymentDetails', JSON.stringify({
           pollId,
           nomineeCode: selectedNominee,
           votes,
           type: 'vote',
-          reference: response.data.reference
+          returnUrl: `/poll/${pollId}/results` // Store the return URL
         }));
         
-        // Redirect to payment page
+        // Redirect to Paystack checkout URL
         window.location.href = response.data.payment_url;
       } else if (pollType === "creator-pay") {
         setSuccess("Vote cast successfully.");
         setTimeout(() => {
           setModalOpen(false);
           // clear input fields
-          setVotes("");
-          setVoterCode("");
-          // Redirect to results after a short delay
-          navigate('/poll/' + pollId + '/results');
+          setVotes('');
+          setVoterCode('')
+          // Redirect to verification page
+          navigate(`/payment/verify/${response.data.reference}`);
         }, 1500);
       }
     } catch (err) {
@@ -159,7 +163,7 @@ const ContestantsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header Section */}
-      <header className="bg-gradient-to-r from-teal-600 to-teal-800 text-white py-8 relative overflow-hidden">
+      <header className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-pattern opacity-10"></div>
         <div className="container mx-auto px-4 relative z-10">
           <Link 
@@ -187,7 +191,7 @@ const ContestantsPage = () => {
                 placeholder="Search contestants by name, category, or code..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-300"
               />
             </div>
           </div>
@@ -225,7 +229,7 @@ const ContestantsPage = () => {
                 variants={itemVariants}
               >
                 <h2 className="text-2xl font-bold mb-6 flex items-center">
-                  <FaTrophy className="text-teal-600 mr-2" />
+                  <FaTrophy className="text-blue-600 mr-2" />
                   {category}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -250,7 +254,7 @@ const ContestantsPage = () => {
                         <p className="text-gray-500 text-sm mb-4">Code: {contestant.nominee_code}</p>
                         <button
                           onClick={() => handleVoteClick(contestant.nominee_code)}
-                          className="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm rounded-full hover:bg-teal-700 transition-colors space-x-1 shadow-md hover:shadow-lg"
+                          className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm rounded-full hover:bg-primary-700 transition-colors space-x-1 shadow-md hover:shadow-lg"
                         >
                           <FaVoteYea className="w-4 h-4" />
                           <span>Vote</span>
@@ -267,7 +271,7 @@ const ContestantsPage = () => {
           <div className="mt-12 text-center">
             <Link
               to={`/poll/${pollId}/results`}
-              className="inline-flex items-center px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              className="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               View Live Results
               <FaTrophy className="ml-2" />
@@ -297,7 +301,7 @@ const ContestantsPage = () => {
                 <motion.p
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
-                  className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-lg"
+                  className="text-primary-500 text-sm mb-4 bg-primary-50 p-3 rounded-lg"
                 >
                   {error}
                 </motion.p>
@@ -322,7 +326,7 @@ const ContestantsPage = () => {
                     value={votes}
                     onChange={(e) => setVotes(e.target.value)}
                     min="1"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                     placeholder="Enter number of votes"
                   />
                 </div>
@@ -337,7 +341,7 @@ const ContestantsPage = () => {
                     type="text"
                     value={voterCode}
                     onChange={(e) => setVoterCode(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                     placeholder="Enter your voter code"
                   />
                 </div>
@@ -353,7 +357,7 @@ const ContestantsPage = () => {
                 <button
                   onClick={handlePayment}
                   disabled={loading || (pollType === "voters-pay" && !votes) || (pollType === "creator-pay" && !voterCode)}
-                  className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center">

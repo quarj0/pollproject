@@ -41,7 +41,7 @@ const LoginPage = ({ login }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-primary-700 to-secondary-800">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-primary-700 to-blue-900">
       {/* Left Section - Branding */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -49,11 +49,7 @@ const LoginPage = ({ login }) => {
         transition={{ duration: 0.5 }}
         className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 text-white"
       >
-        {/* <img
-          src={votelap}
-          alt="VoteLab Logo"
-          className="w-32 h-32 md:w-48 md:h-48 object-contain mb-8"
-        /> */}
+      
         <h1 className="text-4xl md:text-5xl font-bold mb-4 font-montserrat">Welcome Back!</h1>
         <p className="text-lg md:text-xl text-center max-w-md font-lato">
           Login to manage your polls and see what your audience thinks.
@@ -133,13 +129,13 @@ const LoginPage = ({ login }) => {
             <div className="flex flex-col sm:flex-row justify-between items-center mt-6 space-y-4 sm:space-y-0">
               <Link
                 to="/password/reset"
-                className="text-secondary-600 hover:text-secondary-700 text-sm font-medium transition-colors font-montserrat"
+                className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors font-montserrat"
               >
-                Forgot your password?
+                Forgotten your password?
               </Link>
               <Link
                 to="/register"
-                className="text-secondary-600 hover:text-secondary-700 text-sm font-medium transition-colors font-montserrat"
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors font-montserrat"
               >
                 Don&apos;t have an account? Sign up
               </Link>

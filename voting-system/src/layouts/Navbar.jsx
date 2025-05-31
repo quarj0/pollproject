@@ -202,7 +202,7 @@ export default function Navbar({ authTokens, logout }) {
                   ) : (
                     <Link
                       to="/login"
-                      className="text-gray-700 hover:text-teal-700 font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 rounded-md px-3 py-2"
+                      className="text-gray-700 hover:text-blue-700 font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-3 py-2"
                     >
                       Login
                     </Link>
@@ -241,8 +241,8 @@ export default function Navbar({ authTokens, logout }) {
                       to={item.href}
                       className={`${
                         item.current
-                          ? "bg-teal-800 text-white"
-                          : "text-gray-700 hover:bg-teal-700 hover:text-white"
+                          ? "bg-blue-800 text-white"
+                          : "text-gray-700 hover:bg-blue-700 hover:text-white"
                       } block rounded-md px-3 py-2 text-base font-medium transition duration-200 w-full text-left`}
                     >
                       {item.name}

@@ -40,6 +40,7 @@ import Breadcrumb from "./components/Breadcrumb";
 import EditPoll from "./components/EditPoll";
 import ContestantManagement from "./components/ContestantManagement";
 import VoteDemo from "./components/demo/VoteDemo";
+import LogoutNavbar from "./layouts/LogoutNavbar";
 
 const App = () => {
   const [authTokens, setAuthTokens] = useState(() => {
@@ -133,6 +134,9 @@ const App = () => {
               user={user}
             />
           )}
+          {!authTokens && <LogoutNavbar />}
+          
+          {/* Main content */}
           <Breadcrumb />
           <div>
             <Routes>

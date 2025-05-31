@@ -83,7 +83,9 @@ class VerifyPaymentView(APIView):
             reference_parts = reference.split("-")
             poll_id = reference_parts[1]
             poll = get_object_or_404(Poll, id=poll_id)
-            return_url = f"{frontend_url}/poll/{poll.id}/results"
+            
+            # Get return URL from query params or default to results page
+            return_url = request.GET.get('return_url', f"{frontend_url}/poll/{poll.id}/results")
         except (IndexError, Poll.DoesNotExist):
             error_url = f"{frontend_url}/payment/verification-error"
             if is_api_request:
@@ -124,31 +126,22 @@ class VerifyPaymentView(APIView):
                     }, status=status.HTTP_200_OK)
                 return redirect(return_url)
 
+            # Process the payment based on type
             if "activate" in reference:
                 # Handle poll activation
                 transaction = self._process_poll_activation(transaction, poll, amount_paid, reference)
-                if is_api_request:
-                    return Response({
-                        "message": "Poll activated successfully.",
-                        "redirect_url": return_url
-                    }, status=status.HTTP_200_OK)
-                return redirect(return_url)
-                
             elif "vote" in reference:
                 # Handle vote processing
                 contestant_id = reference_parts[2]
                 contestant = get_object_or_404(Contestant, id=contestant_id, poll=poll)
                 vote = self._process_vote(transaction, poll, contestant, amount_paid, reference)
-                if is_api_request:
-                    return Response({
-                        "message": "Vote recorded successfully.",
-                        "redirect_url": return_url
-                    }, status=status.HTTP_201_CREATED)
-                return redirect(return_url)
+            else:
+                raise ValueError("Invalid transaction type")
 
+            # Return success response
             if is_api_request:
                 return Response({
-                    "message": "Payment verified.",
+                    "message": "Payment verified and processed successfully.",
                     "redirect_url": return_url
                 }, status=status.HTTP_200_OK)
             return redirect(return_url)

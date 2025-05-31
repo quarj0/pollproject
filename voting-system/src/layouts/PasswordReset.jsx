@@ -26,7 +26,7 @@ const PasswordResetRequestPage = () => {
       } else if (err.response?.status === 400) {
         setError("Please enter a valid email address.");
       } else {
-        setError("An error occurred. Please try again later.");
+        setError("An error occurblue. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -34,7 +34,7 @@ const PasswordResetRequestPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-800 to-blue-950 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-800 to-blue-950 flex flex-col items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -43,11 +43,7 @@ const PasswordResetRequestPage = () => {
       >
         {/* Logo and Branding */}
         <div className="text-center mb-8">
-          {/* <img
-            src={votelap}
-            alt="VoteLab Logo"
-            className="w-24 h-24 mx-auto mb-4"
-          /> */}
+         
           <h2 className="text-3xl font-bold text-white mb-2">
             Reset Your Password
           </h2>
@@ -77,7 +73,7 @@ const PasswordResetRequestPage = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 text-red-600 p-4 rounded-lg mb-6"
+              className="bg-blue-50 text-blue-600 p-4 rounded-lg mb-6"
             >
               {error}
             </motion.div>
@@ -94,7 +90,7 @@ const PasswordResetRequestPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter your email address"
                   required
                 />
@@ -109,7 +105,7 @@ const PasswordResetRequestPage = () => {
               className={`w-full py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center space-x-2 ${
                 loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-teal-600 hover:bg-teal-700"
+                : "bg-blue-600 hover:bg-blue-700"
               } transition-colors duration-200`}
             >
               <span>{loading ? "Sending..." : "Send Reset Link"}</span>
@@ -120,7 +116,7 @@ const PasswordResetRequestPage = () => {
           <div className="mt-6">
             <Link
               to="/login"
-              className="text-teal-600 hover:text-teal-700 font-medium flex items-center justify-center transition-colors"
+              className="text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center transition-colors"
             >
               <FaArrowLeft className="mr-2" />
               Back to Login
