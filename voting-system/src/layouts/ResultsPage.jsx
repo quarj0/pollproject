@@ -35,17 +35,28 @@ const ResultsPage = () => {
   const [wsStatus, setWsStatus] = useState('connecting');
   const [isPollActive, setIsPollActive] = useState(false);
 
+  // Helper function to process image URLs
+  const getImageUrl = (imageData) => {
+    if (!imageData) return avatar;
+    if (typeof imageData === 'string') {
+      return imageData.startsWith('http') ? imageData : `http://localhost:8000${imageData}`;
+    }
+    if (imageData.url) return imageData.url;
+    return avatar;
+  };
+
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
       // First try to get the results
       const resultsResponse = await axiosInstance.get(`/vote/results/${pollId}/`);
-      console.log('Results response:', resultsResponse.data);
+      console.log('Raw results response:', resultsResponse.data);
 
       // Process results data
-      const resultsData = resultsResponse.data.results || resultsResponse.data;
+      const resultsData = resultsResponse.data;
       const processedResults = processResults(resultsData);
-      setResults(processedResults);
+      console.log('Processed results:', processedResults);
+      setResults(resultsData); // Store the raw data instead of processed data
 
       let newPollDetails = null;
       // Set poll details from results data if available
@@ -168,77 +179,34 @@ const ResultsPage = () => {
   }, [pollId, wsStatus, isPollActive]);
 
   const processResults = (data) => {
-    if (!data) return [];
+    if (!data) return { results: [], categories: {}, categoryList: [], totalVotes: 0 };
 
-    // Helper function to process image URL
-    const getImageUrl = (imageData) => {
-      if (!imageData) return avatar;
-      if (typeof imageData === 'string') {
-        // If it's already a full URL (like Cloudinary URL)
-        return imageData.startsWith('http') ? imageData : `http://localhost:8000${imageData}`;
-      }
-      // If it's an object with url property (like Cloudinary response)
-      if (imageData.url) return imageData.url;
-      return avatar;
-    };
-
-    // If data has categories structure
-    if (data.categories) {
-      const allResults = [];
-      Object.values(data.categories).forEach((categoryResults) => {
-        categoryResults.forEach((result) => {
-          const imageUrl = result.image || result.contestant_image || result.image_url;
-          allResults.push({
-            name: result.name,
-            image: getImageUrl(imageUrl),
-            vote_count: result.vote_count || 0,
-            category: result.category,
-          });
-        });
-      });
-      return allResults.sort((a, b) => b.vote_count - a.vote_count);
+    // If we have the new API response structure
+    if (data.categories && data.category_list) {
+      return {
+        results: [], // We don't need this anymore but keep for backward compatibility
+        categories: data.categories,
+        categoryList: data.category_list,
+        totalVotes: data.total_votes || 0
+      };
     }
 
-    // If data is a flat array
+    // Handle legacy data formats
     if (Array.isArray(data)) {
-      const resultMap = new Map();
-      data.forEach((item) => {
-        const contestant = item.contestant || item;
-        const voteCount = item.total_votes || item.vote_count || 0;
-        const imageUrl = contestant.image || contestant.contestant_image || contestant.image_url;
-        
-        if (resultMap.has(contestant.name)) {
-          const existing = resultMap.get(contestant.name);
-          existing.vote_count += voteCount;
-        } else {
-          resultMap.set(contestant.name, {
-            name: contestant.name,
-            image: getImageUrl(imageUrl),
-            vote_count: voteCount,
-          });
-        }
-      });
-      return Array.from(resultMap.values()).sort((a, b) => b.vote_count - a.vote_count);
+      return {
+        results: data.map(item => ({
+          name: item.name || item.contestant?.name,
+          vote_count: item.vote_count || item.total_votes || 0,
+          image: getImageUrl(item.image || item.contestant_image),
+          category: item.category || 'Uncategorized'
+        })).sort((a, b) => b.vote_count - a.vote_count),
+        categories: {},
+        categoryList: [],
+        totalVotes: 0
+      };
     }
 
-    // If data is an object with poll_title, total_votes format
-    if (data.poll_title && data.categories) {
-      const allResults = [];
-      Object.entries(data.categories).forEach(([category, results]) => {
-        results.forEach((result) => {
-          const imageUrl = result.image || result.contestant_image || result.image_url;
-          allResults.push({
-            name: result.name,
-            image: getImageUrl(imageUrl),
-            vote_count: result.vote_count || 0,
-            category,
-          });
-        });
-      });
-      return allResults.sort((a, b) => b.vote_count - a.vote_count);
-    }
-
-    return [];
+    return { results: [], categories: {}, categoryList: [], totalVotes: 0 };
   };
 
   const getDynamicColor = (index, total) =>
@@ -273,7 +241,98 @@ const ResultsPage = () => {
     },
   };
 
+  const renderCategoryResults = (category, categoryData) => {
+    if (!categoryData || !categoryData.contestants) {
+      console.error('Invalid category data:', category, categoryData);
+      return null;
+    }
+
+    return (
+      <motion.div
+        key={category}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm p-6 mb-6"
+      >
+        <h3 className="text-xl font-bold mb-4 flex items-center">
+          <FaTrophy className="mr-2 text-primary-600" />
+          {category}
+          <span className="ml-2 text-sm text-gray-500">
+            ({categoryData.total_votes || 0} votes)
+          </span>
+        </h3>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rank
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contestant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Votes
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category %
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {categoryData.contestants.map((contestant, index) => (
+                <motion.tr
+                  key={index}
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: index * 0.1 }}
+                  className="hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">
+                      #{index + 1}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <img
+                          className="h-10 w-10 rounded-full object-cover"
+                          src={getImageUrl(contestant.image)}
+                          alt={contestant.name}
+                        />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {contestant.name}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {contestant.vote_count}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {contestant.percentage}%
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+    );
+  };
+
   const renderChart = () => {
+    const { categories, categoryList } = processResults(results);
+
     switch (activeTab) {
       case "bar":
         return (
@@ -281,46 +340,57 @@ const ResultsPage = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-xl shadow-sm p-6"
+            className="space-y-8"
           >
-            <h2 className="text-xl font-bold mb-6 flex items-center">
-              <FaChartBar className="mr-2 text-primary-600" />
-              Results Overview
-            </h2>
-            <ResponsiveContainer
-              width="100%"
-              height={400}
-              className="animate__animated animate__fadeIn"
-            >
-              <BarChart
-                data={results}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                  }}
-                />
-                <Legend />
-                <Bar
-                  dataKey="vote_count"
-                  animationDuration={1500}
-                  label={{ position: "top" }}
-                >
-                  {results.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={getDynamicColor(index, results.length)}
+            {categoryList && categoryList.map(category => (
+              <div key={category} className="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h3 className="text-xl font-bold mb-4 flex items-center">
+                  <FaChartBar className="mr-2 text-primary-600" />
+                  {category}
+                </h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={categories[category].contestants}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "rgba(255, 255, 255, 0.95)",
+                        borderRadius: "8px",
+                        border: "none",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                      }}
+                      formatter={(value, name, props) => {
+                        if (!props || !props.payload) return '';
+                        return `${props.payload.percentage}%`;
+                      }}
                     />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                    <Legend />
+                    <Bar
+                      dataKey="vote_count"
+                      name="Votes"
+                      fill="#8884d8"
+                      label={{
+                        position: 'top',
+                        formatter: (value, name, props) => {
+                          if (!props || !props.payload) return '';
+                          return `${props.payload.percentage}%`;
+                        }
+                      }}
+                    >
+                      {categories[category].contestants.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={getDynamicColor(index, categories[category].contestants.length)}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ))}
           </motion.div>
         );
 
@@ -330,76 +400,74 @@ const ResultsPage = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-xl shadow-sm p-6"
+            className="space-y-8"
           >
-            <h2 className="text-xl font-bold mb-6 flex items-center">
-              <FaChartPie className="mr-2 text-primary-600" />
-              Vote Distribution
-            </h2>
-            <ResponsiveContainer
-              width="100%"
-              height={400}
-              className="animate__animated animate__fadeIn"
-            >
-              <PieChart>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                  }}
-                  formatter={(value, name) => [
-                    `${value} votes (${getVotePercentage(value)}%)`,
-                    name,
-                  ]}
-                />
-                <Legend />
-                <Pie
-                  data={results}
-                  dataKey="vote_count"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={150}
-                  label={({
-                    cx,
-                    cy,
-                    midAngle,
-                    innerRadius,
-                    outerRadius,
-                    value,
-                    index,
-                  }) => {
-                    const RADIAN = Math.PI / 180;
-                    const radius =
-                      25 + innerRadius + (outerRadius - innerRadius);
-                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        fill={getDynamicColor(index, results.length)}
-                        textAnchor={x > cx ? "start" : "end"}
-                        dominantBaseline="central"
-                      >
-                        {getVotePercentage(value)}%
-                      </text>
-                    );
-                  }}
-                  animationDuration={1500}
-                >
-                  {results.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={getDynamicColor(index, results.length)}
+            {categoryList && categoryList.map(category => (
+              <div key={category} className="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h3 className="text-xl font-bold mb-4 flex items-center">
+                  <FaChartPie className="mr-2 text-primary-600" />
+                  {category}
+                </h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "rgba(255, 255, 255, 0.95)",
+                        borderRadius: "8px",
+                        border: "none",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                      }}
+                      formatter={(value, name, props) => {
+                        if (!props || !props.payload) return [value, name];
+                        return [`${value} votes (${props.payload.percentage}%)`, name];
+                      }}
                     />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+                    <Legend />
+                    <Pie
+                      data={categories[category].contestants}
+                      dataKey="vote_count"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={150}
+                      label={({
+                        cx,
+                        cy,
+                        midAngle,
+                        innerRadius,
+                        outerRadius,
+                        value,
+                        index,
+                      }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = 25 + innerRadius + (outerRadius - innerRadius);
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                        return (
+                          <text
+                            x={x}
+                            y={y}
+                            fill={getDynamicColor(index, categories[category].contestants.length)}
+                            textAnchor={x > cx ? "start" : "end"}
+                            dominantBaseline="central"
+                          >
+                            {categories[category].contestants[index].percentage}%
+                          </text>
+                        );
+                      }}
+                    >
+                      {categories[category].contestants.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={getDynamicColor(index, categories[category].contestants.length)}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ))}
           </motion.div>
         );
 
@@ -409,95 +477,16 @@ const ResultsPage = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-xl shadow-sm p-6"
+            className="space-y-8"
           >
-            <h2 className="text-xl font-bold mb-6 flex items-center">
-              <FaTable className="mr-2 text-primary-600" />
-              Detailed Results
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Rank
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Contestant
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Votes
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Percentage
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {results.map((result, index) => (
-                    <motion.tr
-                      key={index}
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ delay: index * 0.1 }}
-                      className="hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          #{index + 1}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <img
-                              className="h-10 w-10 rounded-full object-cover"
-                              src={result.image}
-                              alt={result.name}
-                            />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {result.name}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.5, delay: index * 0.1 }}
-                          className="text-sm text-gray-900"
-                        >
-                          {result.vote_count}
-                        </motion.div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {getVotePercentage(result.vote_count)}%
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {categoryList && categoryList.map(category => (
+              <div key={category}>
+                {renderCategoryResults(category, categories[category])}
+              </div>
+            ))}
           </motion.div>
         );
+
       default:
         return null;
     }
@@ -573,10 +562,7 @@ const ResultsPage = () => {
                       transition={{ duration: 0.5 }}
                       className="text-3xl font-bold mt-1"
                     >
-                      {results.reduce(
-                        (acc, result) => acc + result.vote_count,
-                        0
-                      )}
+                      {processResults(results).totalVotes || 0}
                     </motion.h3>
                   </div>
                   <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
@@ -593,14 +579,14 @@ const ResultsPage = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Contestants</p>
+                    <p className="text-sm text-gray-600">Categories</p>
                     <motion.h3
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5 }}
                       className="text-3xl font-bold mt-1"
                     >
-                      {results.length}
+                      {processResults(results).categoryList.length || 0}
                     </motion.h3>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -617,14 +603,21 @@ const ResultsPage = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Leading Contestant</p>
+                    <p className="text-sm text-gray-600">Leading Category</p>
                     <motion.h3
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5 }}
-                      className="text-3xl font-bold mt-1"
+                      className="text-3xl font-bold mt-1 truncate max-w-[200px]"
                     >
-                      {results[0]?.name || "No votes yet"}
+                      {(() => {
+                        const { categories, categoryList } = processResults(results);
+                        if (!categoryList.length) return "No categories";
+                        const leadingCategory = categoryList.reduce((max, cat) => 
+                          (categories[cat]?.totalVotes || 0) > (categories[max]?.totalVotes || 0) ? cat : max
+                        , categoryList[0]);
+                        return leadingCategory;
+                      })()}
                     </motion.h3>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">

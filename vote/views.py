@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from django.db import transaction
+from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.db.models import Sum
 
@@ -44,7 +44,7 @@ class CreatorPayVoteView(APIView):
         reference = f"creator-vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
         
         # Create transaction first
-        transaction = Transaction.objects.create(
+        vote_transaction = Transaction.objects.create(
             poll=poll,
             amount=0,  # Creator-pay polls don't have a direct payment
             payment_reference=reference,
@@ -56,16 +56,23 @@ class CreatorPayVoteView(APIView):
             'poll': poll.id,
             'contestant': contestant.id,
             'number_of_votes': 1,
-            'transaction': transaction.id  # Link the vote to the transaction
+            'transaction': vote_transaction.id  # Link the vote to the transaction
         })
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        with transaction.atomic():
-            vote = serializer.save()
-            voter_code.used = True
-            voter_code.save()
+        try:
+            with db_transaction.atomic():
+                vote = serializer.save()
+                voter_code.used = True
+                voter_code.save()
+        except Exception as e:
+            logger.error(f"Error processing creator-pay vote: {str(e)}")
+            return Response(
+                {"error": "An error occurred while processing your vote."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return Response({"message": "Vote cast successfully."}, status=status.HTTP_201_CREATED)
 
@@ -550,38 +557,55 @@ class VoteResultView(APIView):
     @cache_poll_data(timeout=300)  # Cache for 5 minutes
     def get(self, request, poll_id):
         poll = get_object_or_404(Poll, id=poll_id)
-        results = Contestant.objects.filter(poll=poll).annotate(
-            vote_count=Sum('votes__number_of_votes')
-        ).values(
-            'id', 'name', 'vote_count', 'category'
-        ).order_by('-vote_count')
-
-        # Get all contestants with their images
-        contestants = Contestant.objects.filter(poll=poll)
-        image_map = {
-            c.id: str(c.contestant_image.url) if c.contestant_image else None
-            for c in contestants
-        }
-
-        # Group results by category
+        
+        # Get all categories in the poll
+        categories = Contestant.objects.filter(poll=poll).values_list('category', flat=True).distinct()
+        
         categorized_results = {}
-        for result in results:
-            category = result['category']
-            if category not in categorized_results:
-                categorized_results[category] = []
-
-            result_with_image = {
-                'name': result['name'],
-                'vote_count': result['vote_count'] or 0,
-                'category': result['category'],
-                'image': image_map.get(result['id'])
+        total_votes = 0
+        
+        # Process results by category
+        for category in categories:
+            # Get contestants and their votes for this category
+            category_results = Contestant.objects.filter(
+                poll=poll,
+                category=category
+            ).annotate(
+                vote_count=Sum('votes__number_of_votes')
+            ).values(
+                'id', 'name', 'vote_count', 'category', 'contestant_image'
+            ).order_by('-vote_count')
+            
+            # Format results for this category
+            formatted_results = []
+            for result in category_results:
+                vote_count = result['vote_count'] or 0
+                total_votes += vote_count
+                
+                formatted_results.append({
+                    'name': result['name'],
+                    'vote_count': vote_count,
+                    'category': result['category'],
+                    'image': str(result['contestant_image'].url) if result['contestant_image'] else None,
+                    'percentage': 0  # Will be calculated after we have category total
+                })
+            
+            # Calculate percentages within category
+            category_total = sum(r['vote_count'] for r in formatted_results)
+            if category_total > 0:
+                for result in formatted_results:
+                    result['percentage'] = round((result['vote_count'] / category_total) * 100, 1)
+            
+            categorized_results[category] = {
+                'contestants': formatted_results,
+                'total_votes': category_total
             }
-            categorized_results[category].append(result_with_image)
 
         return Response({
             'poll_title': poll.title,
-            'total_votes': sum(r['vote_count'] or 0 for r in results),
-            'categories': categorized_results
+            'total_votes': total_votes,
+            'categories': categorized_results,
+            'category_list': list(categories)  # Include list of categories for easy iteration
         })
 
 

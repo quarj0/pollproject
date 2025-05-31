@@ -142,11 +142,15 @@ const ContestantsPage = () => {
         setSuccess("Vote cast successfully.");
         setTimeout(() => {
           setModalOpen(false);
-          navigate('/dashboard');
+          // clear input fields
+          setVotes("");
+          setVoterCode("");
+          // Redirect to results after a short delay
+          navigate('/poll/' + pollId + '/results');
         }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "An error has occurred. Check your internet connection and try again.");
+      setError(err.response?.data?.detail || err.response?.data?.error || "An error occurred while processing your vote.");
     } finally {
       setLoading(false);
     }
