@@ -3,6 +3,9 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSearch, FaTrophy, FaArrowLeft, FaVoteYea } from "react-icons/fa";
 import axiosInstance from "../apis/api";
+import { PaystackButton } from "react-paystack";
+
+const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY; 
 
 const ContestantsPage = () => {
   const { pollId } = useParams();
@@ -19,6 +22,8 @@ const ContestantsPage = () => {
   const [pollType, setPollType] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [pollDescription, setPollDescription] = useState("");
+  const [paystackDetails, setPaystackDetails] = useState(null);
+  const [paystackLoading, setPaystackLoading] = useState(false);
 
   // Animation variants
   const containerVariants = {
@@ -99,15 +104,19 @@ const ContestantsPage = () => {
     setError("");
     setSuccess("");
     setLoading(true);
+    setPaystackDetails(null);
+    setPaystackLoading(false);
 
     try {
       if (pollType === "voters-pay" && (!votes || votes < 1)) {
         setError("Please enter a valid number of votes.");
+        setLoading(false);
         return;
       }
 
       if (pollType === "creator-pay" && !voterCode) {
         setError("Please enter a valid voter code.");
+        setLoading(false);
         return;
       }
 
@@ -127,30 +136,22 @@ const ContestantsPage = () => {
       const response = await axiosInstance.post(endpoint, payload);
 
       if (pollType === "voters-pay") {
-        if (!response.data.payment_url) {
-          throw new Error("Payment URL not received from server");
+        // Expect backend to return payment details for Paystack
+        if (!response.data || !response.data.amount || !response.data.reference) {
+          throw new Error("Payment details not received from server");
         }
-
-        // Store payment info in sessionStorage for verification
-        sessionStorage.setItem('paymentDetails', JSON.stringify({
-          pollId,
-          nomineeCode: selectedNominee,
-          votes,
-          type: 'vote',
-          returnUrl: `/poll/${pollId}/results` // Store the return URL
-        }));
-        
-        // Redirect to Paystack checkout URL
-        window.location.href = response.data.payment_url;
+        setPaystackDetails({
+          amount: response.data.amount,
+          email: response.data.email || "customer@castsure.com",
+          reference: response.data.reference,
+        });
+        setPaystackLoading(true);
       } else if (pollType === "creator-pay") {
         setSuccess("Vote cast successfully.");
         setTimeout(() => {
           setModalOpen(false);
-          // clear input fields
-          setVotes('');
-          setVoterCode('')
-          // Redirect to verification page
-          navigate(`/payment/verify/${response.data.reference}`);
+          setVotes("");
+          setVoterCode("");
         }, 1500);
       }
     } catch (err) {
@@ -158,6 +159,31 @@ const ContestantsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Paystack success handler
+  const handlePaystackSuccess = async (ref) => {
+    setPaystackLoading(false);
+    setSuccess("Verifying payment...");
+    try {
+      const verifyRes = await axiosInstance.get(`/payment/verify/${paystackDetails.reference}/`);
+      setSuccess(verifyRes.data.message || "Payment verified successfully.");
+      setTimeout(() => {
+        setModalOpen(false);
+        setVotes("");
+        setPaystackDetails(null);
+        setSuccess("");
+        // Optionally refresh results or UI here
+      }, 2000);
+    } catch (err) {
+      setError("Payment verification failed. Please contact support if you were debited.");
+    }
+  };
+
+  // Paystack close handler
+  const handlePaystackClose = () => {
+    setPaystackLoading(false);
+    setPaystackDetails(null);
   };
 
   return (
@@ -354,23 +380,37 @@ const ContestantsPage = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={handlePayment}
-                  disabled={loading || (pollType === "voters-pay" && !votes) || (pollType === "creator-pay" && !voterCode)}
-                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : (
-                    "Submit Vote"
-                  )}
-                </button>
+                {pollType === "voters-pay" && paystackDetails ? (
+                  <PaystackButton
+                    publicKey={PAYSTACK_PUBLIC_KEY}
+                    email={paystackDetails.email}
+                    amount={paystackDetails.amount}
+                    reference={paystackDetails.reference}
+                    currency="GHS"
+                    text="Pay & Vote"
+                    onSuccess={handlePaystackSuccess}
+                    onClose={handlePaystackClose}
+                    className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                  />
+                ) : (
+                  <button
+                    onClick={handlePayment}
+                    disabled={loading || (pollType === "voters-pay" && !votes) || (pollType === "creator-pay" && !voterCode)}
+                    className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      pollType === "voters-pay" ? "Get Payment Link" : "Submit Vote"
+                    )}
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>

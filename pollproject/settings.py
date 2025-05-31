@@ -21,13 +21,16 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8080', 'http://localhost:5137',]
+CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://localhost:5173', 'https://castsure.vote']
 
 # Always append trailing slashes to URLs
 APPEND_SLASH = True
 
 
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8080')
+if DEBUG:
+    FRONTEND_URL == config('FRONTEND_URL', default='http://localhost:5173')
+else:
+    FRONTEND_URL == 'https://castsure.vote'
 
 
 # Security settings for production

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaImage,
@@ -10,6 +10,7 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 import axiosInstance from "../apis/api";
+import { PaystackButton } from "react-paystack";
 
 const steps = [
   { title: "Basic Info", description: "Enter poll title and description" },
@@ -34,6 +35,13 @@ const CreatePoll = () => {
   const [loading, setLoading] = useState(false);
   const [setupFee, setSetupFee] = useState(0);
   const [responseData, setResponseData] = useState(null);
+  const [paystackDetails, setPaystackDetails] = useState(null);
+  const [paystackLoading, setPaystackLoading] = useState(false);
+  const [paystackSuccess, setPaystackSuccess] = useState("");
+  const [paystackError, setPaystackError] = useState("");
+
+  const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+  const VOTER_CODES_URL = import.meta.env.VITE_API_URL;
 
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -412,6 +420,50 @@ const CreatePoll = () => {
   };
 
   if (responseData) {
+    // If creator-pay, fetch payment details for PaystackButton
+    const isCreatorPay = responseData && responseData.payment_link && formData.poll_type === "creator-pay";
+
+    const fetchPaystackDetails = async () => {
+      if (!paystackDetails && isCreatorPay) {
+        try {
+          setPaystackLoading(true);
+          // Call backend to get amount, email, reference for PaystackButton
+          const pollId = responseData.poll_id;
+          const res = await axiosInstance.post(`/vote/creator-pay/${pollId}/`, { code: "ACTIVATION" });
+          setPaystackDetails({
+            amount: res.data.amount,
+            email: res.data.email,
+            reference: res.data.reference,
+          });
+        } catch (err) {
+          setPaystackError("Failed to get payment details. Please refresh the page.");
+        } finally {
+          setPaystackLoading(false);
+        }
+      }
+    };
+
+    useEffect(() => {
+      if (isCreatorPay && !paystackDetails) {
+        fetchPaystackDetails();
+      }
+      // eslint-disable-next-line
+    }, [isCreatorPay, paystackDetails]);
+
+    const handlePaystackSuccess = async () => {
+      setPaystackLoading(false);
+      setPaystackSuccess("Verifying payment...");
+      try {
+        const verifyRes = await axiosInstance.get(`/payment/verify/${paystackDetails.reference}/`);
+        setPaystackSuccess(verifyRes.data.message || "Payment verified successfully.");
+      } catch (err) {
+        setPaystackError("Payment verification failed. Please contact support if you were debited.");
+      }
+    };
+    const handlePaystackClose = () => {
+      setPaystackLoading(false);
+      setPaystackDetails(null);
+    };
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -442,7 +494,36 @@ const CreatePoll = () => {
                 </p>
               </div>
             )}
-            {responseData.payment_link && (
+            {/* Only show PaystackButton for creator-pay */}
+            {isCreatorPay && (
+              <div>
+                <p className="font-medium mb-2">Activate Poll (Pay Setup Fee)</p>
+                {paystackError && <p className="text-red-500 mb-2">{paystackError}</p>}
+                {paystackSuccess && <p className="text-green-600 mb-2">{paystackSuccess}</p>}
+                {paystackDetails ? (
+                  <PaystackButton
+                    publicKey={PAYSTACK_PUBLIC_KEY}
+                    email={paystackDetails.email}
+                    amount={paystackDetails.amount}
+                    reference={paystackDetails.reference}
+                    currency="GHS"
+                    text="Pay & Activate Poll"
+                    onSuccess={handlePaystackSuccess}
+                    onClose={handlePaystackClose}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  />
+                ) : (
+                  <button
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg"
+                    disabled
+                  >
+                    Loading payment details...
+                  </button>
+                )}
+              </div>
+            )}
+            {/* For voters-pay, show payment link as before */}
+            {responseData.payment_link && formData.poll_type === "voters-pay" && (
               <div>
                 <p className="font-medium mb-2">Payment Link</p>
                 <a
@@ -460,7 +541,7 @@ const CreatePoll = () => {
               <div>
                 <p className="font-medium mb-2">Voter Codes</p>
                 <a
-                  href={`http://localhost:8000${responseData.download_voter_codes}`}
+                  href={`${VOTER_CODES_URL}${responseData.download_voter_codes}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"

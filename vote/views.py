@@ -9,7 +9,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.db.models import Sum
 
@@ -40,41 +39,24 @@ class CreatorPayVoteView(APIView):
 
         contestant = self.get_contestant(poll, nominee_code, contestant_id)
         
-        # Create a unique reference for the transaction
+        # Calculate setup fee (in GHS)
+        setup_fee = poll.setup_fee or 0
         reference = f"creator-vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
-        
-        # Create transaction first
-        vote_transaction = Transaction.objects.create(
+
+        # Create pending transaction (not success=True)
+        Transaction.objects.create(
             poll=poll,
-            amount=0,  # Creator-pay polls don't have a direct payment
+            amount=setup_fee,
             payment_reference=reference,
-            transaction_type='vote',
-            success=True  # Mark as successful since no payment is needed
+            transaction_type='poll_activation',
+            success=False
         )
 
-        serializer = VoteSerializer(data={
-            'poll': poll.id,
-            'contestant': contestant.id,
-            'number_of_votes': 1,
-            'transaction': vote_transaction.id  # Link the vote to the transaction
-        })
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            with db_transaction.atomic():
-                vote = serializer.save()
-                voter_code.used = True
-                voter_code.save()
-        except Exception as e:
-            logger.error(f"Error processing creator-pay vote: {str(e)}")
-            return Response(
-                {"error": "An error occurred while processing your vote."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-        return Response({"message": "Vote cast successfully."}, status=status.HTTP_201_CREATED)
+        return Response({
+            "amount": int(setup_fee * 100),  # Paystack expects kobo
+            "email": request.user.email if hasattr(request.user, 'email') else "customer@castsure.com",
+            "reference": reference
+        }, status=status.HTTP_200_OK)
 
     def validate_voter_code(self, poll, code):
         try:
@@ -126,13 +108,8 @@ class VoterPayVoteView(APIView):
         vote_price = poll.voting_fee
         amount_to_pay = vote_price * num_votes
         unique_reference = f"vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
-        payment_link = self.generate_payment_link(
-            amount_to_pay, unique_reference)
 
-        if not payment_link:
-            return Response({"error": "Unable to generate payment link."},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        # Do NOT call generate_payment_link for inline modal
         Transaction.objects.create(
             poll=poll,
             amount=amount_to_pay,
@@ -141,36 +118,11 @@ class VoterPayVoteView(APIView):
             success=False
         )
 
-        return Response({"payment_url": payment_link}, status=status.HTTP_200_OK)
-
-    def generate_payment_link(self, amount, reference):
-        url = "https://api.paystack.co/transaction/initialize"
-        headers = {
-            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        # Get the current site URL from the request
-        protocol = 'https' if self.request.is_secure() else 'http'
-        current_site = f"{protocol}://{self.request.get_host()}"
-        
-        data = {
-            "email": "customer@castsure.com",
-            "amount": int(amount * 100),
-            "reference": reference,
-            "callback_url": f"{current_site}/payment/verify/{reference}",
-            "metadata": {
-                "reference": reference,
-                "type": "vote"
-            }
-        }
-
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get("status"):
-                return response_data["data"]["authorization_url"]
-        return None
+        return Response({
+            "amount": int(amount_to_pay * 100),  
+            "email": request.user.email or "customer@castsure.com", 
+            "reference": unique_reference
+        }, status=status.HTTP_200_OK)
 
     def get_contestant(self, poll, nominee_code, contestant_id):
         if nominee_code:
