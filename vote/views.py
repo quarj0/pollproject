@@ -1,10 +1,8 @@
 from .ussd_service import USSDService
 from vote.models import Vote, VoterCode
 import uuid
-import requests
 import logging
 
-from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,13 +11,13 @@ from django.utils import timezone
 from django.db.models import Sum
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.db import models
 
-from .serializers import VoteSerializer
 from .models import VoterCode, Vote
 from poll.models import Poll, Contestant
 from payment.models import Transaction
 from .ussd_service import USSDService
-from .decorators import cache_poll_data, PaymentRateThrottle
+from .decorators import cache_poll_data
 
 logger = logging.getLogger(__name__)
 
@@ -37,33 +35,26 @@ class VoterPayVoteView(APIView):
 
         contestant = self.get_contestant(poll, nominee_code, contestant_id)
         
-        # Create the vote
-        vote = Vote.objects.create(
-            poll=poll,
-            contestant=contestant,
-            number_of_votes=num_votes,
-        )
-
-        # Trigger real-time update manually (in case signal doesn't fire)
-        self.trigger_realtime_update(poll_id, vote)
-
+        # DON'T CREATE VOTE YET - only create payment reference and transaction
+        
         # Calculate payment details
         vote_price = poll.voting_fee
         amount_to_pay = vote_price * num_votes
         unique_reference = f"vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
 
-        # Create transaction record
+        # Create pending transaction with metadata for vote creation
         Transaction.objects.create(
             poll=poll,
             amount=amount_to_pay,
             payment_reference=unique_reference,
             transaction_type='vote',
-            success=False
+            success=False,
+            
         )
 
         return Response({
-            "message": "Vote recorded successfully",
-            "vote_id": vote.id,
+            "message": "Payment initialized. Vote will be recorded after successful payment.",
+            "payment_pending": True,  # Indicate this is pending payment
             "amount": int(amount_to_pay * 100),  
             "email": getattr(request.user, "email", "customer@castsure.com"), 
             "reference": unique_reference
@@ -85,21 +76,6 @@ class VoterPayVoteView(APIView):
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
-    def trigger_realtime_update(self, poll_id, vote):
-        """Manually trigger real-time update for WebSocket clients."""
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'poll_{poll_id}',
-            {
-                'type': 'vote_update',
-                'poll_id': poll_id,
-                'vote_id': vote.id,
-                'contestant_id': vote.contestant.id,
-                'number_of_votes': vote.number_of_votes,
-                'timestamp': timezone.now().isoformat()
-            }
-        )
-
 
 class CreatorPayVoteView(APIView):
     def post(self, request, poll_id):
@@ -112,47 +88,31 @@ class CreatorPayVoteView(APIView):
             return Response({"error": "Voter code is required for creator-pay polls."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # Validate voter code FIRST
         voter_code = self.validate_voter_code(poll, code)
         if isinstance(voter_code, Response):
             return voter_code
 
         contestant = self.get_contestant(poll, nominee_code, contestant_id)
         
-        # Create the vote
+        # Only create vote if voter code is valid
         vote = Vote.objects.create(
             poll=poll,
             contestant=contestant,
             number_of_votes=1,
-            voter_code=voter_code,
         )
 
         # Mark voter code as used
         voter_code.used = True
         voter_code.save()
 
-        # Trigger real-time update
+        # Trigger real-time update - vote is confirmed immediately for creator-pay
         self.trigger_realtime_update(poll_id, vote)
         
-        # Calculate setup fee (in GHS)
-        setup_fee = poll.setup_fee or 0
-        reference = f"creator-vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
-
-        # Create pending transaction
-        Transaction.objects.create(
-            poll=poll,
-            amount=setup_fee,
-            payment_reference=reference,
-            transaction_type='poll_activation',
-            user=request.user,
-            success=False
-        )
-
         return Response({
             "message": "Vote recorded successfully",
             "vote_id": vote.id,
-            "amount": int(setup_fee * 100),
-            "email": getattr(request.user, "email", "customer@castsure.com"),
-            "reference": reference
+            "vote_confirmed": True  # Indicate vote is immediately confirmed
         }, status=status.HTTP_201_CREATED)
 
     def validate_voter_code(self, poll, code):
@@ -200,6 +160,8 @@ class CreatorPayVoteView(APIView):
                 'timestamp': timezone.now().isoformat()
             }
         )
+
+
 
 class USSDVotingView(APIView):
     """
@@ -259,337 +221,6 @@ class USSDVotingView(APIView):
         return None
 
 
-class USSDVoteView(APIView):
-    """
-    Handle direct voting via USSD
-    """
-
-    def post(self, request):
-        """
-        Process vote submission
-        Expected payload:
-        {
-            "phone_number": "+233xxxxxxxxx",
-            "poll_id": 123,
-            "contestant_id": 456,
-            "votes_count": 1,
-            "voter_code": "ABC123" // optional for polls requiring codes
-        }
-        """
-        try:
-            phone_number = request.data.get('phone_number')
-            poll_id = request.data.get('poll_id')
-            contestant_id = request.data.get('contestant_id')
-            votes_count = request.data.get('votes_count', 1)
-            voter_code = request.data.get('voter_code')
-
-            # Validation
-            if not all([phone_number, poll_id, contestant_id]):
-                return Response({
-                    "error": "Missing required fields"
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            # Get poll and contestant
-            poll = get_object_or_404(Poll, id=poll_id, active=True)
-            contestant = get_object_or_404(
-                Contestant, id=contestant_id, poll=poll)
-
-            # Check if poll is active
-            now = timezone.now()
-            if not (poll.start_time <= now <= poll.end_time):
-                return Response({
-                    "error": "Poll is not currently active"
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            # Validate voter code if poll requires it
-            if poll.poll_type == Poll.CREATOR_PAY and voter_code:
-                voter_code_obj = VoterCode.objects.filter(
-                    poll=poll, code=voter_code, used=False
-                ).first()
-                if not voter_code_obj:
-                    return Response({
-                        "error": "Invalid or already used voter code"
-                    }, status=status.HTTP_400_BAD_REQUEST)
-
-            # Check if voter has already voted (for polls with restrictions)
-            if poll.one_vote_per_person:
-                existing_vote = Vote.objects.filter(
-                    poll=poll,
-                    voter_phone=phone_number
-                ).first()
-                if existing_vote:
-                    return Response({
-                        "error": "You have already voted in this poll"
-                    }, status=status.HTTP_400_BAD_REQUEST)
-
-            # Handle payment for voter-pay polls
-            if poll.poll_type == Poll.VOTER_PAY:
-                payment_response = self.initiate_payment(
-                    poll, contestant, phone_number, votes_count
-                )
-                return Response(payment_response, status=status.HTTP_200_OK)
-
-            # Create vote for free polls or creator-pay polls
-            vote = Vote.objects.create(
-                poll=poll,
-                contestant=contestant,
-                voter_phone=phone_number,
-                votes_count=votes_count
-            )
-
-            # Broadcast to WebSocket group
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"poll_{poll.id}",
-                {
-                    "type": "vote_update",
-                    "data": {"poll_id": poll.id}
-                }
-            )
-
-            # Mark voter code as used if applicable
-            if poll.poll_type == Poll.CREATOR_PAY and voter_code:
-                voter_code_obj.used = True
-                voter_code_obj.save()
-
-            return Response({
-                "message": "Vote recorded successfully",
-                "vote_id": vote.id,
-                "contestant": contestant.name,
-                "votes_count": votes_count
-            }, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            logger.error(f"Vote processing error: {str(e)}")
-            return Response({
-                "error": "Failed to process vote"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def initiate_payment(self, poll, contestant, phone_number, votes_count):
-        """Initiate payment for voter-pay polls"""
-        try:
-            amount = poll.voting_fee * votes_count
-            reference = f"vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
-
-            # Create Paystack payment
-            headers = {
-                "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-                "Content-Type": "application/json"
-            }
-
-            # Get the current site URL from the request
-            protocol = 'https' if self.request.is_secure() else 'http'
-            current_site = f"{protocol}://{self.request.get_host()}"
-
-            data = {
-                "email": f"ussd_{phone_number.replace('+', '')}@votelab.com",
-                "amount": int(amount * 100),  # Convert to kobo
-                "reference": reference,
-                "callback_url": f"{current_site}/payment/verify/{reference}",
-                "metadata": {
-                    "poll_id": poll.id,
-                    "contestant_id": contestant.id,
-                    "phone_number": phone_number,
-                    "votes_count": votes_count
-                }
-            }
-
-            response = requests.post(
-                "https://api.paystack.co/transaction/initialize",
-                json=data,
-                headers=headers
-            )
-
-            if response.status_code == 200 and response.json().get("status"):
-                # Create pending transaction
-                Transaction.objects.create(
-                    poll=poll,
-                    amount=amount,
-                    payment_reference=reference,
-                    transaction_type='vote',
-                    success=False
-                )
-
-                payment_url = response.json()["data"]["authorization_url"]
-                return {
-                    "message": "Payment required",
-                    "payment_url": payment_url,
-                    "amount": amount,
-                    "reference": reference
-                }
-
-            return {"error": "Failed to initiate payment"}
-
-        except Exception as e:
-            logger.error(f"Payment initiation error: {str(e)}")
-            return {"error": "Payment service unavailable"}
-
-
-class USSDPaymentCallbackView(APIView):
-    """
-    Handle payment callbacks from Paystack
-    """
-
-    def post(self, request):
-        """
-        Process payment verification and create vote
-        """
-        try:
-            reference = request.data.get('reference')
-            if not reference:
-                return Response({
-                    "error": "Reference is required"
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            # Verify payment with Paystack
-            headers = {
-                "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-            }
-
-            response = requests.get(
-                f"https://api.paystack.co/transaction/verify/{reference}",
-                headers=headers
-            )
-
-            if response.status_code != 200:
-                return Response({
-                    "error": "Payment verification failed"
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            payment_data = response.json()
-            if not payment_data.get("status") or payment_data["data"]["status"] != "success":
-                return Response({
-                    "error": "Payment was not successful"
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            # Get transaction
-            transaction = get_object_or_404(
-                Transaction,
-                payment_reference=reference,
-                success=False
-            )
-
-            # Extract metadata
-            metadata = payment_data["data"]["metadata"]
-            poll_id = metadata.get("poll_id")
-            contestant_id = metadata.get("contestant_id")
-            phone_number = metadata.get("phone_number")
-            votes_count = metadata.get("votes_count", 1)
-
-            # Get poll and contestant
-            poll = get_object_or_404(Poll, id=poll_id)
-            contestant = get_object_or_404(Contestant, id=contestant_id)
-
-            # Create vote
-            vote = Vote.objects.create(
-                poll=poll,
-                contestant=contestant,
-                voter_phone=phone_number,
-                votes_count=votes_count
-            )
-
-            # Broadcast to WebSocket group
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"poll_{poll.id}",
-                {
-                    "type": "vote_update",
-                    "data": {"poll_id": poll.id}
-                }
-            )
-
-            # Update transaction
-            transaction.success = True
-            transaction.save()
-
-            return Response({
-                "message": "Vote recorded successfully",
-                "vote_id": vote.id,
-                "contestant": contestant.name,
-                "votes_count": votes_count
-            }, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            logger.error(f"Payment callback error: {str(e)}")
-            return Response({
-                "error": "Failed to process payment callback"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class USSDStatusView(APIView):
-    """
-    Check USSD service status and poll information
-    """
-
-    def get(self, request, poll_id=None):
-        """
-        Get poll status and voting information
-        """
-        try:
-            if poll_id:
-                poll = get_object_or_404(Poll, id=poll_id)
-                contestants = poll.contestants.all()
-
-                # Get vote counts
-                vote_data = []
-                for contestant in contestants:
-                    votes = Vote.objects.filter(
-                        poll=poll,
-                        contestant=contestant
-                    ).aggregate(
-                        total_votes=Sum('votes_count')
-                    )['total_votes'] or 0
-
-                    vote_data.append({
-                        "contestant_id": contestant.id,
-                        "name": contestant.name,
-                        "category": contestant.category,
-                        "votes": votes
-                    })
-
-                return Response({
-                    "poll": {
-                        "id": poll.id,
-                        "title": poll.title,
-                        "description": poll.description,
-                        "active": poll.active,
-                        "start_time": poll.start_time,
-                        "end_time": poll.end_time,
-                        "poll_type": poll.poll_type,
-                        "voting_fee": poll.voting_fee
-                    },
-                    "contestants": vote_data,
-                    "ussd_code": f"*1398*{poll.id}#"
-                }, status=status.HTTP_200_OK)
-
-            # Return all active polls
-            active_polls = Poll.objects.filter(
-                active=True,
-                start_time__lte=timezone.now(),
-                end_time__gt=timezone.now()
-            )
-
-            polls_data = []
-            for poll in active_polls:
-                polls_data.append({
-                    "id": poll.id,
-                    "title": poll.title,
-                    "ussd_code": f"*1398*{poll.id}#",
-                    "voting_fee": poll.voting_fee,
-                    "poll_type": poll.poll_type
-                })
-
-            return Response({
-                "active_polls": polls_data
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            logger.error(f"Status check error: {str(e)}")
-            return Response({
-                "error": "Failed to get status"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 class VoteResultView(APIView):
     @cache_poll_data(timeout=300)  # Cache for 5 minutes
     def get(self, request, poll_id):
@@ -601,17 +232,29 @@ class VoteResultView(APIView):
         categorized_results = {}
         total_votes = 0
         
-        # Process results by category
+        # Process results by category - only count votes with successful transactions for voter-pay polls
         for category in categories:
-            # Get contestants and their votes for this category
-            category_results = Contestant.objects.filter(
-                poll=poll,
-                category=category
-            ).annotate(
-                vote_count=Sum('votes__number_of_votes')
-            ).values(
-                'id', 'name', 'vote_count', 'category', 'contestant_image'
-            ).order_by('-vote_count')
+            if poll.poll_type == Poll.VOTERS_PAY:
+                # Only count votes with successful transactions
+                category_results = Contestant.objects.filter(
+                    poll=poll,
+                    category=category
+                ).annotate(
+                    vote_count=Sum('votes__number_of_votes', 
+                                 filter=models.Q(votes__transaction__success=True))
+                ).values(
+                    'id', 'name', 'vote_count', 'category', 'contestant_image'
+                ).order_by('-vote_count')
+            else:
+                # For creator-pay polls, count all votes (they're only created after validation)
+                category_results = Contestant.objects.filter(
+                    poll=poll,
+                    category=category
+                ).annotate(
+                    vote_count=Sum('votes__number_of_votes')
+                ).values(
+                    'id', 'name', 'vote_count', 'category', 'contestant_image'
+                ).order_by('-vote_count')
             
             # Format results for this category
             formatted_results = []
@@ -655,12 +298,22 @@ class VoteResultsView(APIView):
                 poll=poll).values('id', 'name')
             contestant_dict = {c['id']: c['name'] for c in contestants}
 
-            # Get vote counts
-            votes = Vote.objects.filter(poll=poll).values(
-                'contestant_id'
-            ).annotate(
-                total_votes=Sum('number_of_votes')
-            )
+            # Get vote counts - only successful transactions for voter-pay polls
+            if poll.poll_type == Poll.VOTERS_PAY:
+                votes = Vote.objects.filter(
+                    poll=poll, 
+                    transaction__success=True
+                ).values(
+                    'contestant_id'
+                ).annotate(
+                    total_votes=Sum('number_of_votes')
+                )
+            else:
+                votes = Vote.objects.filter(poll=poll).values(
+                    'contestant_id'
+                ).annotate(
+                    total_votes=Sum('number_of_votes')
+                )
 
             # Format results
             results = [

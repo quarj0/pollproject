@@ -1,4 +1,5 @@
 import uuid
+from vote.models import Vote
 from rest_framework.pagination import PageNumberPagination
 import hmac
 import hashlib
@@ -12,17 +13,17 @@ from urllib3.util.retry import Retry
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import ListAPIView
+from django.utils import timezone
+import uuid
 
-from vote.models import Vote
 
 from .serializers import TransactionSerializer
-from vote.serializers import VoteSerializer
 from .models import Withdrawal, Transaction
 from poll.models import Contestant, Poll
 
@@ -173,22 +174,34 @@ class VerifyPaymentView(APIView):
                 transaction.success = True
                 transaction.save()
 
-            # Create vote
+            # Check if vote already exists for this transaction to avoid duplicates
+            existing_vote = Vote.objects.filter(transaction=transaction).first()
+            if existing_vote:
+                logger.info(f"Vote already exists for transaction {reference}")
+                return existing_vote
+
+            # Create vote ONLY after successful payment verification
             vote = Vote.objects.create(
                 poll=poll,
                 contestant=contestant,
                 number_of_votes=vote_count,
                 transaction=transaction
             )
-            # Broadcast to WebSocket group
+            
+            # Broadcast to WebSocket group ONLY after vote is created
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"poll_{poll.id}",
                 {
                     "type": "vote_update",
-                    "data": {"poll_id": poll.id}
+                    "poll_id": poll.id,
+                    "vote_id": vote.id,
+                    "contestant_id": vote.contestant.id,
+                    "number_of_votes": vote.number_of_votes,
+                    "timestamp": timezone.now().isoformat()
                 }
             )
+            
             return vote
 
         except Exception as e:
@@ -553,6 +566,12 @@ def paystack_webhook(request):
                 contestant_id = reference_parts[2]
                 contestant = get_object_or_404(Contestant, id=contestant_id, poll=poll)
                 
+                # Check if vote already exists for this transaction
+                existing_vote = Vote.objects.filter(transaction=transaction).first()
+                if existing_vote:
+                    logger.info(f"Vote already exists for transaction {reference}")
+                    return JsonResponse({"status": "success", "message": "Vote already recorded"})
+                
                 # Calculate votes based on amount paid
                 voting_fee = Decimal(poll.voting_fee)
                 vote_count = int(amount_paid // voting_fee)
@@ -568,6 +587,7 @@ def paystack_webhook(request):
                     transaction.success = True
                     transaction.save()
                     logger.info(f"Vote recorded via webhook for poll {poll.id}, contestant {contestant_id}")
+                    
                     # Broadcast to WebSocket group
                     channel_layer = get_channel_layer()
                     async_to_sync(channel_layer.group_send)(
