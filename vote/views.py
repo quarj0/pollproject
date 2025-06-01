@@ -11,6 +11,8 @@ from rest_framework.views import APIView
 from rest_framework import status
 from django.utils import timezone
 from django.db.models import Sum
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from .serializers import VoteSerializer
 from .models import VoterCode, Vote
@@ -20,6 +22,83 @@ from .ussd_service import USSDService
 from .decorators import cache_poll_data, PaymentRateThrottle
 
 logger = logging.getLogger(__name__)
+
+
+class VoterPayVoteView(APIView):
+    def post(self, request, poll_id):
+        poll = get_object_or_404(Poll, id=poll_id, poll_type=Poll.VOTERS_PAY)
+        nominee_code = request.data.get("nominee_code")
+        contestant_id = request.data.get("contestant_id")
+        num_votes = int(request.data.get("number_of_votes", 1))
+
+        if not nominee_code and not contestant_id:
+            return Response({"error": "Either nominee_code or contestant_id must be provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        contestant = self.get_contestant(poll, nominee_code, contestant_id)
+        
+        # Create the vote
+        vote = Vote.objects.create(
+            poll=poll,
+            contestant=contestant,
+            number_of_votes=num_votes,
+        )
+
+        # Trigger real-time update manually (in case signal doesn't fire)
+        self.trigger_realtime_update(poll_id, vote)
+
+        # Calculate payment details
+        vote_price = poll.voting_fee
+        amount_to_pay = vote_price * num_votes
+        unique_reference = f"vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
+
+        # Create transaction record
+        Transaction.objects.create(
+            poll=poll,
+            amount=amount_to_pay,
+            payment_reference=unique_reference,
+            transaction_type='vote',
+            success=False
+        )
+
+        return Response({
+            "message": "Vote recorded successfully",
+            "vote_id": vote.id,
+            "amount": int(amount_to_pay * 100),  
+            "email": getattr(request.user, "email", "customer@castsure.com"), 
+            "reference": unique_reference
+        }, status=status.HTTP_201_CREATED)
+
+    def get_contestant(self, poll, nominee_code, contestant_id):
+        if nominee_code:
+            return get_object_or_404(Contestant, nominee_code=nominee_code, poll=poll)
+        elif contestant_id:
+            return get_object_or_404(Contestant, id=contestant_id, poll=poll)
+        raise ValueError("Either nominee_code or contestant_id must be provided.")
+
+    def get_client_ip(self, request):
+        """Get client IP address from request."""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+    def trigger_realtime_update(self, poll_id, vote):
+        """Manually trigger real-time update for WebSocket clients."""
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'poll_{poll_id}',
+            {
+                'type': 'vote_update',
+                'poll_id': poll_id,
+                'vote_id': vote.id,
+                'contestant_id': vote.contestant.id,
+                'number_of_votes': vote.number_of_votes,
+                'timestamp': timezone.now().isoformat()
+            }
+        )
 
 
 class CreatorPayVoteView(APIView):
@@ -39,11 +118,26 @@ class CreatorPayVoteView(APIView):
 
         contestant = self.get_contestant(poll, nominee_code, contestant_id)
         
+        # Create the vote
+        vote = Vote.objects.create(
+            poll=poll,
+            contestant=contestant,
+            number_of_votes=1,
+            voter_code=voter_code,
+        )
+
+        # Mark voter code as used
+        voter_code.used = True
+        voter_code.save()
+
+        # Trigger real-time update
+        self.trigger_realtime_update(poll_id, vote)
+        
         # Calculate setup fee (in GHS)
         setup_fee = poll.setup_fee or 0
         reference = f"creator-vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
 
-        # Create pending transaction (not success=True)
+        # Create pending transaction
         Transaction.objects.create(
             poll=poll,
             amount=setup_fee,
@@ -54,10 +148,12 @@ class CreatorPayVoteView(APIView):
         )
 
         return Response({
-            "amount": int(setup_fee * 100),  # Paystack expects kobo
+            "message": "Vote recorded successfully",
+            "vote_id": vote.id,
+            "amount": int(setup_fee * 100),
             "email": getattr(request.user, "email", "customer@castsure.com"),
             "reference": reference
-        }, status=status.HTTP_200_OK)
+        }, status=status.HTTP_201_CREATED)
 
     def validate_voter_code(self, poll, code):
         try:
@@ -79,63 +175,31 @@ class CreatorPayVoteView(APIView):
             return get_object_or_404(Contestant, nominee_code=nominee_code, poll=poll)
         elif contestant_id:
             return get_object_or_404(Contestant, id=contestant_id, poll=poll)
-        raise ValueError(
-            "Either nominee_code or contestant_id must be provided.")
+        raise ValueError("Either nominee_code or contestant_id must be provided.")
 
+    def get_client_ip(self, request):
+        """Get client IP address from request."""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
 
-class VoterPayVoteView(APIView):
-    throttle_classes = [PaymentRateThrottle]
-
-    def post(self, request, poll_id):
-        poll = get_object_or_404(Poll, id=poll_id, poll_type=Poll.VOTERS_PAY)
-        nominee_code = request.data.get("nominee_code")
-        contestant_id = request.data.get("contestant_id")
-        num_votes = int(request.data.get("number_of_votes", 1))
-
-        if not nominee_code and not contestant_id:
-            return Response({"error": "Either nominee_code or contestant_id must be provided."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        contestant = self.get_contestant(poll, nominee_code, contestant_id)
-        serializer = VoteSerializer(data={
-            'poll': poll.id,
-            'contestant': contestant.id,
-            'number_of_votes': num_votes,
-        })
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        vote_price = poll.voting_fee
-        amount_to_pay = vote_price * num_votes
-        unique_reference = f"vote-{poll.id}-{contestant.id}-{uuid.uuid4().hex[:8]}"
-
-        # Do NOT call generate_payment_link for inline modal
-        Transaction.objects.create(
-            poll=poll,
-            amount=amount_to_pay,
-            payment_reference=unique_reference,
-            transaction_type='vote',
-            success=False
+    def trigger_realtime_update(self, poll_id, vote):
+        """Manually trigger real-time update for WebSocket clients."""
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'poll_{poll_id}',
+            {
+                'type': 'vote_update',
+                'poll_id': poll_id,
+                'vote_id': vote.id,
+                'contestant_id': vote.contestant.id,
+                'number_of_votes': vote.number_of_votes,
+                'timestamp': timezone.now().isoformat()
+            }
         )
-
-        return Response({
-            "amount": int(amount_to_pay * 100),  
-            "email": getattr(request.user, "email", "customer@castsure.com"), 
-            "reference": unique_reference
-        }, status=status.HTTP_200_OK)
-
-    def get_contestant(self, poll, nominee_code, contestant_id):
-        if nominee_code:
-            return get_object_or_404(Contestant, nominee_code=nominee_code, poll=poll)
-        elif contestant_id:
-            return get_object_or_404(Contestant, id=contestant_id, poll=poll)
-        raise ValueError(
-            "Either nominee_code or contestant_id must be provided.")
-
-
-logger = logging.getLogger(__name__)
-
 
 class USSDVotingView(APIView):
     """
@@ -271,6 +335,16 @@ class USSDVoteView(APIView):
                 contestant=contestant,
                 voter_phone=phone_number,
                 votes_count=votes_count
+            )
+
+            # Broadcast to WebSocket group
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"poll_{poll.id}",
+                {
+                    "type": "vote_update",
+                    "data": {"poll_id": poll.id}
+                }
             )
 
             # Mark voter code as used if applicable
@@ -412,6 +486,16 @@ class USSDPaymentCallbackView(APIView):
                 contestant=contestant,
                 voter_phone=phone_number,
                 votes_count=votes_count
+            )
+
+            # Broadcast to WebSocket group
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"poll_{poll.id}",
+                {
+                    "type": "vote_update",
+                    "data": {"poll_id": poll.id}
+                }
             )
 
             # Update transaction

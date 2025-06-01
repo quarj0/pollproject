@@ -26,6 +26,9 @@ from vote.serializers import VoteSerializer
 from .models import Withdrawal, Transaction
 from poll.models import Contestant, Poll
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +179,15 @@ class VerifyPaymentView(APIView):
                 contestant=contestant,
                 number_of_votes=vote_count,
                 transaction=transaction
+            )
+            # Broadcast to WebSocket group
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"poll_{poll.id}",
+                {
+                    "type": "vote_update",
+                    "data": {"poll_id": poll.id}
+                }
             )
             return vote
 
@@ -556,6 +568,15 @@ def paystack_webhook(request):
                     transaction.success = True
                     transaction.save()
                     logger.info(f"Vote recorded via webhook for poll {poll.id}, contestant {contestant_id}")
+                    # Broadcast to WebSocket group
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"poll_{poll.id}",
+                        {
+                            "type": "vote_update",
+                            "data": {"poll_id": poll.id}
+                        }
+                    )
                 else:
                     logger.error(f"Insufficient amount for voting: {amount_paid}")
                     return JsonResponse({"status": "error", "message": "Insufficient amount for voting"}, status=400)
