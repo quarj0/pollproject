@@ -3,7 +3,6 @@ from django.conf.urls.static import static
 from django.shortcuts import redirect
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.contrib import admin
 
 
 def root_redirect_handler(request):
@@ -17,7 +16,6 @@ def root_redirect_handler(request):
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('auth/', include('authentication.urls')),
     path('polls/', include('poll.urls')),
     path('payment/', include('payment.urls')),
