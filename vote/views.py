@@ -67,15 +67,6 @@ class VoterPayVoteView(APIView):
             return get_object_or_404(Contestant, id=contestant_id, poll=poll)
         raise ValueError("Either nominee_code or contestant_id must be provided.")
 
-    def get_client_ip(self, request):
-        """Get client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-
 
 class CreatorPayVoteView(APIView):
     def post(self, request, poll_id):
@@ -136,15 +127,6 @@ class CreatorPayVoteView(APIView):
         elif contestant_id:
             return get_object_or_404(Contestant, id=contestant_id, poll=poll)
         raise ValueError("Either nominee_code or contestant_id must be provided.")
-
-    def get_client_ip(self, request):
-        """Get client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
 
     def trigger_realtime_update(self, poll_id, vote):
         """Manually trigger real-time update for WebSocket clients."""

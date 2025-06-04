@@ -19,8 +19,7 @@ def validate_image(image):
     max_width, max_height = 3000, 3000
     if width > max_width or height > max_height:
         raise serializers.ValidationError(
-            f"Image dimensions must not exceed {
-                max_width}x{max_height} pixels."
+            f"Image dimensions must not exceed {max_width}x{max_height} pixels."
         )
 
 

@@ -193,8 +193,7 @@ class DownloadVoterCodesView(APIView):
             return Response({"error": "No voter codes available for this poll."}, status=status.HTTP_404_NOT_FOUND)
 
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="voter_codes_{
-            poll_id}.csv"'
+        response['Content-Disposition'] = f'attachment; filename="voter_codes_{poll_id}.csv"'
 
         writer = csv.writer(response)
         writer.writerow(['Voter Code', 'Used'])
@@ -228,8 +227,7 @@ class ContestantUpdateView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        contestant = get_object_or_404(
-            Contestant, id=contestant_id, poll_id=poll_id)
+        contestant = get_object_or_404(Contestant, id=contestant_id, poll_id=poll_id)
         serializer = ContestantSerializer(
             contestant, data=request.data, partial=True)
 
