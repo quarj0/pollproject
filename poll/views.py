@@ -117,8 +117,12 @@ class PollCreateView(APIView):
 
 
 class UpdatePollView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Poll.objects.all()
     serializer_class = UpdatePollSerializer
+
+    def get_queryset(self):
+        return Poll.objects.filter(creator=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
@@ -129,15 +133,27 @@ class PollDetailView(APIView):
     def get(self, request, poll_id, *args, **kwargs):
         poll = get_object_or_404(Poll, id=poll_id)
 
+        # If user is authenticated and is the creator, allow full access
+        if request.user.is_authenticated and poll.creator == request.user:
+            contestants = poll.contestants.all()
+            contestants_data = ContestantSerializer(
+                contestants, many=True).data
+            return Response({
+                "poll": PollSerializer(poll).data,
+                "contestants": contestants_data,
+                "is_creator": True
+            }, status=status.HTTP_200_OK)
+
+        # For unauthenticated users or non-creators, only show active polls
         if not poll.active:
             return Response({"detail": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
         contestants = poll.contestants.all()
         contestants_data = ContestantSerializer(contestants, many=True).data
-
         return Response({
             "poll": PollSerializer(poll).data,
-            "contestants": contestants_data
+            "contestants": contestants_data,
+            "is_creator": False
         }, status=status.HTTP_200_OK)
 
 
@@ -163,25 +179,39 @@ class ContestantDetails(APIView):
 
 class PollListView(APIView):
     def get(self, request, *args, **kwargs):
-        polls = Poll.objects.all()
+        # If user is authenticated, show only their polls
+        if request.user.is_authenticated:
+            polls = Poll.objects.filter(creator=request.user)
+        else:
+            # For unauthenticated users, show all active polls
+            polls = Poll.objects.filter(active=True)
+
         # Auto-expire polls whose end_time has passed
         for poll in polls:
             poll.auto_expire()
-        serializer = PollSerializer(Poll.objects.all(), many=True)
+        serializer = PollSerializer(polls, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class DeletePollView(APIView):
-    def delete(self, request, poll_id=None):
+    permission_classes = [IsAuthenticated]
 
+    def delete(self, request, poll_id=None):
         if poll_id:
             poll = get_object_or_404(Poll, id=poll_id)
+            # Only allow creator to delete their own poll
+            if poll.creator != request.user:
+                return Response(
+                    {"detail": "You don't have permission to delete this poll."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             poll.delete()
             return Response({"detail": f"Poll {poll_id} has been deleted."}, status=status.HTTP_200_OK)
         else:
-            polls = Poll.objects.all()
+            # Only allow users to delete their own polls
+            polls = Poll.objects.filter(creator=request.user)
             polls.delete()
-            return Response({"detail": "All polls deleted."}, status=status.HTTP_200_OK)
+            return Response({"detail": "All your polls have been deleted."}, status=status.HTTP_200_OK)
 
 
 class DownloadVoterCodesView(APIView):
@@ -227,7 +257,8 @@ class ContestantUpdateView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        contestant = get_object_or_404(Contestant, id=contestant_id, poll_id=poll_id)
+        contestant = get_object_or_404(
+            Contestant, id=contestant_id, poll_id=poll_id)
         serializer = ContestantSerializer(
             contestant, data=request.data, partial=True)
 
@@ -243,7 +274,7 @@ class DeleteContestantView(APIView):
 
     def delete(self, request, poll_id, contestant_id):
         poll = get_object_or_404(Poll, id=poll_id)
-        
+
         # Check if poll can be edited
         if poll.start_time <= timezone.now():
             return Response(
@@ -257,6 +288,7 @@ class DeleteContestantView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        contestant = get_object_or_404(Contestant, id=contestant_id, poll_id=poll_id)
+        contestant = get_object_or_404(
+            Contestant, id=contestant_id, poll_id=poll_id)
         contestant.delete()
         return Response({"message": "Contestant deleted successfully"}, status=status.HTTP_200_OK)
