@@ -57,11 +57,15 @@ def validate_poll_type(data):
 def calculate_setup_fee(expected_voters):
     if expected_voters < 20:
         return 0
-    # 20-100 voters: 1.5 GHS per voter
-    if expected_voters <= 100:
+    # 20-75 voters: 1.5 GHS per voter
+    if expected_voters <= 75:
         return int(expected_voters * 1.5)
-    # 101-350 voters: 0.8 GHS per voter
-    return int(expected_voters * 0.8)
+    # 76-150 voters: 1.2 GHS per voter
+    if expected_voters <= 150 and expected_voters >= 76:
+        return int(expected_voters * 1.2)
+    # 151-350 voters: 0.8 GHS per voter
+    if expected_voters <= 350 and expected_voters >= 151:
+        return int(expected_voters * 0.8)
 
 
 class PollSerializer(serializers.ModelSerializer):
