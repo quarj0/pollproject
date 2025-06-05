@@ -100,7 +100,6 @@ class PollSerializer(serializers.ModelSerializer):
         request = self.context['request']
         validated_data['creator'] = request.user
 
-       
         poll = Poll.objects.create(**validated_data)
         return poll
 
