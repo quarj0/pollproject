@@ -328,9 +328,7 @@ class AccountBalanceView(APIView):
             # Get polls created by this user where voters pay
             polls = Poll.objects.filter(
                 creator=request.user,
-                poll_type=Poll.VOTERS_PAY,
-                active=True
-            )
+                poll_type=Poll.VOTERS_PAY)
 
             total_earnings = Decimal('0.0')
             total_withdrawn = Decimal('0.0')
