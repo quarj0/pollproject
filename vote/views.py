@@ -32,10 +32,13 @@ class VoterPayVoteView(APIView):
         if not nominee_code and not contestant_id:
             return Response({"error": "Either nominee_code or contestant_id must be provided."},
                             status=status.HTTP_400_BAD_REQUEST)
+            
+        if poll.end_time < timezone.now():
+            return Response({"message": "Poll has ended."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         contestant = self.get_contestant(poll, nominee_code, contestant_id)
         
-        # DON'T CREATE VOTE YET - only create payment reference and transaction
         
         # Calculate payment details
         vote_price = poll.voting_fee
@@ -77,6 +80,10 @@ class CreatorPayVoteView(APIView):
 
         if not code:
             return Response({"error": "Voter code is required for creator-pay polls."},
+                            status=status.HTTP_400_BAD_REQUEST)
+            
+        if poll.end_time < timezone.now():
+            return Response({"message": "Poll has ended."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Validate voter code FIRST

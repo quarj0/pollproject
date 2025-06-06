@@ -79,6 +79,10 @@ class PollSerializer(serializers.ModelSerializer):
             'poll_type', 'expected_voters', 'voting_fee', 'active', 'setup_fee'
         ]
 
+    def get_is_owner(self, obj):
+        request = self.context.get('request')
+        return request.user == obj.creator if request else False
+
     def get_poll_image_url(self, obj):
         if obj.poll_image:
             return obj.poll_image.url

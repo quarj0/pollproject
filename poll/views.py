@@ -53,7 +53,7 @@ class PollCreateView(APIView):
                         "message": "Poll created successfully. Please complete payment to activate the poll."
                     }, status=status.HTTP_201_CREATED)
                 else:
-                    return Response({"detail": "Invalid setup fee."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"message": "Invalid setup fee."}, status=status.HTTP_400_BAD_REQUEST)
 
             poll.active = True
             poll.save()
@@ -116,6 +116,51 @@ class PollCreateView(APIView):
         return None
 
 
+class PollListView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Show all polls to everyone
+        polls = Poll.objects.all()
+
+        # Auto-expire outdated polls
+        for poll in polls:
+            poll.auto_expire()
+
+        serializer = PollSerializer(
+            polls, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+class PollDetailView(APIView):
+    def get(self, request, poll_id, *args, **kwargs):
+        poll = get_object_or_404(Poll, id=poll_id)
+        serializer = PollSerializer(poll, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DeletePollView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, poll_id=None):
+        if poll_id:
+            poll = get_object_or_404(Poll, id=poll_id)
+            # Only allow creator to delete their own poll
+            if poll.creator != request.user:
+                return Response(
+                    {"message": "You don't have permission to delete this poll."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            poll.delete()
+            return Response({"message": f"Poll {poll_id} has been deleted."}, status=status.HTTP_200_OK)
+        else:
+            # Only allow users to delete their own polls
+            polls = Poll.objects.filter(creator=request.user)
+            polls.delete()
+            return Response({"message": "All your polls have been deleted."}, status=status.HTTP_200_OK)
+
+
+
 class UpdatePollView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Poll.objects.all()
@@ -129,7 +174,7 @@ class UpdatePollView(generics.UpdateAPIView):
         return self.update(request, *args, **kwargs)
 
 
-class PollDetailView(APIView):
+class PollmessageView(APIView):
     def get(self, request, poll_id, *args, **kwargs):
         poll = get_object_or_404(Poll, id=poll_id)
 
@@ -146,7 +191,7 @@ class PollDetailView(APIView):
 
         # For unauthenticated users or non-creators, only show active polls
         if not poll.active:
-            return Response({"detail": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
         contestants = poll.contestants.all()
         contestants_data = ContestantSerializer(contestants, many=True).data
@@ -156,62 +201,6 @@ class PollDetailView(APIView):
             "is_creator": False
         }, status=status.HTTP_200_OK)
 
-
-class ContestantListView(APIView):
-    def get(self, request, poll_id, *args, **kwargs):
-        contestants = Contestant.objects.filter(poll_id=poll_id)
-        serializer = ContestantSerializer(contestants, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ContestantDetails(APIView):
-    def get(self, request, poll_id, contestant_id, *args, **kwargs):
-        """
-        Fetch a single contestant by poll_id and contestant_id
-        """
-        contestant = Contestant.objects.filter(
-            poll_id=poll_id, id=contestant_id).first()
-        if not contestant:
-            return Response({"error": "Contestant not found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ContestantSerializer(contestant)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class PollListView(APIView):
-    def get(self, request, *args, **kwargs):
-        # If user is authenticated, show only their polls
-        if request.user.is_authenticated:
-            polls = Poll.objects.filter(creator=request.user)
-        else:
-            # For unauthenticated users, show all active polls
-            polls = Poll.objects.filter(active=True)
-
-        # Auto-expire polls whose end_time has passed
-        for poll in polls:
-            poll.auto_expire()
-        serializer = PollSerializer(polls, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class DeletePollView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, poll_id=None):
-        if poll_id:
-            poll = get_object_or_404(Poll, id=poll_id)
-            # Only allow creator to delete their own poll
-            if poll.creator != request.user:
-                return Response(
-                    {"detail": "You don't have permission to delete this poll."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            poll.delete()
-            return Response({"detail": f"Poll {poll_id} has been deleted."}, status=status.HTTP_200_OK)
-        else:
-            # Only allow users to delete their own polls
-            polls = Poll.objects.filter(creator=request.user)
-            polls.delete()
-            return Response({"detail": "All your polls have been deleted."}, status=status.HTTP_200_OK)
 
 
 class DownloadVoterCodesView(APIView):
@@ -238,6 +227,35 @@ class ContestantCreateView(generics.CreateAPIView):
     queryset = Contestant.objects.all()
     serializer_class = ContestantSerializer
     permission_classes = [IsAuthenticated]
+
+
+class ContestantListView(APIView):
+    def get(self, request, poll_id, *args, **kwargs):
+        contestants = Contestant.objects.filter(poll_id=poll_id)
+        serializer = ContestantSerializer(contestants, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ContestantDetails(APIView):
+    def get(self, request, poll_id, contestant_id, *args, **kwargs):
+        contestant = get_object_or_404(
+            Contestant, id=contestant_id, poll_id=poll_id)
+        serializer = ContestantSerializer(
+            contestant, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class Contestantmessages(APIView):
+    def get(self, request, poll_id, contestant_id, *args, **kwargs):
+        """
+        Fetch a single contestant by poll_id and contestant_id
+        """
+        contestant = Contestant.objects.filter(
+            poll_id=poll_id, id=contestant_id).first()
+        if not contestant:
+            return Response({"error": "Contestant not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContestantSerializer(contestant)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ContestantUpdateView(APIView):
