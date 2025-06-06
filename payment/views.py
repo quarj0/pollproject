@@ -21,7 +21,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import ListAPIView
 from django.utils import timezone
 import uuid
-
+from django.db import models
 
 from .serializers import TransactionSerializer
 from .models import Withdrawal, Transaction
@@ -217,6 +217,31 @@ class VerifyPaymentView(APIView):
             logger.error(f"Error processing vote: {str(e)}")
             raise ValueError(f"Vote processing failed: {str(e)}")
 
+
+# Add this to your poll/views.py
+
+class PaymentDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, poll_id):
+        """Get payment details for a poll activation"""
+        poll = get_object_or_404(Poll, id=poll_id)
+
+        # Only allow creator to get payment details
+        if poll.creator != request.user:
+            return Response(
+                {"error": "You don't have permission to access this poll's payment details."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Only for creator-pay polls
+        if poll.poll_type != Poll.CREATOR_PAY:
+            return Response(
+                {"error": "Payment details are only available for creator-pay polls."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        
 
 class PaymentLinkView(APIView):
     """
