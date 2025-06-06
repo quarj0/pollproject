@@ -33,7 +33,6 @@ class PollCreateView(APIView):
         if serializer.is_valid():
             poll = serializer.save()
 
-            ussd_code = f"*1398*{poll.id}#"
             short_url = self.generate_poll_url(poll.id, request)
 
             if poll.poll_type == Poll.CREATOR_PAY:
@@ -47,7 +46,6 @@ class PollCreateView(APIView):
                     return Response({
                         "poll_id": poll.id,
                         "short_url": short_url,
-                        "ussd_code": ussd_code,
                         "payment_link": payment_link,
                         "download_voter_codes": reverse('download-voter-codes', args=[poll.id]),
                         "message": "Poll created successfully. Please complete payment to activate the poll."
@@ -61,7 +59,6 @@ class PollCreateView(APIView):
             return Response({
                 "poll_id": poll.id,
                 "short_url": short_url,
-                "ussd_code": ussd_code,
                 "message": "Poll created successfully and is now active."
             }, status=status.HTTP_201_CREATED)
 
@@ -74,7 +71,7 @@ class PollCreateView(APIView):
         for _ in range(poll.expected_voters):
             code = get_random_string(
                 length=5, allowed_chars=string.ascii_uppercase + string.digits)
-            VoterCode.objects.create(poll=poll, code=code)
+            VoterCode.objects.bulk_create([VoterCode(poll=poll, code=code)])
 
         return f"{poll.expected_voters} voter codes generated for Poll '{poll.title}'"
 

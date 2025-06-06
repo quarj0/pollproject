@@ -46,8 +46,7 @@ class VerifyPaymentView(APIView):
     def _get_frontend_url(self, request):
         """Get the frontend URL based on environment"""
         if settings.DEBUG:
-            return 'http://localhost:5173'  # Development frontend URL
-        # Production URL
+            return 'http://localhost:5173'  
         return f"{'https' if request.is_secure() else 'http'}://{request.get_host()}"
 
     def _process_poll_activation(self, transaction, poll, amount_paid, reference):
@@ -81,8 +80,7 @@ class VerifyPaymentView(APIView):
         frontend_url = self._get_frontend_url(request)
 
         # Check if this is an API request or direct browser request
-        is_api_request = 'application/json' in request.headers.get(
-            'Accept', '')
+        is_api_request = 'application/json' in request.headers.get('Accept', '')
 
         # Extract poll_id from reference before verification
         try:
@@ -92,7 +90,8 @@ class VerifyPaymentView(APIView):
 
             # Get return URL from query params or default to results page
             return_url = request.GET.get(
-                'return_url', f"{frontend_url}/poll/{poll.id}/results")
+                'return_url', f"{frontend_url}/poll/{poll_id}/results"
+            )
         except (IndexError, Poll.DoesNotExist):
             error_url = f"{frontend_url}/payment/verification-error"
             return Response({
@@ -218,31 +217,6 @@ class VerifyPaymentView(APIView):
             raise ValueError(f"Vote processing failed: {str(e)}")
 
 
-# Add this to your poll/views.py
-
-class PaymentDetailsView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, poll_id):
-        """Get payment details for a poll activation"""
-        poll = get_object_or_404(Poll, id=poll_id)
-
-        # Only allow creator to get payment details
-        if poll.creator != request.user:
-            return Response(
-                {"error": "You don't have permission to access this poll's payment details."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        # Only for creator-pay polls
-        if poll.poll_type != Poll.CREATOR_PAY:
-            return Response(
-                {"error": "Payment details are only available for creator-pay polls."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        
-
 class PaymentLinkView(APIView):
     """
     Get payment link for a poll.
@@ -344,6 +318,7 @@ class PaymentLinkView(APIView):
         except requests.RequestException as e:
             logger.error(f"Exception during Paystack initialization: {e}")
             return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class AccountBalanceView(APIView):
     permission_classes = [IsAuthenticated]

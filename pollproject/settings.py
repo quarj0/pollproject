@@ -22,7 +22,8 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://localhost:5173', 'https://castsure.vercel.app']
+CORS_ALLOWED_ORIGINS = ['http://localhost:8000',
+                        'http://localhost:5173', 'https://castsure.vercel.app']
 
 # Always append trailing slashes to URLs
 APPEND_SLASH = True
@@ -121,8 +122,8 @@ REST_FRAMEWORK = {
     # 'DEFAULT_THROTTLE_RATES': {
     #     'anon': '100/day',
     #     'user': '1000/day',
-    #     'ussd': '60/minute', 
-    #     'payment_endpoints': '30/hour', 
+    #     'ussd': '60/minute',
+    #     'payment_endpoints': '30/hour',
     # },
 }
 
@@ -181,8 +182,8 @@ if DEBUG:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 else:
-    
-# File storage settings
+
+    # File storage settings
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = f"https://res.cloudinary.com/{config('CLOUDINARY_CLOUD_NAME')}/image/upload/"
 
@@ -231,7 +232,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # WebSocket settings
 CORS_ALLOW_WEBSOCKETS = True
 CORS_ALLOW_ALL_ORIGINS = True
@@ -242,13 +242,13 @@ if DEBUG:
 else:
     REDIS_URL = config('UPSTASH_REDIS_REST_URL')
 
-# Channel layers configuration
+# Channel layers configuration - FIX: hosts must be a list
 if DEBUG:
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
-                "hosts": config('REDIS_URL'),
+                "hosts": [config('REDIS_URL')],
             },
         },
     }
@@ -257,11 +257,12 @@ else:
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
-                "hosts": config('UPSTASH_REDIS_REST_URL'),
+                "hosts": [config('UPSTASH_REDIS_REST_URL')],
             },
         },
     }
 
+# Cache configuration
 if DEBUG:
     CACHES = {
         'default': {
@@ -283,10 +284,8 @@ else:
         }
     }
 
-
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
