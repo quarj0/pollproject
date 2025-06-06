@@ -58,14 +58,14 @@ def calculate_setup_fee(expected_voters):
     if expected_voters < 20:
         return 0
     # 20-75 voters: 1.5 GHS per voter
-    if expected_voters <= 75:
+    if expected_voters <= 80:
         return int(expected_voters * 1.5)
     # 76-150 voters: 1.2 GHS per voter
-    if expected_voters <= 150 and expected_voters >= 76:
-        return int(expected_voters * 1.2)
+    if expected_voters <= 150 and expected_voters >= 81:
+        return int(expected_voters * 1.3)
     # 151-350 voters: 0.8 GHS per voter
     if expected_voters <= 350 and expected_voters >= 151:
-        return int(expected_voters * 0.8)
+        return int(expected_voters * 0.9)
 
 
 class PollSerializer(serializers.ModelSerializer):
@@ -162,6 +162,10 @@ class UpdatePollSerializer(serializers.ModelSerializer):
             if 'start_time' in validated_data and validated_data['start_time'] != instance.start_time:
                 raise ValidationError(
                     "Start time cannot be modified for an active poll.")
+                
+            if instance.creator != self.context['request'].user:
+                raise PermissionDenied(
+                    "You don't have permission to update this poll.")
 
             if instance.end_time <= timezone.now():
                 raise ValidationError(

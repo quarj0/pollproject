@@ -233,7 +233,6 @@ class PaymentLinkView(APIView):
         frontend_url = settings.FRONTEND_URL
         return_url = request.GET.get(
             'return_url', f"{frontend_url}/poll/{poll_id}/results")
-        callback_url = f"{frontend_url}/payment/verify/{reference}"
 
         # Check if a successful payment transaction already exists
         existing_transaction = Transaction.objects.filter(
@@ -264,6 +263,9 @@ class PaymentLinkView(APIView):
                 payment_reference=reference,
                 success=False
             )
+
+        # Now that reference is defined, create the callback_url
+        callback_url = f"{frontend_url}/payment/verify/{reference}"
 
         payment_data = {
             "email": getattr(request.user, "email", "customer@castsure.com"),
@@ -317,7 +319,6 @@ class PaymentLinkView(APIView):
         except requests.RequestException as e:
             logger.error(f"Exception during Paystack initialization: {e}")
             return Response({"error": "An error occurred during payment link generation."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class AccountBalanceView(APIView):
     permission_classes = [IsAuthenticated]

@@ -189,9 +189,9 @@ class PollmessageView(APIView):
                 "is_creator": True
             }, status=status.HTTP_200_OK)
 
-        # For unauthenticated users or non-creators, only show active polls
-        if not poll.active:
-            return Response({"message": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
+        # # For unauthenticated users or non-creators, only show active polls
+        # if not poll.active:
+        #     return Response({"message": "Poll is not active."}, status=status.HTTP_400_BAD_REQUEST)
 
         contestants = poll.contestants.all()
         contestants_data = ContestantSerializer(contestants, many=True).data
