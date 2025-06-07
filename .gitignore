@@ -1,0 +1,38 @@
+# Python
+*.py[cod]
+__pycache__/
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.sqlite3
+*.db
+media/
+staticfiles/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Virtual environment
+venv/
+.env/
+.env.bak
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+# Coverage reports
+.coverage
+htmlcov/

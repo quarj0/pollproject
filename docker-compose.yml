@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: votingsystem
+      POSTGRES_USER: quarjo
+      POSTGRES_PASSWORD: quarjowusu
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quarjo"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app-network
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://quarjo:quarjowusu@db:5432/votingsystem
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=pollproject.settings
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=votingsystem
+      - DB_USER=quarjo
+      - DB_PASSWORD=quarjowusu
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DEBUG=1
+      - SECRET_KEY=1+d4fjz%gxzh6wq41i+d_hy(lqoxr45ohv7kp9d%u96mw2dw2g
+      - PAYSTACK_SECRET_KEY=pk_test_6d7517a0b66d0f7cdc847840682b1034cf181a58
+      - PAYSTACK_PUBLIC_KEY=sk_test_4af318b52b2397534e31d19dfafb755f2265ed7b
+      - FRONTEND_URL=http://localhost:5173
+      - CLOUDINARY_CLOUD_NAME=diy43zbod
+      - CLOUDINARY_API_KEY=941472846578751
+      - CLOUDINARY_API_SECRET=xtulsVl4rGhcKxaDkFM09Mykl4A
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_HOST_USER=guidemelearn.info@gmail.com
+      - EMAIL_HOST_PASSWORD=ezvwdyfdkycauwbl
+      - EMAIL_USE_TLS=True
+      - DEFAULT_FROM_EMAIL=guidemelearn.info@gmail.com
+    volumes:
+      - .:/app
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+        daphne -b 0.0.0.0 -p 8000 pollproject.asgi:application"
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge
