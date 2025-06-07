@@ -27,6 +27,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
     'http://localhost:5173',
     'https://castsure.vercel.app',
+    'https://pollproject-production.up.railway.app',
 ]
 
 # Always append trailing slashes to URLs
