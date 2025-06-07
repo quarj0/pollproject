@@ -105,6 +105,7 @@ TEMPLATES = [
 ]
 
 ASGI_APPLICATION = 'pollproject.asgi.application'
+WSGI_APPLICATION = 'pollproject.wsgi.application'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
